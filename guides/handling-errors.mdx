@@ -19,6 +19,8 @@ All errors follow the same envelope:
 
 | HTTP Status | Error | Cause | Fix |
 |-------------|-------|-------|-----|
+| `401` | `missing api key` | No `Authorization: Bearer` header or `?key=` param | Add your API key — see [Authentication](/get-started/authentication) |
+| `403` | `invalid api key` | Key is invalid, disabled, or revoked | Request or rotate a key |
 | `400` | `invalid inputMint` | Mint address is not valid base58 | Check the token mint address |
 | `400` | `invalid amount` | Amount is not a valid number or is zero | Use string representation of the amount in smallest units |
 | `400` | `invalid swapMode` | Must be `ExactIn` or `ExactOut` | Check the `swapMode` parameter |
@@ -32,7 +34,8 @@ All errors follow the same envelope:
 
 <CodeGroup>
 ```bash cURL
-response=$(curl -s -w "\n%{http_code}" "https://api.argyros.xyz/api/v1/quote?inputMint=INVALID&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn")
+response=$(curl -s -w "\n%{http_code}" "https://api.argyros.xyz/api/v1/quote?inputMint=INVALID&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn" \
+  -H "Authorization: Bearer $ARGYROS_KEY")
 http_code=$(echo "$response" | tail -1)
 body=$(echo "$response" | head -1)
 
@@ -49,13 +52,18 @@ const response = await fetch(
       outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
       amount: "1000000000",
       swapMode: "ExactIn",
-    })
+    }),
+  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } }
 );
 
 const result = await response.json();
 
 if (!result.success) {
   switch (result.error) {
+    case "missing api key":
+    case "invalid api key":
+      console.log("Check your Authorization header / API key.");
+      break;
     case "no route found":
       console.log("No swap route available. Try a smaller amount.");
       break;
@@ -69,14 +77,18 @@ if (!result.success) {
 ```
 
 ```python Python
-import requests
+import os, requests
 
-resp = requests.get("https://api.argyros.xyz/api/v1/quote", params={
-    "inputMint": "So11111111111111111111111111111111111111112",
-    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-    "amount": "1000000000",
-    "swapMode": "ExactIn",
-})
+resp = requests.get(
+    "https://api.argyros.xyz/api/v1/quote",
+    params={
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        "amount": "1000000000",
+        "swapMode": "ExactIn",
+    },
+    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+)
 
 result = resp.json()
 

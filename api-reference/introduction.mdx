@@ -2,12 +2,18 @@
 title: "Argyros API reference — quote, swap & instructions"
 sidebarTitle: "Introduction"
 description: "Base URL, response format, and conventions for the Argyros API."
-llmDescription: "Argyros API reference overview. Base URL: https://api.argyros.xyz. Currently supports Fogo chain (Solana coming soon). Covers the JSON response envelope ({success, data, error}), HTTP status codes (200, 400, 404, 429, 500), and the endpoint table with links to GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, and GET /health."
+llmDescription: "Argyros API reference overview. Base URL: https://api.argyros.xyz. Currently supports Fogo chain (Solana coming soon). Covers the JSON response envelope ({success, data, error}), HTTP status codes (200, 400, 401, 403, 404, 429, 500), the auth requirement (every endpoint needs an API key except GET /health and GET /api/v1/tokens — see /get-started/authentication), and the endpoint table with an auth-required column linking to GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, WS /api/v1/stream, GET /api/v1/price, GET /api/v1/tokens, and GET /health."
 ---
 
 **Base URL**: `https://api.argyros.xyz`
 
 All swap endpoints are under `/api/v1`. The API currently operates on **Fogo**.
+
+<Note>
+Every endpoint below requires an API key (`Authorization: Bearer argy_...`, or `?key=` for the
+WebSocket stream) **except** `GET /health` and `GET /api/v1/tokens`. See
+[Authentication](/get-started/authentication).
+</Note>
 
 <Info>
 **Solana support coming soon.** When available, all endpoints will accept a `chain` query parameter to select between Fogo and Solana. See [Supported Chains](/concepts/chains).
@@ -39,17 +45,20 @@ All responses use a consistent envelope:
 |------|---------|
 | `200` | Success |
 | `400` | Bad request: invalid parameters, missing required fields |
+| `401` | No API key was provided |
+| `403` | The API key is invalid, disabled, or revoked |
 | `404` | Not found: no route exists for the given token pair/amount |
 | `429` | Rate limited: too many requests |
 | `500` | Internal error: transaction build or simulation failed |
 
 ## Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `GET https://api.argyros.xyz/api/v1/quote` | GET | Get swap quote with routing details |
-| `POST https://api.argyros.xyz/api/v1/swap` | POST | Build unsigned swap transaction |
-| `POST https://api.argyros.xyz/api/v1/instructions` | POST | Get raw swap instructions |
-| `WS wss://api.argyros.xyz/api/v1/stream` | WS | [Stream live quotes over WebSocket](/api-reference/stream/index) |
-| `GET https://api.argyros.xyz/api/v1/price/:mint` | GET | [Spot USD price for a token](/api-reference/price/index) |
-| `GET https://api.argyros.xyz/health` | GET | Service health check |
+| Endpoint | Method | Auth required | Description |
+|----------|--------|:---:|-------------|
+| `GET https://api.argyros.xyz/api/v1/quote` | GET | ✅ | Get swap quote with routing details |
+| `POST https://api.argyros.xyz/api/v1/swap` | POST | ✅ | Build unsigned swap transaction |
+| `POST https://api.argyros.xyz/api/v1/instructions` | POST | ✅ | Get raw swap instructions |
+| `WS wss://api.argyros.xyz/api/v1/stream` | WS | ✅ | [Stream live quotes over WebSocket](/api-reference/stream/index) |
+| `GET https://api.argyros.xyz/api/v1/price/:mint` | GET | ✅ | [Spot USD price for a token](/api-reference/price/index) |
+| `GET https://api.argyros.xyz/api/v1/tokens` | GET | — | Curated list of well-known token mints |
+| `GET https://api.argyros.xyz/health` | GET | — | Service health check |

@@ -25,7 +25,8 @@ inputMint=So11111111111111111111111111111111111111112&\
 outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&\
 amount=1000000000&\
 swapMode=ExactIn&\
-slippageBps=50"
+slippageBps=50" \
+  -H "Authorization: Bearer $ARGYROS_KEY"
 ```
 
 ```typescript TypeScript
@@ -37,22 +38,27 @@ const quoteResponse = await fetch(
       amount: "1000000000",
       swapMode: "ExactIn",
       slippageBps: "50",
-    })
+    }),
+  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } }
 );
 const quote = await quoteResponse.json();
 console.log(`Best route: ${quote.data.hopCount} hop(s), output: ${quote.data.amountOut}`);
 ```
 
 ```python Python
-import requests
+import os, requests
 
-quote_resp = requests.get("https://api.argyros.xyz/api/v1/quote", params={
-    "inputMint": "So11111111111111111111111111111111111111112",
-    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-    "amount": "1000000000",
-    "swapMode": "ExactIn",
-    "slippageBps": "50",
-})
+quote_resp = requests.get(
+    "https://api.argyros.xyz/api/v1/quote",
+    params={
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        "amount": "1000000000",
+        "swapMode": "ExactIn",
+        "slippageBps": "50",
+    },
+    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+)
 quote = quote_resp.json()
 print(f"Best route: {quote['data']['hopCount']} hop(s), output: {quote['data']['amountOut']}")
 ```
@@ -64,6 +70,7 @@ print(f"Best route: {quote['data']['hopCount']} hop(s), output: {quote['data']['
 ```bash cURL
 curl -X POST "https://api.argyros.xyz/api/v1/swap" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ARGYROS_KEY" \
   -d '{
     "userWallet": "YOUR_WALLET_ADDRESS",
     "inputMint": "So11111111111111111111111111111111111111112",
@@ -77,7 +84,10 @@ curl -X POST "https://api.argyros.xyz/api/v1/swap" \
 ```typescript TypeScript
 const swapResponse = await fetch("https://api.argyros.xyz/api/v1/swap", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${process.env.ARGYROS_KEY}`,
+  },
   body: JSON.stringify({
     userWallet: wallet.publicKey.toBase58(),
     inputMint: "So11111111111111111111111111111111111111112",
@@ -91,14 +101,18 @@ const swap = await swapResponse.json();
 ```
 
 ```python Python
-swap_resp = requests.post("https://api.argyros.xyz/api/v1/swap", json={
-    "userWallet": "YOUR_WALLET_ADDRESS",
-    "inputMint": "So11111111111111111111111111111111111111112",
-    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-    "amount": "1000000000",
-    "swapMode": "ExactIn",
-    "slippageBps": 50,
-})
+swap_resp = requests.post(
+    "https://api.argyros.xyz/api/v1/swap",
+    json={
+        "userWallet": "YOUR_WALLET_ADDRESS",
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        "amount": "1000000000",
+        "swapMode": "ExactIn",
+        "slippageBps": 50,
+    },
+    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+)
 swap = swap_resp.json()
 ```
 </CodeGroup>

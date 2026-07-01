@@ -1,7 +1,7 @@
 ---
 title: "Embedding Swap in a dApp"
 description: "How to integrate Argyros swap functionality into a web application."
-llmDescription: "Complete guide to embedding Argyros swap in a React web app on Fogo. Includes TypeScript functions for getQuote and buildSwapTransaction, an executeSwap function using @solana/wallet-adapter-react signTransaction, a full React SwapButton component example, error handling table for UI messages, and best practices (show price impact, refresh quotes, handle rate limits). Solana chain support coming soon."
+llmDescription: "Complete guide to embedding Argyros swap in a React web app on Fogo. Includes TypeScript functions for getQuote and buildSwapTransaction (both sending the required Authorization: Bearer API key header), an executeSwap function using @solana/wallet-adapter-react signTransaction, a full React SwapButton component example, error handling table for UI messages, and best practices (show price impact, refresh quotes, handle rate limits). Solana chain support coming soon."
 ---
 
 # Embedding Swap in a dApp
@@ -23,6 +23,7 @@ npm install @solana/web3.js
 
 ```typescript TypeScript
 const ARGYROS_API = "https://api.argyros.xyz";
+const ARGYROS_KEY = process.env.ARGYROS_KEY; // see /get-started/authentication
 
 interface QuoteParams {
   inputMint: string;
@@ -41,7 +42,9 @@ async function getQuote(params: QuoteParams) {
     slippageBps: String(params.slippageBps ?? 50),
   });
 
-  const res = await fetch(`${ARGYROS_API}/api/v1/quote?${searchParams}`);
+  const res = await fetch(`${ARGYROS_API}/api/v1/quote?${searchParams}`, {
+    headers: { Authorization: `Bearer ${ARGYROS_KEY}` },
+  });
   const json = await res.json();
 
   if (!json.success) throw new Error(json.error);
@@ -66,7 +69,10 @@ interface SwapParams {
 async function buildSwapTransaction(params: SwapParams) {
   const res = await fetch(`${ARGYROS_API}/api/v1/swap`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ARGYROS_KEY}`,
+    },
     body: JSON.stringify({
       ...params,
       slippageBps: params.slippageBps ?? 50,

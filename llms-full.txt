@@ -14,6 +14,23 @@ Currently: **Fogo** (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs).
 
 ---
 
+## Authentication
+
+Every endpoint requires an API key **except** `GET /health` and `GET /api/v1/tokens`. Send it as:
+
+- `Authorization: Bearer argy_your_key_here` header on REST calls, or
+- `?key=argy_your_key_here` query parameter — **required** for the WebSocket stream
+  (`GET /api/v1/stream`), since a browser WS handshake can't carry custom headers.
+
+```bash
+curl "https://api.argyros.xyz/api/v1/quote?..." -H "Authorization: Bearer $ARGYROS_KEY"
+```
+
+A missing key returns `401 Unauthorized`; an invalid/disabled/revoked key returns `403 Forbidden`.
+Keys are free during beta — see https://docs.argyros.xyz/get-started/authentication.
+
+---
+
 ## Response Envelope
 
 All endpoints return:
@@ -26,7 +43,7 @@ All endpoints return:
 { "success": false, "error": "descriptive message" }
 ```
 
-HTTP status codes: 200 (success), 400 (bad request), 404 (no route), 429 (rate limited), 500 (internal error).
+HTTP status codes: 200 (success), 400 (bad request), 401 (missing API key), 403 (invalid/disabled API key), 404 (no route), 429 (rate limited), 500 (internal error).
 
 ---
 
@@ -85,41 +102,55 @@ Get the best swap route and estimated output for a token pair.
 
 ### Errors
 
+- 401: `missing api key` — no `Authorization` header or `?key=` param
+- 403: `invalid api key` — key is invalid, disabled, or revoked
 - 400: `invalid inputMint`, `invalid outputMint`, `invalid amount`, `invalid swapMode`, `insufficient liquidity`
 - 404: `no route found`, `no pool found`
 
 ### Example (cURL)
 
 ```bash
-curl "https://api.argyros.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn&slippageBps=50"
+curl "https://api.argyros.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn&slippageBps=50" \
+  -H "Authorization: Bearer $ARGYROS_KEY"
 ```
 
 ### Example (Python)
 
 ```python
-import requests
-resp = requests.get("https://api.argyros.xyz/api/v1/quote", params={
-    "inputMint": "So11111111111111111111111111111111111111112",
-    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-    "amount": "1000000000",
-    "swapMode": "ExactIn",
-    "slippageBps": "50",
-})
+import os, requests
+resp = requests.get(
+    "https://api.argyros.xyz/api/v1/quote",
+    params={
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        "amount": "1000000000",
+        "swapMode": "ExactIn",
+        "slippageBps": "50",
+    },
+    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+)
 data = resp.json()["data"]
 ```
 
 ### Example (TypeScript)
 
 ```typescript
-const resp = await fetch("https://api.argyros.xyz/api/v1/quote?" + new URLSearchParams({
-  inputMint: "So11111111111111111111111111111111111111112",
-  outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-  amount: "1000000000",
-  swapMode: "ExactIn",
-  slippageBps: "50",
-}));
+const resp = await fetch(
+  "https://api.argyros.xyz/api/v1/quote?" + new URLSearchParams({
+    inputMint: "So11111111111111111111111111111111111111112",
+    outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+    amount: "1000000000",
+    swapMode: "ExactIn",
+    slippageBps: "50",
+  }),
+  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } }
+);
 const { data } = await resp.json();
 ```
+
+Every example above needs the `Authorization: Bearer <key>` header (or `?key=` for the WS stream)
+— it's omitted from the `/swap` and `/instructions` examples below for brevity, but required
+there too.
 
 ---
 
@@ -236,7 +267,18 @@ Get raw instructions for custom transaction composition. Same request as /swap w
 
 ## GET /health
 
-Returns `{"status": "ok"}` (not wrapped in the standard envelope).
+Returns `{"status": "ok"}` (not wrapped in the standard envelope). No API key required.
+
+---
+
+## GET /api/v1/tokens
+
+Returns a static, curated list of well-known token mints (symbol, name, decimals, logo) for
+building token pickers. No API key required. Served with `Cache-Control: public, max-age=300`.
+
+```json
+{ "tokens": [ { "mint": "So11111111111111111111111111111111111111112", "symbol": "SOL", "name": "Solana", "decimals": 9, "logoURI": "..." }, ... ] }
+```
 
 ---
 
@@ -255,6 +297,8 @@ Default: 60 requests/minute, 10 requests/second burst. 429 response on limit. Us
 
 | Error | Recovery |
 |-------|----------|
+| missing api key (401) | Add `Authorization: Bearer <key>` (or `?key=` for the WS stream) |
+| invalid api key (403) | Key is invalid, disabled, or revoked — request/rotate a key |
 | no route found (404) | Try smaller amount or different slippage |
 | insufficient liquidity (400) | Reduce amount |
 | simulation.insufficientFunds | Check wallet balance |

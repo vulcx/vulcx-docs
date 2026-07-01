@@ -15,13 +15,18 @@
       "description": "Production"
     }
   ],
+  "security": [
+    { "ApiKeyHeader": [] },
+    { "ApiKeyQuery": [] }
+  ],
   "paths": {
     "/health": {
       "get": {
         "operationId": "healthCheck",
         "summary": "Health check",
-        "description": "Returns service health status.",
+        "description": "Returns service health status. Does not require an API key — safe for uptime monitors.",
         "tags": ["Health"],
+        "security": [],
         "responses": {
           "200": {
             "description": "Service is healthy",
@@ -281,6 +286,44 @@
         }
       }
     },
+    "/api/v1/tokens": {
+      "get": {
+        "operationId": "listKnownTokens",
+        "summary": "List known tokens",
+        "description": "Returns a static, curated list of well-known token mints (symbol, name, decimals, logo) for building token pickers. Does not require an API key. Cacheable — served with `Cache-Control: public, max-age=300`.",
+        "tags": ["Tokens"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Token list retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tokens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "mint": { "type": "string", "example": "So11111111111111111111111111111111111111112" },
+                          "symbol": { "type": "string", "example": "SOL" },
+                          "name": { "type": "string", "example": "Solana" },
+                          "decimals": { "type": "integer", "example": 9 },
+                          "logoURI": { "type": "string", "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" }
+                        },
+                        "required": ["mint", "symbol", "name", "decimals"]
+                      }
+                    }
+                  },
+                  "required": ["tokens"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/instructions": {
       "post": {
         "operationId": "buildInstructions",
@@ -339,6 +382,19 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key sent as `Authorization: Bearer argy_...`. Required on every endpoint except `GET /health` and `GET /api/v1/tokens`."
+      },
+      "ApiKeyQuery": {
+        "type": "apiKey",
+        "in": "query",
+        "name": "key",
+        "description": "API key as a `?key=argy_...` query parameter — the only option for the WebSocket stream (`GET /api/v1/stream`), since browsers can't set custom headers on a WS handshake. Also accepted on REST endpoints as a fallback to the `Authorization` header."
+      }
+    },
     "schemas": {
       "PriceResult": {
         "type": "object",

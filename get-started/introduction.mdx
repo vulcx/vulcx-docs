@@ -2,7 +2,7 @@
 title: "Introduction to Argyros — best-price swaps on Fogo"
 sidebarTitle: "Introduction"
 description: "Argyros is a swap aggregator on Fogo with multi-hop routing across Vortex, Fluxbeam, Fogo.fun, Moonit, and more. Solana support coming soon."
-llmDescription: "Introduction to Argyros, a swap aggregator on Fogo (Solana coming soon). Covers what Argyros is, its value props (best-price multi-hop routing, fast execution, simple 3-endpoint API), the endpoint table (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /health), and quick cURL + TypeScript + Python examples for getting a SOL→USDC quote on Fogo. Also available as a self-hosted community binary (see /get-started/self-hosted) for operators who want full control with their own FluxRPC key and community license."
+llmDescription: "Introduction to Argyros, a swap aggregator on Fogo (Solana coming soon). Covers what Argyros is, its value props (best-price multi-hop routing, fast execution, simple 3-endpoint API), the endpoint table (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /health, GET /api/v1/tokens) with an auth-required column, and quick cURL + TypeScript + Python examples (each including the required Authorization: Bearer header) for getting a SOL→USDC quote on Fogo. Notes that every endpoint requires an API key except GET /health and GET /api/v1/tokens — see /get-started/authentication. Also available as a self-hosted community binary (see /get-started/self-hosted) for operators who want full control with their own FluxRPC key and community license."
 ---
 
 # Welcome to Argyros
@@ -18,12 +18,17 @@ Argyros aggregates liquidity across the **Fogo** ecosystem to find the best swap
 
 ## Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/quote` | GET | Get the best route and estimated output for a token pair |
-| `/api/v1/swap` | POST | Build an unsigned swap transaction |
-| `/api/v1/instructions` | POST | Get raw instructions for custom transaction composition |
-| `/health` | GET | Service health check |
+| Endpoint | Method | Auth required | Description |
+|----------|--------|:---:|-------------|
+| `/api/v1/quote` | GET | ✅ | Get the best route and estimated output for a token pair |
+| `/api/v1/swap` | POST | ✅ | Build an unsigned swap transaction |
+| `/api/v1/instructions` | POST | ✅ | Get raw instructions for custom transaction composition |
+| `/api/v1/stream` | GET (WS) | ✅ | Live-updating quotes over a WebSocket |
+| `/api/v1/tokens` | GET | — | Curated list of well-known token mints |
+| `/health` | GET | — | Service health check |
+
+Every endpoint requires an API key (`Authorization: Bearer argy_...`) except `/health` and
+`/api/v1/tokens` — see [Authentication](/get-started/authentication).
 
 ## Quick example
 
@@ -31,7 +36,8 @@ Get a quote for swapping 1 SOL to USDC on Fogo:
 
 <CodeGroup>
 ```bash cURL
-curl "https://api.argyros.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn&slippageBps=50"
+curl "https://api.argyros.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn&slippageBps=50" \
+  -H "Authorization: Bearer $ARGYROS_KEY"
 ```
 
 ```typescript TypeScript
@@ -43,26 +49,36 @@ const response = await fetch(
       amount: "1000000000",
       swapMode: "ExactIn",
       slippageBps: "50",
-    })
+    }),
+  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } }
 );
 const { data } = await response.json();
 console.log(`Output: ${data.amountOut}, Hops: ${data.hopCount}`);
 ```
 
 ```python Python
-import requests
+import os, requests
 
-resp = requests.get("https://api.argyros.xyz/api/v1/quote", params={
-    "inputMint": "So11111111111111111111111111111111111111112",
-    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-    "amount": "1000000000",
-    "swapMode": "ExactIn",
-    "slippageBps": "50",
-})
+resp = requests.get(
+    "https://api.argyros.xyz/api/v1/quote",
+    params={
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        "amount": "1000000000",
+        "swapMode": "ExactIn",
+        "slippageBps": "50",
+    },
+    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+)
 data = resp.json()["data"]
 print(f"Output: {data['amountOut']}, Hops: {data['hopCount']}")
 ```
 </CodeGroup>
+
+<Note>
+Every request above needs an API key — see [Authentication](/get-started/authentication) for how
+to get one and use it. `/health` and `/api/v1/tokens` are the only endpoints that don't require it.
+</Note>
 
 ## Next steps
 

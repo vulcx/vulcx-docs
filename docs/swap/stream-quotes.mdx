@@ -1,7 +1,7 @@
 ---
 title: "Stream Quotes"
 description: "Subscribe to live swap quotes over WebSocket and update prices in real time without polling."
-llmDescription: "Guide to the Argyros WebSocket quote stream (wss://api.argyros.xyz/api/v1/stream) on Fogo. Explains when to stream vs poll GET /api/v1/quote, how to connect, the subscribe/unsubscribe protocol with a pairs array ({in, out, amount, exactIn}), how to handle quote and ack messages, reconnection, and limits (256 subscriptions/connection, change-only pushes, ~50ms debounce). Includes runnable Browser and Node.js (ws) examples. Solana support coming soon."
+llmDescription: "Guide to the Argyros WebSocket quote stream (wss://api.argyros.xyz/api/v1/stream) on Fogo. Requires an API key as a ?key=argy_... query parameter, same as every endpoint except GET /health and GET /api/v1/tokens. Explains when to stream vs poll GET /api/v1/quote, how to connect, the subscribe/unsubscribe protocol with a pairs array ({in, out, amount, exactIn}), how to handle quote and ack messages, reconnection, and limits (256 subscriptions/connection, change-only pushes, ~50ms debounce). Includes runnable Browser and Node.js (ws) examples with the key in the connection URL. Solana support coming soon."
 ---
 
 # Stream Quotes
@@ -10,7 +10,7 @@ The Argyros quote stream pushes a fresh quote whenever the price of a token pair
 can show a live rate without polling. It's a WebSocket endpoint that speaks plain JSON.
 
 ```
-wss://api.argyros.xyz/api/v1/stream
+wss://api.argyros.xyz/api/v1/stream?key=argy_your_key_here
 ```
 
 <Info>
@@ -20,6 +20,12 @@ For a single quote — for example, right before building a transaction — use
 for the same pair and amount. For the full message schema, see the
 [Stream Quotes API reference](/api-reference/stream/index).
 </Info>
+
+<Note>
+Like every endpoint except `GET /health` and `GET /api/v1/tokens`, this requires an API key. Browsers
+can't set custom headers on a WebSocket handshake, so the key goes in the URL as `?key=` — see
+[Authentication](/get-started/authentication).
+</Note>
 
 ## How it works
 
@@ -63,7 +69,7 @@ you receive is a genuine price update.
 
 <CodeGroup>
 ```javascript Browser
-const ws = new WebSocket("wss://api.argyros.xyz/api/v1/stream");
+const ws = new WebSocket(`wss://api.argyros.xyz/api/v1/stream?key=${ARGYROS_KEY}`);
 
 ws.onopen = () => {
   ws.send(JSON.stringify({
@@ -97,7 +103,7 @@ ws.onclose = () => {
 ```javascript Node.js
 import WebSocket from "ws";
 
-const ws = new WebSocket("wss://api.argyros.xyz/api/v1/stream");
+const ws = new WebSocket(`wss://api.argyros.xyz/api/v1/stream?key=${process.env.ARGYROS_KEY}`);
 
 ws.on("open", () => {
   ws.send(JSON.stringify({

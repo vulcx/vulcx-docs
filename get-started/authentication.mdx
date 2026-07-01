@@ -2,13 +2,19 @@
 title: "Authentication — API keys & the Authorization header"
 sidebarTitle: "Authentication"
 description: "Authenticate Argyros API requests with an API key using the Authorization: Bearer header. How to get a key, use it from the SDK, widget, and WebSocket, and keep it secure."
-llmDescription: "How to authenticate with the Argyros API. Every request to https://api.argyros.xyz is authenticated with an API key (format argy_...) sent in the Authorization: Bearer header. Covers getting a key (free during beta via Discord), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey) and widget (api-key attribute), the WebSocket query-param form (/api/v1/stream?key=argy_...), 401/403 errors for missing or invalid keys, key security best practices, and a link to rate limits. Fogo; Solana coming soon."
+llmDescription: "How to authenticate with the Argyros API. Every request to https://api.argyros.xyz is authenticated with an API key (format argy_...) sent in the Authorization: Bearer header, EXCEPT GET /health and GET /api/v1/tokens, which require no key. Covers getting a key (free during beta via Discord), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey) and widget (api-key attribute), the WebSocket query-param form (/api/v1/stream?key=argy_...) which is required (not optional) since browsers can't set custom headers on a WS handshake, 401/403 errors for missing or invalid keys, key security best practices, and a link to rate limits. Fogo; Solana coming soon."
 icon: "key"
 ---
 
-Every request to the Argyros API (`https://api.argyros.xyz`) is authenticated with an API key.
-Keys look like `argy_` followed by a long hex string, and you send them in the standard
-`Authorization: Bearer` header.
+Every request to the Argyros API (`https://api.argyros.xyz`) is authenticated with an API key,
+**except** `GET /health` and `GET /api/v1/tokens`, which are public and require no key. Keys look
+like `argy_` followed by a long hex string, and you send them in the standard `Authorization:
+Bearer` header (or as a `?key=` query parameter — the only option for the WebSocket stream).
+
+<Note>
+This applies to the WebSocket stream too: `GET /api/v1/stream` requires a key just like every
+other endpoint. See [WebSocket streaming](#websocket-streaming) below for the query-param form.
+</Note>
 
 <Note>
 Argyros is **free during beta** — there are no paid tiers yet. You still need a key so we can

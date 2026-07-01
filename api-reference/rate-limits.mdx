@@ -16,6 +16,9 @@ The Argyros API applies rate limiting to ensure fair usage and service stability
 Rate limits are subject to change. Contact the team for higher limits if you need them for production integrations.
 </Note>
 
+Rate limiting is applied per API key. `GET /health` and `GET /api/v1/tokens` don't require a key
+and aren't subject to these per-key limits.
+
 ## Rate limit response
 
 When rate limited, the API returns HTTP `429`:

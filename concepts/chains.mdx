@@ -21,7 +21,8 @@ Fogo is the primary chain for Argyros today.
 | Token standard | SPL Token |
 
 ```bash
-curl "https://api.argyros.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn"
+curl "https://api.argyros.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn" \
+  -H "Authorization: Bearer $ARGYROS_KEY"
 ```
 
 ## Solana (coming soon)

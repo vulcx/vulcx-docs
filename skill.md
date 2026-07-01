@@ -1,7 +1,7 @@
 ---
 name: argyros-swap
 description: Integrate Argyros swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, and handling errors across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves. Solana support coming soon.
-version: "1.1.0"
+version: "1.2.0"
 tags:
   - argyros
   - fogo
@@ -18,6 +18,22 @@ tags:
 **Base URL**: `https://api.argyros.xyz`
 **OpenAPI spec**: `https://docs.argyros.xyz/api-reference/openapi.json`
 **Full reference**: `https://docs.argyros.xyz/llms-full.txt`
+
+## Authentication
+
+Every endpoint requires an API key **except** `GET /health` and `GET /api/v1/tokens`. Send it as:
+
+- `Authorization: Bearer argy_your_key_here` on REST calls, or
+- `?key=argy_your_key_here` query parameter — **required** for the WebSocket stream
+  (`GET /api/v1/stream`), since a browser WS handshake can't carry custom headers.
+
+```bash
+curl "https://api.argyros.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn" \
+  -H "Authorization: Bearer $ARGYROS_KEY"
+```
+
+Missing/invalid keys return `401 Unauthorized` (no key) or `403 Forbidden` (invalid/disabled/revoked
+key). Keys are free during beta — see [Authentication](https://docs.argyros.xyz/get-started/authentication) for how to get one.
 
 ## Chain Support
 
@@ -40,12 +56,14 @@ Do not use when:
 
 ## Quick Reference
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/v1/quote` | GET | Get best route and estimated output |
-| `/api/v1/swap` | POST | Build unsigned swap transaction |
-| `/api/v1/instructions` | POST | Get raw instructions for custom tx |
-| `/health` | GET | Service health check |
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|:---:|---------|
+| `/api/v1/quote` | GET | required | Get best route and estimated output |
+| `/api/v1/swap` | POST | required | Build unsigned swap transaction |
+| `/api/v1/instructions` | POST | required | Get raw instructions for custom tx |
+| `/api/v1/stream` | GET (WS) | required (`?key=`) | Live-updating quotes over WebSocket |
+| `/api/v1/tokens` | GET | — | Curated list of well-known token mints |
+| `/health` | GET | — | Service health check |
 
 ## Intent → Endpoint Decision Tree
 
@@ -198,6 +216,8 @@ Same as `/swap` without `skipSimulation`.
 
 | Error | HTTP | Recovery |
 |-------|------|----------|
+| `missing api key` | 401 | Add `Authorization: Bearer <key>` (or `?key=` for the WS stream) |
+| `invalid api key` | 403 | Key is invalid, disabled, or revoked — request/rotate a key |
 | `no route found` | 404 | Try smaller amount, different slippage, or check token support |
 | `no pool found` | 404 | Token may not have listed pools |
 | `insufficient liquidity` | 400 | Reduce swap amount |

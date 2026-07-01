@@ -9,7 +9,8 @@
     "production": {
       "host": "api.argyros.xyz",
       "protocol": "wss",
-      "description": "Production WebSocket server"
+      "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.argyros.xyz/api/v1/stream?key=argy_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes.",
+      "security": [{ "$ref": "#/components/securitySchemes/ApiKeyQuery" }]
     }
   },
   "channels": {
@@ -208,6 +209,14 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "ApiKeyQuery": {
+        "type": "httpApiKey",
+        "in": "query",
+        "name": "key",
+        "description": "API key as a `?key=argy_...` query parameter. Required — this is the only auth option for the WebSocket stream, since browsers can't set custom headers on a WS handshake."
+      }
+    },
     "schemas": {
       "PairRequest": {
         "type": "object",
