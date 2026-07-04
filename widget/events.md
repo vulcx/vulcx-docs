@@ -1,10 +1,10 @@
 ---
 title: "Widget events"
-description: "Custom events from argyros-swap: quote-update, swap-initiated, swap-complete, swap-error, connect-wallet."
-llmDescription: "Event reference for the Argyros argyros-swap Web Component. Documents quote-update (QuoteResponse), swap-initiated (inputMint, outputMint, amount), swap-complete (SwapResponse), swap-error (error string), and connect-wallet. All events bubble and are composed so they cross the shadow DOM. Includes React and Vue listener examples."
+description: "Custom events from vulcx-swap: quote-update, swap-initiated, swap-complete, swap-error, connect-wallet."
+llmDescription: "Event reference for the Vulcx vulcx-swap Web Component. Documents quote-update (QuoteResponse), swap-initiated (inputMint, outputMint, amount), swap-complete (SwapResponse), swap-error (error string), and connect-wallet. All events bubble and are composed so they cross the shadow DOM. Includes React and Vue listener examples."
 ---
 
-The `<argyros-swap>` element dispatches custom events at key points in the swap lifecycle. All events have `bubbles: true` and `composed: true`, so they cross the shadow DOM boundary.
+The `<vulcx-swap>` element dispatches custom events at key points in the swap lifecycle. All events have `bubbles: true` and `composed: true`, so they cross the shadow DOM boundary.
 
 ---
 
@@ -148,7 +148,7 @@ See [Wallet Integration](./wallet-integration.md) for full patterns.
 
 ```tsx
 import { useEffect, useRef } from "react";
-import "@argyros/widget";
+import "@vulcx/widget";
 
 function SwapWidget() {
   const ref = useRef<HTMLElement>(null);
@@ -164,7 +164,7 @@ function SwapWidget() {
     return () => el.removeEventListener("quote-update", onQuote);
   }, []);
 
-  return <argyros-swap ref={ref} api-key="argy_..." />;
+  return <vulcx-swap ref={ref} api-key="argy_..." />;
 }
 ```
 
@@ -172,7 +172,7 @@ function SwapWidget() {
 
 ```vue
 <template>
-  <argyros-swap
+  <vulcx-swap
     api-key="argy_..."
     @quote-update="onQuote"
     @swap-complete="onSwap"
@@ -181,7 +181,7 @@ function SwapWidget() {
 </template>
 
 <script setup>
-import "@argyros/widget";
+import "@vulcx/widget";
 
 function onQuote(e) { console.log(e.detail); }
 function onSwap(e) { console.log(e.detail); }

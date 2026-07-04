@@ -1,7 +1,7 @@
 ---
 title: "SDK quickstart"
-description: "Install @argyros/sdk and run your first Fogo swap — quote, build, sign, submit — in under five minutes."
-llmDescription: "Quickstart for the @argyros/sdk TypeScript SDK. Covers npm install, initializing ArgyrosSDK, calling sdk.quote() for a SOL to USDC quote on Fogo, building an unsigned transaction with sdk.swap(), and signing/submitting with @solana/web3.js VersionedTransaction. Fogo live; Solana coming soon."
+description: "Install @vulcx/sdk and run your first Fogo swap — quote, build, sign, submit — in under five minutes."
+llmDescription: "Quickstart for the @vulcx/sdk TypeScript SDK. Covers npm install, initializing VulcxSDK, calling sdk.quote() for a SOL to USDC quote on Fogo, building an unsigned transaction with sdk.swap(), and signing/submitting with @solana/web3.js VersionedTransaction. Fogo live; Solana coming soon."
 ---
 
 Get a quote and execute a swap in under 5 minutes.
@@ -11,13 +11,13 @@ Get a quote and execute a swap in under 5 minutes.
 ## Install
 
 ```bash
-npm install @argyros/sdk
+npm install @vulcx/sdk
 ```
 
-Or via CDN (exposes `window.ArgyrosSDK`):
+Or via CDN (exposes `window.VulcxSDK`):
 
 ```html
-<script src="https://cdn.argyros.trade/sdk.umd.js"></script>
+<script src="https://cdn.vulcx.xyz/sdk.umd.js"></script>
 ```
 
 ---
@@ -25,9 +25,9 @@ Or via CDN (exposes `window.ArgyrosSDK`):
 ## 1. Initialize
 
 ```typescript
-import { ArgyrosSDK } from "@argyros/sdk";
+import { VulcxSDK } from "@vulcx/sdk";
 
-const sdk = new ArgyrosSDK({
+const sdk = new VulcxSDK({
   apiKey: "argy_your_api_key",
   chain: "solana",
 });

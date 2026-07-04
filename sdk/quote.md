@@ -1,7 +1,7 @@
 ---
 title: "sdk.quote()"
-description: "Get the best swap rate for a token pair with the Argyros SDK — parameters, response schema, and price impact."
-llmDescription: "Reference for sdk.quote() in the Argyros TypeScript SDK. Documents QuoteRequest params (inputMint, outputMint, amount in smallest units, swapMode ExactIn/ExactOut, slippageBps default 50) and QuoteResponse fields (amountIn, amountOut, priceImpactBps, priceImpactPercent, priceImpactSeverity none/low/moderate/high/extreme, feeBps, otherAmountThreshold, routes RouteInfo array). Includes a token-decimals table (SOL 9, USDC 6, BONK 5) and error cases. Fogo; Solana coming soon."
+description: "Get the best swap rate for a token pair with the Vulcx SDK — parameters, response schema, and price impact."
+llmDescription: "Reference for sdk.quote() in the Vulcx TypeScript SDK. Documents QuoteRequest params (inputMint, outputMint, amount in smallest units, swapMode ExactIn/ExactOut, slippageBps default 50) and QuoteResponse fields (amountIn, amountOut, priceImpactBps, priceImpactPercent, priceImpactSeverity none/low/moderate/high/extreme, feeBps, otherAmountThreshold, routes RouteInfo array). Includes a token-decimals table (SOL 9, USDC 6, BONK 5) and error cases. Fogo; Solana coming soon."
 ---
 
 Find the best swap rate for a token pair. The aggregator searches across all supported DEXs and returns the optimal route.

@@ -1,6 +1,6 @@
-# Argyros Developer Docs
+# Vulcx Developer Docs
 
-Mintlify-powered documentation for the Argyros API.
+Mintlify-powered documentation for the Vulcx API.
 
 ## Development
 

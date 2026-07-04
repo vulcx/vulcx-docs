@@ -1,7 +1,7 @@
 ---
 title: "sdk.swap()"
-description: "Build an unsigned, ready-to-sign swap transaction with the Argyros SDK, then sign and submit it."
-llmDescription: "Reference for sdk.swap() in the Argyros TypeScript SDK. Documents SwapRequest params and SwapResponse (base64 transaction, lastValidBlockHeight, amountIn/amountOut, SimulationResult). Shows signing and submitting with @solana/web3.js VersionedTransaction and with a React wallet adapter. Fogo; Solana coming soon."
+description: "Build an unsigned, ready-to-sign swap transaction with the Vulcx SDK, then sign and submit it."
+llmDescription: "Reference for sdk.swap() in the Vulcx TypeScript SDK. Documents SwapRequest params and SwapResponse (base64 transaction, lastValidBlockHeight, amountIn/amountOut, SimulationResult). Shows signing and submitting with @solana/web3.js VersionedTransaction and with a React wallet adapter. Fogo; Solana coming soon."
 ---
 
 Build an unsigned swap transaction ready to be signed and submitted to the Solana network.

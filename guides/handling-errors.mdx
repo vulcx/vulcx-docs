@@ -1,7 +1,7 @@
 ---
 title: "Handling Errors"
 description: "Common errors, what they mean, and how to handle them."
-llmDescription: "Error handling guide for the Argyros API on Fogo. Covers the error response format, common HTTP errors (400, 404, 429, 500) with causes and fixes, simulation error fields (insufficientFunds, slippageExceeded), on-chain transaction errors (SlippageExceeded, BlockhashExpired), and retry strategy with cURL, TypeScript, and Python examples for each error category."
+llmDescription: "Error handling guide for the Vulcx API on Fogo. Covers the error response format, common HTTP errors (400, 404, 429, 500) with causes and fixes, simulation error fields (insufficientFunds, slippageExceeded), on-chain transaction errors (SlippageExceeded, BlockhashExpired), and retry strategy with cURL, TypeScript, and Python examples for each error category."
 ---
 
 ## Error response format
@@ -34,8 +34,8 @@ All errors follow the same envelope:
 
 <CodeGroup>
 ```bash cURL
-response=$(curl -s -w "\n%{http_code}" "https://api.argyros.xyz/api/v1/quote?inputMint=INVALID&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn" \
-  -H "Authorization: Bearer $ARGYROS_KEY")
+response=$(curl -s -w "\n%{http_code}" "https://api.vulcx.xyz/api/v1/quote?inputMint=INVALID&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn" \
+  -H "Authorization: Bearer $VULCX_KEY")
 http_code=$(echo "$response" | tail -1)
 body=$(echo "$response" | head -1)
 
@@ -46,14 +46,14 @@ fi
 
 ```typescript TypeScript
 const response = await fetch(
-  "https://api.argyros.xyz/api/v1/quote?" +
+  "https://api.vulcx.xyz/api/v1/quote?" +
     new URLSearchParams({
       inputMint: "So11111111111111111111111111111111111111112",
       outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
       amount: "1000000000",
       swapMode: "ExactIn",
     }),
-  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } }
+  { headers: { Authorization: `Bearer ${process.env.VULCX_KEY}` } }
 );
 
 const result = await response.json();
@@ -80,14 +80,14 @@ if (!result.success) {
 import os, requests
 
 resp = requests.get(
-    "https://api.argyros.xyz/api/v1/quote",
+    "https://api.vulcx.xyz/api/v1/quote",
     params={
         "inputMint": "So11111111111111111111111111111111111111112",
         "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
         "amount": "1000000000",
         "swapMode": "ExactIn",
     },
-    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
 )
 
 result = resp.json()

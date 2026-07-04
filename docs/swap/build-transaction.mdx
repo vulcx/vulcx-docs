@@ -42,9 +42,9 @@ llmDescription: "Detailed guide for POST /api/v1/swap on Fogo. Covers request bo
 
 <CodeGroup>
 ```bash cURL
-curl -X POST "https://api.argyros.xyz/api/v1/swap" \
+curl -X POST "https://api.vulcx.xyz/api/v1/swap" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $ARGYROS_KEY" \
+  -H "Authorization: Bearer $VULCX_KEY" \
   -d '{
     "userWallet": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
     "inputMint": "So11111111111111111111111111111111111111112",
@@ -56,11 +56,11 @@ curl -X POST "https://api.argyros.xyz/api/v1/swap" \
 ```
 
 ```typescript TypeScript
-const response = await fetch("https://api.argyros.xyz/api/v1/swap", {
+const response = await fetch("https://api.vulcx.xyz/api/v1/swap", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.ARGYROS_KEY}`,
+    Authorization: `Bearer ${process.env.VULCX_KEY}`,
   },
   body: JSON.stringify({
     userWallet: wallet.publicKey.toBase58(),
@@ -82,7 +82,7 @@ console.log(`Transaction built. Expires at block ${data.lastValidBlockHeight}`);
 import os, requests
 
 resp = requests.post(
-    "https://api.argyros.xyz/api/v1/swap",
+    "https://api.vulcx.xyz/api/v1/swap",
     json={
         "userWallet": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
         "inputMint": "So11111111111111111111111111111111111111112",
@@ -91,7 +91,7 @@ resp = requests.post(
         "swapMode": "ExactIn",
         "slippageBps": 50,
     },
-    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
 )
 result = resp.json()
 if not result["success"]:

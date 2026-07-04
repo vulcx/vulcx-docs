@@ -1,7 +1,7 @@
 ---
 title: "Widget examples"
-description: "Full argyros-swap integration examples for HTML/CDN, React, Vue 3, Next.js, and Svelte."
-llmDescription: "Complete Argyros argyros-swap Web Component examples for HTML/CDN, React with Wallet Adapter, Vue 3, Next.js (App Router), and Svelte, plus a light-theme custom-accent example."
+description: "Full vulcx-swap integration examples for HTML/CDN, React, Vue 3, Next.js, and Svelte."
+llmDescription: "Complete Vulcx vulcx-swap Web Component examples for HTML/CDN, React with Wallet Adapter, Vue 3, Next.js (App Router), and Svelte, plus a light-theme custom-accent example."
 ---
 
 Full integration examples for each framework.
@@ -18,8 +18,8 @@ Complete standalone page with wallet connection:
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Argyros Swap</title>
-  <script src="https://cdn.argyros.trade/argyros-widget.umd.js"></script>
+  <title>Vulcx Swap</title>
+  <script src="https://cdn.vulcx.xyz/vulcx-widget.umd.js"></script>
   <style>
     body {
       margin: 0;
@@ -34,17 +34,17 @@ Complete standalone page with wallet connection:
 </head>
 <body>
   <div class="container">
-    <argyros-swap
+    <vulcx-swap
       api-key="argy_your_api_key"
       chain="solana"
       default-input-mint="So11111111111111111111111111111111111111112"
       default-output-mint="uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
       theme="dark"
-    ></argyros-swap>
+    ></vulcx-swap>
   </div>
 
   <script>
-    const widget = document.querySelector("argyros-swap");
+    const widget = document.querySelector("vulcx-swap");
 
     widget.addEventListener("connect-wallet", async () => {
       if (!window.solana?.isPhantom) {
@@ -81,11 +81,11 @@ Complete standalone page with wallet connection:
 import { useEffect, useRef, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import "@argyros/widget";
-import type { ArgyrosSwapElement } from "@argyros/widget";
+import "@vulcx/widget";
+import type { VulcxSwapElement } from "@vulcx/widget";
 
 export default function SwapPage() {
-  const ref = useRef<ArgyrosSwapElement>(null);
+  const ref = useRef<VulcxSwapElement>(null);
   const { publicKey, connected } = useWallet();
   const { setVisible } = useWalletModal();
 
@@ -126,9 +126,9 @@ export default function SwapPage() {
 
   return (
     <div style={{ maxWidth: 460, margin: "0 auto", padding: 24 }}>
-      <argyros-swap
+      <vulcx-swap
         ref={ref as any}
-        api-key={process.env.NEXT_PUBLIC_ARGYROS_KEY}
+        api-key={process.env.NEXT_PUBLIC_VULCX_KEY}
         chain="solana"
         rpc-url="https://mainnet.fogo.io"
         theme="dark"
@@ -143,7 +143,7 @@ TypeScript declaration (`global.d.ts`):
 ```typescript
 declare namespace JSX {
   interface IntrinsicElements {
-    "argyros-swap": React.DetailedHTMLProps<
+    "vulcx-swap": React.DetailedHTMLProps<
       React.HTMLAttributes<HTMLElement> & {
         "api-key"?: string;
         chain?: string;
@@ -166,7 +166,7 @@ declare namespace JSX {
 ```vue
 <template>
   <div class="swap-wrapper">
-    <argyros-swap
+    <vulcx-swap
       ref="widgetRef"
       api-key="argy_your_api_key"
       chain="solana"
@@ -183,7 +183,7 @@ declare namespace JSX {
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import "@argyros/widget";
+import "@vulcx/widget";
 
 const widgetRef = ref<HTMLElement | null>(null);
 
@@ -217,7 +217,7 @@ function setWallet(address: string) {
 </style>
 ```
 
-In `vite.config.ts`, tell Vue to treat `argyros-swap` as a custom element:
+In `vite.config.ts`, tell Vue to treat `vulcx-swap` as a custom element:
 
 ```typescript
 export default defineConfig({
@@ -225,7 +225,7 @@ export default defineConfig({
     vue({
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => tag === "argyros-swap",
+          isCustomElement: (tag) => tag === "vulcx-swap",
         },
       },
     }),
@@ -246,7 +246,7 @@ export default function SwapWidget() {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    import("@argyros/widget");
+    import("@vulcx/widget");
   }, []);
 
   useEffect(() => {
@@ -262,7 +262,7 @@ export default function SwapWidget() {
   }, []);
 
   return (
-    <argyros-swap
+    <vulcx-swap
       ref={ref}
       api-key="argy_your_api_key"
       chain="solana"
@@ -285,7 +285,7 @@ export default function SwapWidget() {
   let widgetEl;
 
   onMount(async () => {
-    await import("@argyros/widget");
+    await import("@vulcx/widget");
 
     widgetEl.addEventListener("connect-wallet", () => {
       console.log("Connect wallet");
@@ -301,7 +301,7 @@ export default function SwapWidget() {
   }
 </script>
 
-<argyros-swap
+<vulcx-swap
   bind:this={widgetEl}
   api-key="argy_your_api_key"
   chain="solana"
@@ -314,16 +314,16 @@ export default function SwapWidget() {
 ## Light Theme with Custom Accent
 
 ```html
-<argyros-swap
+<vulcx-swap
   api-key="argy_your_api_key"
   theme="light"
-></argyros-swap>
+></vulcx-swap>
 
 <style>
-  argyros-swap {
-    --argyros-accent: #6366f1;
-    --argyros-accent-hover: #818cf8;
-    --argyros-radius: 12px;
+  vulcx-swap {
+    --vulcx-accent: #6366f1;
+    --vulcx-accent-hover: #818cf8;
+    --vulcx-radius: 12px;
   }
 </style>
 ```

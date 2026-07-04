@@ -1,9 +1,9 @@
 ---
-name: argyros-swap
-description: Integrate Argyros swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, and handling errors across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves. Solana support coming soon.
+name: vulcx-swap
+description: Integrate Vulcx swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, and handling errors across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves. Solana support coming soon.
 version: "1.2.0"
 tags:
-  - argyros
+  - vulcx
   - fogo
   - swap
   - aggregator
@@ -13,11 +13,11 @@ tags:
   - multi-hop
 ---
 
-# Argyros Swap API
+# Vulcx Swap API
 
-**Base URL**: `https://api.argyros.xyz`
-**OpenAPI spec**: `https://docs.argyros.xyz/api-reference/openapi.json`
-**Full reference**: `https://docs.argyros.xyz/llms-full.txt`
+**Base URL**: `https://api.vulcx.xyz`
+**OpenAPI spec**: `https://docs.vulcx.xyz/api-reference/openapi.json`
+**Full reference**: `https://docs.vulcx.xyz/llms-full.txt`
 
 ## Authentication
 
@@ -28,12 +28,12 @@ Every endpoint requires an API key **except** `GET /health` and `GET /api/v1/tok
   (`GET /api/v1/stream`), since a browser WS handshake can't carry custom headers.
 
 ```bash
-curl "https://api.argyros.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn" \
-  -H "Authorization: Bearer $ARGYROS_KEY"
+curl "https://api.vulcx.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn" \
+  -H "Authorization: Bearer $VULCX_KEY"
 ```
 
 Missing/invalid keys return `401 Unauthorized` (no key) or `403 Forbidden` (invalid/disabled/revoked
-key). Keys are free during beta — see [Authentication](https://docs.argyros.xyz/get-started/authentication) for how to get one.
+key). Keys are free during beta — see [Authentication](https://docs.vulcx.xyz/get-started/authentication) for how to get one.
 
 ## Chain Support
 
@@ -44,15 +44,15 @@ Currently: **Fogo** (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs).
 ## Use / Do Not Use
 
 Use when:
-- The task involves swapping tokens on Fogo via Argyros.
+- The task involves swapping tokens on Fogo via Vulcx.
 - The user needs a quote, swap transaction, or raw instructions.
-- The user needs help debugging Argyros API errors.
+- The user needs help debugging Vulcx API errors.
 
 Do not use when:
-- The task is generic Solana development with no Argyros API usage.
+- The task is generic Solana development with no Vulcx API usage.
 - The task involves other aggregators (Jupiter, etc.).
 
-**Triggers**: `swap`, `quote`, `best route`, `token swap`, `argyros`, `multi-hop`, `price impact`, `slippage`, `build transaction`, `raw instructions`, `fogo`
+**Triggers**: `swap`, `quote`, `best route`, `token swap`, `vulcx`, `multi-hop`, `price impact`, `slippage`, `build transaction`, `raw instructions`, `fogo`
 
 ## Quick Reference
 

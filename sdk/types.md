@@ -1,10 +1,10 @@
 ---
 title: "SDK types reference"
-description: "Every type exported from @argyros/sdk — unions, config, quote, swap, and instructions."
-llmDescription: "TypeScript types exported from @argyros/sdk. Unions: SwapMode (ExactIn or ExactOut), Chain (fogo; solana coming soon), PriceImpactSeverity (none/low/moderate/high/extreme). Config: SDKConfig. Quote: QuoteRequest, QuoteResponse, RouteInfo. Swap: SwapRequest, SwapResponse, SimulationResult. Plus instruction types."
+description: "Every type exported from @vulcx/sdk — unions, config, quote, swap, and instructions."
+llmDescription: "TypeScript types exported from @vulcx/sdk. Unions: SwapMode (ExactIn or ExactOut), Chain (fogo; solana coming soon), PriceImpactSeverity (none/low/moderate/high/extreme). Config: SDKConfig. Quote: QuoteRequest, QuoteResponse, RouteInfo. Swap: SwapRequest, SwapResponse, SimulationResult. Plus instruction types."
 ---
 
-All types exported from `@argyros/sdk`.
+All types exported from `@vulcx/sdk`.
 
 ---
 
@@ -203,10 +203,10 @@ interface RawAccountMeta {
 
 ## Errors
 
-### `ArgyrosError`
+### `VulcxError`
 
 ```typescript
-class ArgyrosError extends Error {
+class VulcxError extends Error {
   readonly statusCode: number;
   readonly body?: unknown;
 }
@@ -215,29 +215,29 @@ class ArgyrosError extends Error {
 ### `BadRequestError`
 
 ```typescript
-class BadRequestError extends ArgyrosError {} // statusCode: 400
+class BadRequestError extends VulcxError {} // statusCode: 400
 ```
 
 ### `AuthError`
 
 ```typescript
-class AuthError extends ArgyrosError {} // statusCode: 401
+class AuthError extends VulcxError {} // statusCode: 401
 ```
 
 ### `NoRouteError`
 
 ```typescript
-class NoRouteError extends ArgyrosError {} // statusCode: 404
+class NoRouteError extends VulcxError {} // statusCode: 404
 ```
 
 ### `RateLimitError`
 
 ```typescript
-class RateLimitError extends ArgyrosError {} // statusCode: 429
+class RateLimitError extends VulcxError {} // statusCode: 429
 ```
 
 ### `ServerError`
 
 ```typescript
-class ServerError extends ArgyrosError {} // statusCode: 500
+class ServerError extends VulcxError {} // statusCode: 500
 ```

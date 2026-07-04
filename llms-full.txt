@@ -1,10 +1,10 @@
-# Argyros — Full API Reference for LLMs
+# Vulcx — Full API Reference for LLMs
 
-> This file contains everything an AI agent needs to integrate with the Argyros swap API.
+> This file contains everything an AI agent needs to integrate with the Vulcx swap API.
 > For a page index, see llms.txt. For a decision-tree playbook, see skill.md.
-> OpenAPI spec: https://docs.argyros.xyz/api-reference/openapi.json
+> OpenAPI spec: https://docs.vulcx.xyz/api-reference/openapi.json
 
-Base URL: `https://api.argyros.xyz`
+Base URL: `https://api.vulcx.xyz`
 
 ## Chain Support
 
@@ -23,11 +23,11 @@ Every endpoint requires an API key **except** `GET /health` and `GET /api/v1/tok
   (`GET /api/v1/stream`), since a browser WS handshake can't carry custom headers.
 
 ```bash
-curl "https://api.argyros.xyz/api/v1/quote?..." -H "Authorization: Bearer $ARGYROS_KEY"
+curl "https://api.vulcx.xyz/api/v1/quote?..." -H "Authorization: Bearer $VULCX_KEY"
 ```
 
 A missing key returns `401 Unauthorized`; an invalid/disabled/revoked key returns `403 Forbidden`.
-Keys are free during beta — see https://docs.argyros.xyz/get-started/authentication.
+Keys are free during beta — see https://docs.vulcx.xyz/get-started/authentication.
 
 ---
 
@@ -110,8 +110,8 @@ Get the best swap route and estimated output for a token pair.
 ### Example (cURL)
 
 ```bash
-curl "https://api.argyros.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn&slippageBps=50" \
-  -H "Authorization: Bearer $ARGYROS_KEY"
+curl "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn&slippageBps=50" \
+  -H "Authorization: Bearer $VULCX_KEY"
 ```
 
 ### Example (Python)
@@ -119,7 +119,7 @@ curl "https://api.argyros.xyz/api/v1/quote?inputMint=So1111111111111111111111111
 ```python
 import os, requests
 resp = requests.get(
-    "https://api.argyros.xyz/api/v1/quote",
+    "https://api.vulcx.xyz/api/v1/quote",
     params={
         "inputMint": "So11111111111111111111111111111111111111112",
         "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
@@ -127,7 +127,7 @@ resp = requests.get(
         "swapMode": "ExactIn",
         "slippageBps": "50",
     },
-    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
 )
 data = resp.json()["data"]
 ```
@@ -136,14 +136,14 @@ data = resp.json()["data"]
 
 ```typescript
 const resp = await fetch(
-  "https://api.argyros.xyz/api/v1/quote?" + new URLSearchParams({
+  "https://api.vulcx.xyz/api/v1/quote?" + new URLSearchParams({
     inputMint: "So11111111111111111111111111111111111111112",
     outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
     amount: "1000000000",
     swapMode: "ExactIn",
     slippageBps: "50",
   }),
-  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } }
+  { headers: { Authorization: `Bearer ${process.env.VULCX_KEY}` } }
 );
 const { data } = await resp.json();
 ```

@@ -1,17 +1,17 @@
 ---
 title: "SDK error handling"
 description: "Typed SDK errors — BadRequestError, AuthError, NoRouteError, RateLimitError, ServerError — and retry behavior."
-llmDescription: "Error handling for the Argyros TypeScript SDK. All errors extend ArgyrosError. Documents typed subclasses by HTTP status: BadRequestError (400), AuthError (401/403), NoRouteError (404), RateLimitError (429), ServerError (5xx), with fields and when each is thrown. Covers automatic retry/backoff behavior and a catch-all pattern."
+llmDescription: "Error handling for the Vulcx TypeScript SDK. All errors extend VulcxError. Documents typed subclasses by HTTP status: BadRequestError (400), AuthError (401/403), NoRouteError (404), RateLimitError (429), ServerError (5xx), with fields and when each is thrown. Covers automatic retry/backoff behavior and a catch-all pattern."
 ---
 
-The SDK throws typed errors for different failure conditions. All errors extend `ArgyrosError`.
+The SDK throws typed errors for different failure conditions. All errors extend `VulcxError`.
 
 ---
 
 ## Error Hierarchy
 
 ```
-ArgyrosError (base)
+VulcxError (base)
 ├── BadRequestError    (400)
 ├── AuthError          (401/403)
 ├── NoRouteError       (404)
@@ -23,7 +23,7 @@ ArgyrosError (base)
 
 ## Error Classes
 
-### `ArgyrosError`
+### `VulcxError`
 
 Base class for all SDK errors.
 
@@ -38,7 +38,7 @@ Base class for all SDK errors.
 Thrown for invalid parameters: bad mint address, invalid amount, unsupported swap mode.
 
 ```typescript
-import { BadRequestError } from "@argyros/sdk";
+import { BadRequestError } from "@vulcx/sdk";
 
 try {
   await sdk.quote({ inputMint: "invalid", ... });
@@ -54,7 +54,7 @@ try {
 Thrown when the API key is invalid, missing, or revoked.
 
 ```typescript
-import { AuthError } from "@argyros/sdk";
+import { AuthError } from "@vulcx/sdk";
 
 try {
   await sdk.quote({ ... });
@@ -70,7 +70,7 @@ try {
 Thrown when no liquidity path exists between the input and output tokens.
 
 ```typescript
-import { NoRouteError } from "@argyros/sdk";
+import { NoRouteError } from "@vulcx/sdk";
 
 try {
   await sdk.quote({ ... });
@@ -86,7 +86,7 @@ try {
 Thrown after all retry attempts are exhausted on rate-limited requests.
 
 ```typescript
-import { RateLimitError } from "@argyros/sdk";
+import { RateLimitError } from "@vulcx/sdk";
 
 try {
   await sdk.quote({ ... });
@@ -102,7 +102,7 @@ try {
 Thrown after all retry attempts are exhausted on server errors.
 
 ```typescript
-import { ServerError } from "@argyros/sdk";
+import { ServerError } from "@vulcx/sdk";
 
 try {
   await sdk.quote({ ... });
@@ -136,14 +136,14 @@ Backoff is exponential: 1s, 2s, 4s, ... capped at 8s. With the default `retries:
 
 ```typescript
 import {
-  ArgyrosSDK,
-  ArgyrosError,
+  VulcxSDK,
+  VulcxError,
   NoRouteError,
   RateLimitError,
   AuthError,
   BadRequestError,
   ServerError,
-} from "@argyros/sdk";
+} from "@vulcx/sdk";
 
 try {
   const quote = await sdk.quote({ ... });
@@ -158,7 +158,7 @@ try {
     // Rate limited after retries
   } else if (err instanceof ServerError) {
     // Server error after retries
-  } else if (err instanceof ArgyrosError) {
+  } else if (err instanceof VulcxError) {
     // Other API error
     console.log(err.statusCode, err.message);
   } else {

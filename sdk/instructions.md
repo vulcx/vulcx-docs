@@ -1,7 +1,7 @@
 ---
 title: "sdk.instructions()"
 description: "Get raw swap instructions to compose custom transactions — add tips, memos, or batch multiple swaps."
-llmDescription: "Reference for sdk.instructions() in the Argyros TypeScript SDK. Returns InstructionsResponse (RawInstruction array, RawAccountMeta, addressLookupTableAddresses) for composing custom transactions when you need memos/tips, account creation, or batched swaps. Includes a full example building a v0 VersionedTransaction with Address Lookup Tables, plus guidance on instructions() vs swap()."
+llmDescription: "Reference for sdk.instructions() in the Vulcx TypeScript SDK. Returns InstructionsResponse (RawInstruction array, RawAccountMeta, addressLookupTableAddresses) for composing custom transactions when you need memos/tips, account creation, or batched swaps. Includes a full example building a v0 VersionedTransaction with Address Lookup Tables, plus guidance on instructions() vs swap()."
 ---
 
 Get raw swap instructions for composing custom transactions. Use this when you need to add custom instructions (tips, memos, etc.) or batch multiple swaps.

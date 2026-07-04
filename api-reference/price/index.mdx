@@ -1,7 +1,7 @@
 ---
 title: "Get Price"
 description: "GET /api/v1/price/:mint — Spot USD price for a token, derived from live pool state."
-llmDescription: "Reference for GET /api/v1/price on the Argyros API (Fogo). Requires an API key (Authorization: Bearer) like every endpoint except GET /health and GET /api/v1/tokens. Returns the spot/mid USD price for a token mint, derived from live on-chain pool state (not an external feed). Anchored on stablecoins = $1 and the native FOGO token priced from the deepest native↔stable pool; every other token is priced from its deepest anchor-paired pool. Single lookup GET /api/v1/price/:mint and batch GET /api/v1/price?mints=a,b,c (max 100). Response fields: mint, price, slot, updatedAt. price is 0 when unknown (no anchor-paired pool yet, or decimals pending). This is a spot oracle distinct from GET /api/v1/quote, which is size- and slippage-aware. Solana coming soon."
+llmDescription: "Reference for GET /api/v1/price on the Vulcx API (Fogo). Requires an API key (Authorization: Bearer) like every endpoint except GET /health and GET /api/v1/tokens. Returns the spot/mid USD price for a token mint, derived from live on-chain pool state (not an external feed). Anchored on stablecoins = $1 and the native FOGO token priced from the deepest native↔stable pool; every other token is priced from its deepest anchor-paired pool. Single lookup GET /api/v1/price/:mint and batch GET /api/v1/price?mints=a,b,c (max 100). Response fields: mint, price, slot, updatedAt. price is 0 when unknown (no anchor-paired pool yet, or decimals pending). This is a spot oracle distinct from GET /api/v1/quote, which is size- and slippage-aware. Solana coming soon."
 openapi: "GET /api/v1/price/{mint}"
 ---
 
@@ -33,8 +33,8 @@ resolved). `slot` and `updatedAt` are `0` in that case.
 </ParamField>
 
 ```bash cURL
-curl "https://api.argyros.xyz/api/v1/price/So11111111111111111111111111111111111111112" \
-  -H "Authorization: Bearer $ARGYROS_KEY"
+curl "https://api.vulcx.xyz/api/v1/price/So11111111111111111111111111111111111111112" \
+  -H "Authorization: Bearer $VULCX_KEY"
 ```
 
 <ResponseExample>
@@ -60,9 +60,9 @@ Fetch up to **100** prices in one call with a comma-separated `mints` query para
 </ParamField>
 
 ```bash cURL
-curl "https://api.argyros.xyz/api/v1/price?\
+curl "https://api.vulcx.xyz/api/v1/price?\
 mints=So11111111111111111111111111111111111111112,uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG" \
-  -H "Authorization: Bearer $ARGYROS_KEY"
+  -H "Authorization: Bearer $VULCX_KEY"
 ```
 
 <ResponseExample>

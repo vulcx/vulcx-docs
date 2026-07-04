@@ -1,7 +1,7 @@
 ---
 title: "Widget wallet integration"
-description: "Plug any wallet into argyros-swap via setWallet() and the connect-wallet event — adapter, Phantom, balances."
-llmDescription: "Wallet integration for the Argyros argyros-swap Web Component. The widget bundles no wallet adapter; it exposes setWallet(address) and a connect-wallet event. Covers wiring the Solana Wallet Adapter (React), Phantom in vanilla JS, and displaying balances."
+description: "Plug any wallet into vulcx-swap via setWallet() and the connect-wallet event — adapter, Phantom, balances."
+llmDescription: "Wallet integration for the Vulcx vulcx-swap Web Component. The widget bundles no wallet adapter; it exposes setWallet(address) and a connect-wallet event. Covers wiring the Solana Wallet Adapter (React), Phantom in vanilla JS, and displaying balances."
 ---
 
 The widget does not bundle a wallet adapter. Instead, it exposes a `setWallet()` method and a `connect-wallet` event so you can plug in any wallet solution.
@@ -22,7 +22,7 @@ The widget does not bundle a wallet adapter. Instead, it exposes a `setWallet()`
 Set the wallet address programmatically. When called with a non-empty address, the widget fetches native SOL balance and SPL token balances via the configured `rpc-url`.
 
 ```javascript
-const widget = document.querySelector("argyros-swap");
+const widget = document.querySelector("vulcx-swap");
 widget.setWallet("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
 ```
 
@@ -39,7 +39,7 @@ widget.setWallet("");
 Fired when the user clicks the primary button but no wallet is connected. Listen for this to trigger your wallet adapter.
 
 ```javascript
-const widget = document.querySelector("argyros-swap");
+const widget = document.querySelector("vulcx-swap");
 
 widget.addEventListener("connect-wallet", async () => {
   const wallet = await connectWallet(); // your wallet adapter
@@ -57,7 +57,7 @@ widget.addEventListener("connect-wallet", async () => {
 import { useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import "@argyros/widget";
+import "@vulcx/widget";
 
 export default function SwapWidget() {
   const ref = useRef<HTMLElement>(null);
@@ -85,7 +85,7 @@ export default function SwapWidget() {
   }, [setVisible]);
 
   return (
-    <argyros-swap
+    <vulcx-swap
       ref={ref}
       api-key="argy_your_api_key"
       chain="solana"
@@ -100,16 +100,16 @@ export default function SwapWidget() {
 ## Phantom (Vanilla JS)
 
 ```html
-<script src="https://cdn.argyros.trade/argyros-widget.umd.js"></script>
+<script src="https://cdn.vulcx.xyz/vulcx-widget.umd.js"></script>
 
-<argyros-swap
+<vulcx-swap
   api-key="argy_your_api_key"
   chain="solana"
   theme="dark"
-></argyros-swap>
+></vulcx-swap>
 
 <script>
-  const widget = document.querySelector("argyros-swap");
+  const widget = document.querySelector("vulcx-swap");
 
   widget.addEventListener("connect-wallet", async () => {
     if (!window.solana?.isPhantom) {

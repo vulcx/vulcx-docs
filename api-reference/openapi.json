@@ -1,17 +1,17 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Argyros API",
+    "title": "Vulcx API",
     "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Vortex, Fluxbeam, Fogo.fun, and Moonit. Solana support coming soon.",
     "version": "1.0.0",
     "contact": {
-      "name": "Argyros",
-      "url": "https://argyros.finance"
+      "name": "Vulcx",
+      "url": "https://vulcx.finance"
     }
   },
   "servers": [
     {
-      "url": "https://api.argyros.xyz",
+      "url": "https://api.vulcx.xyz",
       "description": "Production"
     }
   ],

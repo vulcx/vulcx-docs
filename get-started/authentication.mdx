@@ -1,12 +1,12 @@
 ---
 title: "Authentication — API keys & the Authorization header"
 sidebarTitle: "Authentication"
-description: "Authenticate Argyros API requests with an API key using the Authorization: Bearer header. How to get a key, use it from the SDK, widget, and WebSocket, and keep it secure."
-llmDescription: "How to authenticate with the Argyros API. Every request to https://api.argyros.xyz is authenticated with an API key (format argy_...) sent in the Authorization: Bearer header, EXCEPT GET /health and GET /api/v1/tokens, which require no key. Covers getting a key (free during beta via Discord), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey) and widget (api-key attribute), the WebSocket query-param form (/api/v1/stream?key=argy_...) which is required (not optional) since browsers can't set custom headers on a WS handshake, 401/403 errors for missing or invalid keys, key security best practices, and a link to rate limits. Fogo; Solana coming soon."
+description: "Authenticate Vulcx API requests with an API key using the Authorization: Bearer header. How to get a key, use it from the SDK, widget, and WebSocket, and keep it secure."
+llmDescription: "How to authenticate with the Vulcx API. Every request to https://api.vulcx.xyz is authenticated with an API key (format argy_...) sent in the Authorization: Bearer header, EXCEPT GET /health and GET /api/v1/tokens, which require no key. Covers getting a key (free during beta via Discord), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey) and widget (api-key attribute), the WebSocket query-param form (/api/v1/stream?key=argy_...) which is required (not optional) since browsers can't set custom headers on a WS handshake, 401/403 errors for missing or invalid keys, key security best practices, and a link to rate limits. Fogo; Solana coming soon."
 icon: "key"
 ---
 
-Every request to the Argyros API (`https://api.argyros.xyz`) is authenticated with an API key,
+Every request to the Vulcx API (`https://api.vulcx.xyz`) is authenticated with an API key,
 **except** `GET /health` and `GET /api/v1/tokens`, which are public and require no key. Keys look
 like `argy_` followed by a long hex string, and you send them in the standard `Authorization:
 Bearer` header (or as a `?key=` query parameter — the only option for the WebSocket stream).
@@ -17,7 +17,7 @@ other endpoint. See [WebSocket streaming](#websocket-streaming) below for the qu
 </Note>
 
 <Note>
-Argyros is **free during beta** — there are no paid tiers yet. You still need a key so we can
+Vulcx is **free during beta** — there are no paid tiers yet. You still need a key so we can
 apply [rate limits](/api-reference/rate-limits) and keep the service healthy.
 </Note>
 
@@ -29,14 +29,14 @@ apply [rate limits](/api-reference/rate-limits) and keep the service healthy.
     developer channel — keys are granted at no cost.
 
     <Card title="Get an API key on Discord" icon="discord" href="https://discord.gg/z98Zmk6chP" horizontal>
-      Join the Argyros Discord and request a key.
+      Join the Vulcx Discord and request a key.
     </Card>
   </Step>
   <Step title="Store it as an environment variable">
     Never hard-code a key in source. Keep it in an environment variable:
 
     ```bash
-    export ARGYROS_KEY="argy_your_key_here"
+    export VULCX_KEY="argy_your_key_here"
     ```
   </Step>
 </Steps>
@@ -47,14 +47,14 @@ Send your key in the `Authorization` header on every request:
 
 <CodeGroup>
 ```bash cURL
-curl "https://api.argyros.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn" \
-  -H "Authorization: Bearer $ARGYROS_KEY"
+curl "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn" \
+  -H "Authorization: Bearer $VULCX_KEY"
 ```
 
 ```typescript TypeScript
 const res = await fetch(
-  "https://api.argyros.xyz/api/v1/quote?inputMint=So11...&outputMint=uSd2...&amount=1000000000&swapMode=ExactIn",
-  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } },
+  "https://api.vulcx.xyz/api/v1/quote?inputMint=So11...&outputMint=uSd2...&amount=1000000000&swapMode=ExactIn",
+  { headers: { Authorization: `Bearer ${process.env.VULCX_KEY}` } },
 );
 ```
 
@@ -62,14 +62,14 @@ const res = await fetch(
 import os, requests
 
 res = requests.get(
-    "https://api.argyros.xyz/api/v1/quote",
+    "https://api.vulcx.xyz/api/v1/quote",
     params={
         "inputMint": "So11111111111111111111111111111111111111112",
         "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
         "amount": "1000000000",
         "swapMode": "ExactIn",
     },
-    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
 )
 ```
 </CodeGroup>
@@ -81,13 +81,13 @@ set headers yourself.
 
 <CodeGroup>
 ```typescript SDK
-import { ArgyrosSDK } from "@argyros/sdk";
+import { VulcxSDK } from "@vulcx/sdk";
 
-const sdk = new ArgyrosSDK({ apiKey: process.env.ARGYROS_KEY });
+const sdk = new VulcxSDK({ apiKey: process.env.VULCX_KEY });
 ```
 
 ```html Widget
-<argyros-swap api-key="argy_your_key_here" chain="fogo" theme="dark"></argyros-swap>
+<vulcx-swap api-key="argy_your_key_here" chain="fogo" theme="dark"></vulcx-swap>
 ```
 </CodeGroup>
 
@@ -97,7 +97,7 @@ Browsers can't set custom headers on a WebSocket connection, so the streaming en
 key as a `key` query parameter instead:
 
 ```text
-wss://api.argyros.xyz/api/v1/stream?key=argy_your_key_here
+wss://api.vulcx.xyz/api/v1/stream?key=argy_your_key_here
 ```
 
 ## Keep your key secret

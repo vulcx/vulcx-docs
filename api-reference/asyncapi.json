@@ -1,15 +1,15 @@
 {
   "asyncapi": "3.0.0",
   "info": {
-    "title": "Argyros Stream API",
+    "title": "Vulcx Stream API",
     "version": "1.0.0",
     "description": "Real-time swap quote stream over WebSocket. Subscribe to token pairs and receive a quote push whenever the price materially changes."
   },
   "servers": {
     "production": {
-      "host": "api.argyros.xyz",
+      "host": "api.vulcx.xyz",
       "protocol": "wss",
-      "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.argyros.xyz/api/v1/stream?key=argy_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes.",
+      "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.vulcx.xyz/api/v1/stream?key=argy_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes.",
       "security": [{ "$ref": "#/components/securitySchemes/ApiKeyQuery" }]
     }
   },

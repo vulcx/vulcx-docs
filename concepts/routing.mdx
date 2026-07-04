@@ -1,27 +1,27 @@
 ---
 title: "Swap routing — multi-hop best-price paths on Fogo"
 sidebarTitle: "Routing"
-description: "How Argyros finds the best swap path across DEXs on Fogo."
-llmDescription: "How Argyros routing works at a high level on Fogo. Covers direct swaps, multi-hop routing through intermediate tokens (up to 5 hops), supported liquidity sources (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), price impact severity levels, and slippage protection mechanics. Solana support coming soon with up to 7 hops via P-Token."
+description: "How Vulcx finds the best swap path across DEXs on Fogo."
+llmDescription: "How Vulcx routing works at a high level on Fogo. Covers direct swaps, multi-hop routing through intermediate tokens (up to 5 hops), supported liquidity sources (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), price impact severity levels, and slippage protection mechanics. Solana support coming soon with up to 7 hops via P-Token."
 ---
 
 import SolanaComingSoon from "/snippets/solana-coming-soon.mdx";
 
 # Routing
 
-Argyros evaluates multiple paths to find the best execution for every swap.
+Vulcx evaluates multiple paths to find the best execution for every swap.
 
 <Frame caption="A quote request goes into the routing engine, which compares direct, multi-hop, and split routes across every pool and returns the best-price quote.">
-  <img src="/images/routing.png" alt="Argyros routing: a quote request (tokenIn, tokenOut, amount, mode) enters the Argyros routing engine, which searches every pool on Vortex, Fluxbeam, Fogo.fun, and Moonit for the best price. It picks the best of a direct swap, a multi-hop route (up to 5 hops), or a split route across several pools, then returns a quote response (amountOut, price impact, route) that POST /swap turns into an unsigned transaction." />
+  <img src="/images/routing.png" alt="Vulcx routing: a quote request (tokenIn, tokenOut, amount, mode) enters the Vulcx routing engine, which searches every pool on Vortex, Fluxbeam, Fogo.fun, and Moonit for the best price. It picks the best of a direct swap, a multi-hop route (up to 5 hops), or a split route across several pools, then returns a quote response (amountOut, price impact, route) that POST /swap turns into an unsigned transaction." />
 </Frame>
 
 ## Direct swaps
 
-For common pairs with deep liquidity (e.g., SOL/USDC), a single pool often provides the best price. Argyros compares rates across all supported pools and picks the one with the lowest price impact.
+For common pairs with deep liquidity (e.g., SOL/USDC), a single pool often provides the best price. Vulcx compares rates across all supported pools and picks the one with the lowest price impact.
 
 ## Multi-hop routing
 
-When a direct swap isn't optimal, Argyros routes through intermediate tokens. For example, swapping Token A → Token B might execute as:
+When a direct swap isn't optimal, Vulcx routes through intermediate tokens. For example, swapping Token A → Token B might execute as:
 
 ```
 Token A → SOL → USDC → Token B

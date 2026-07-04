@@ -1,18 +1,18 @@
 ---
-title: "Argyros architecture — how swaps are routed on Fogo"
+title: "Vulcx architecture — how swaps are routed on Fogo"
 sidebarTitle: "Architecture"
-description: "How Argyros routes and executes swaps on Fogo."
-llmDescription: "High-level architecture of Argyros on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Fogo.fun | Moonit bonding curves), and the two integration paths: POST /api/v1/swap for ready-to-sign transactions vs POST /api/v1/instructions for custom transaction composition. Solana support coming soon."
+description: "How Vulcx routes and executes swaps on Fogo."
+llmDescription: "High-level architecture of Vulcx on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Fogo.fun | Moonit bonding curves), and the two integration paths: POST /api/v1/swap for ready-to-sign transactions vs POST /api/v1/instructions for custom transaction composition. Solana support coming soon."
 ---
 
-<Frame caption="Your app calls the Argyros API, which finds the best-price route and returns an unsigned transaction; your wallet signs and submits it to Fogo.">
-  <img src="/images/architecture.png" alt="Argyros system overview: the widget, SDK, and your app call the Argyros API at api.argyros.xyz over HTTPS (GET /quote, POST /swap). The API finds the best-price route across all pools and returns an unsigned transaction. Your wallet signs and submits it on-chain to Fogo, where liquidity comes from Vortex, Fluxbeam, Fogo.fun, and Moonit." />
+<Frame caption="Your app calls the Vulcx API, which finds the best-price route and returns an unsigned transaction; your wallet signs and submits it to Fogo.">
+  <img src="/images/architecture.png" alt="Vulcx system overview: the widget, SDK, and your app call the Vulcx API at api.vulcx.xyz over HTTPS (GET /quote, POST /swap). The API finds the best-price route across all pools and returns an unsigned transaction. Your wallet signs and submits it on-chain to Fogo, where liquidity comes from Vortex, Fluxbeam, Fogo.fun, and Moonit." />
 </Frame>
 
 ## Data flow
 
 ```
-Client                    Argyros API                 Fogo
+Client                    Vulcx API                 Fogo
   │                           │                          │
   GET /quote                  │                          │
   ──────────────────────────> │                          │

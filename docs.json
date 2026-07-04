@@ -1,19 +1,19 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "palm",
-  "name": "Argyros",
+  "name": "Vulcx",
   "metadata": {
     "timestamp": true
   },
   "banner": {
-    "content": "Argyros is in active development and not yet live in production. APIs and documentation may change.",
+    "content": "Vulcx is in active development and not yet live in production. APIs and documentation may change.",
     "dismissible": true
   },
   "seo": {
     "indexing": "navigable",
     "metatags": {
       "og:type": "website",
-      "og:site_name": "Argyros",
+      "og:site_name": "Vulcx",
       "og:locale": "en_US",
       "og:image": "/images/og-card.png",
       "twitter:card": "summary_large_image",
@@ -200,21 +200,21 @@
       "anchors": [
         {
           "anchor": "Support",
-          "href": "https://t.me/argyros",
+          "href": "https://t.me/vulcx",
           "icon": "telegram"
         }
       ]
     }
   },
   "logo": {
-    "light": "/logo/argyros-silver.png",
-    "dark": "/logo/argyros-silver.png"
+    "light": "/logo/vulcx-silver.png",
+    "dark": "/logo/vulcx-silver.png"
   },
   "navbar": {
     "links": [
       {
         "label": "Website",
-        "href": "https://argyros.xyz"
+        "href": "https://vulcx.xyz"
       }
     ],
     "primary": {
@@ -225,10 +225,10 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/argyros_ag",
+      "x": "https://x.com/vulcx_ag",
       "github": "https://github.com/argyros-ag",
       "discord": "https://discord.gg/z98Zmk6chP",
-      "telegram": "https://t.me/argyros"
+      "telegram": "https://t.me/vulcx"
     }
   }
 }

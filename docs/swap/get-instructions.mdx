@@ -50,9 +50,9 @@ The request body is identical to `/swap` except there is no `skipSimulation` fie
 
 <CodeGroup>
 ```bash cURL
-curl -X POST "https://api.argyros.xyz/api/v1/instructions" \
+curl -X POST "https://api.vulcx.xyz/api/v1/instructions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $ARGYROS_KEY" \
+  -H "Authorization: Bearer $VULCX_KEY" \
   -d '{
     "userWallet": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
     "inputMint": "So11111111111111111111111111111111111111112",
@@ -64,11 +64,11 @@ curl -X POST "https://api.argyros.xyz/api/v1/instructions" \
 ```
 
 ```typescript TypeScript
-const response = await fetch("https://api.argyros.xyz/api/v1/instructions", {
+const response = await fetch("https://api.vulcx.xyz/api/v1/instructions", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.ARGYROS_KEY}`,
+    Authorization: `Bearer ${process.env.VULCX_KEY}`,
   },
   body: JSON.stringify({
     userWallet: wallet.publicKey.toBase58(),
@@ -90,7 +90,7 @@ console.log(`${data.instructions.length} instructions, ${data.hopCount} hop(s)`)
 import os, requests
 
 resp = requests.post(
-    "https://api.argyros.xyz/api/v1/instructions",
+    "https://api.vulcx.xyz/api/v1/instructions",
     json={
         "userWallet": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
         "inputMint": "So11111111111111111111111111111111111111112",
@@ -99,7 +99,7 @@ resp = requests.post(
         "swapMode": "ExactIn",
         "slippageBps": 50,
     },
-    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
 )
 result = resp.json()
 if not result["success"]:

@@ -1,12 +1,12 @@
 ---
 title: "Executing Swaps"
 description: "End-to-end guide: get a quote, build a transaction, sign, and submit."
-llmDescription: "Step-by-step guide to executing a token swap on Argyros on Fogo. Covers the full flow: GET /api/v1/quote (with cURL + TypeScript + Python), POST /api/v1/swap to build the transaction, then sign with @solana/web3.js VersionedTransaction, sendRawTransaction, and confirmTransaction. Includes complete runnable code examples. Solana chain support coming soon."
+llmDescription: "Step-by-step guide to executing a token swap on Vulcx on Fogo. Covers the full flow: GET /api/v1/quote (with cURL + TypeScript + Python), POST /api/v1/swap to build the transaction, then sign with @solana/web3.js VersionedTransaction, sendRawTransaction, and confirmTransaction. Includes complete runnable code examples. Solana chain support coming soon."
 ---
 
 # Executing Swaps
 
-This guide walks through the full swap lifecycle using the Argyros API on **Fogo**.
+This guide walks through the full swap lifecycle using the Vulcx API on **Fogo**.
 
 ## Flow
 
@@ -20,18 +20,18 @@ This guide walks through the full swap lifecycle using the Argyros API on **Fogo
 
 <CodeGroup>
 ```bash cURL
-curl "https://api.argyros.xyz/api/v1/quote?\
+curl "https://api.vulcx.xyz/api/v1/quote?\
 inputMint=So11111111111111111111111111111111111111112&\
 outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&\
 amount=1000000000&\
 swapMode=ExactIn&\
 slippageBps=50" \
-  -H "Authorization: Bearer $ARGYROS_KEY"
+  -H "Authorization: Bearer $VULCX_KEY"
 ```
 
 ```typescript TypeScript
 const quoteResponse = await fetch(
-  "https://api.argyros.xyz/api/v1/quote?" +
+  "https://api.vulcx.xyz/api/v1/quote?" +
     new URLSearchParams({
       inputMint: "So11111111111111111111111111111111111111112",
       outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
@@ -39,7 +39,7 @@ const quoteResponse = await fetch(
       swapMode: "ExactIn",
       slippageBps: "50",
     }),
-  { headers: { Authorization: `Bearer ${process.env.ARGYROS_KEY}` } }
+  { headers: { Authorization: `Bearer ${process.env.VULCX_KEY}` } }
 );
 const quote = await quoteResponse.json();
 console.log(`Best route: ${quote.data.hopCount} hop(s), output: ${quote.data.amountOut}`);
@@ -49,7 +49,7 @@ console.log(`Best route: ${quote.data.hopCount} hop(s), output: ${quote.data.amo
 import os, requests
 
 quote_resp = requests.get(
-    "https://api.argyros.xyz/api/v1/quote",
+    "https://api.vulcx.xyz/api/v1/quote",
     params={
         "inputMint": "So11111111111111111111111111111111111111112",
         "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
@@ -57,7 +57,7 @@ quote_resp = requests.get(
         "swapMode": "ExactIn",
         "slippageBps": "50",
     },
-    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
 )
 quote = quote_resp.json()
 print(f"Best route: {quote['data']['hopCount']} hop(s), output: {quote['data']['amountOut']}")
@@ -68,9 +68,9 @@ print(f"Best route: {quote['data']['hopCount']} hop(s), output: {quote['data']['
 
 <CodeGroup>
 ```bash cURL
-curl -X POST "https://api.argyros.xyz/api/v1/swap" \
+curl -X POST "https://api.vulcx.xyz/api/v1/swap" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $ARGYROS_KEY" \
+  -H "Authorization: Bearer $VULCX_KEY" \
   -d '{
     "userWallet": "YOUR_WALLET_ADDRESS",
     "inputMint": "So11111111111111111111111111111111111111112",
@@ -82,11 +82,11 @@ curl -X POST "https://api.argyros.xyz/api/v1/swap" \
 ```
 
 ```typescript TypeScript
-const swapResponse = await fetch("https://api.argyros.xyz/api/v1/swap", {
+const swapResponse = await fetch("https://api.vulcx.xyz/api/v1/swap", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.ARGYROS_KEY}`,
+    Authorization: `Bearer ${process.env.VULCX_KEY}`,
   },
   body: JSON.stringify({
     userWallet: wallet.publicKey.toBase58(),
@@ -102,7 +102,7 @@ const swap = await swapResponse.json();
 
 ```python Python
 swap_resp = requests.post(
-    "https://api.argyros.xyz/api/v1/swap",
+    "https://api.vulcx.xyz/api/v1/swap",
     json={
         "userWallet": "YOUR_WALLET_ADDRESS",
         "inputMint": "So11111111111111111111111111111111111111112",
@@ -111,7 +111,7 @@ swap_resp = requests.post(
         "swapMode": "ExactIn",
         "slippageBps": 50,
     },
-    headers={"Authorization": f"Bearer {os.environ['ARGYROS_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
 )
 swap = swap_resp.json()
 ```

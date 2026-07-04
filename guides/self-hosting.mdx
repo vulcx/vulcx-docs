@@ -1,13 +1,13 @@
 ---
-title: "Self-hosting Argyros"
+title: "Self-hosting Vulcx"
 sidebarTitle: "Self-Hosting"
-description: "Deploy the Argyros community binary with Docker or a raw binary, then harden it with nginx, SSL, and systemd."
-llmDescription: "Step-by-step deployment guide for the Argyros community (self-hosted) binary on Fogo. Prerequisites: FluxRPC key (fluxrpc.com?ref=ARGYROS) and community license key (license.argyros.xyz). Deployment options: Docker Compose (curl docker-compose.yml, fill .env, docker compose up -d) or raw binary (download linux-amd64/arm64 from GitHub releases). Full env var reference: COMMUNITY_MODE=true, CHAIN=fogo (default), RPC_URL (FluxRPC endpoint+key), YELLOWSTONE_URL, YELLOWSTONE_TOKEN (same FluxRPC key), COMMUNITY_LICENSE_KEY, COMMUNITY_LICENSE_API=https://license.argyros.xyz, LICENSE_CHECK_INTERVAL (default 6h), REFERRER_WALLET (optional — dApp builders only, not bot operators), ALLOWED_IPS (optional comma-separated CIDRs), HTTP_PORT=8080, HTTP_HOST=0.0.0.0, LUT_AUTHORITY_KEY_FOGO (optional, holds private key + SOL — treat as secret). Nginx setup: apt install nginx certbot, copy examples/nginx.conf, set server_name, certbot --nginx. Referral fees: set REFERRER_WALLET for dApp/UI builders to earn on-chain protocol fee split; leave unset for bot/internal use. Systemd unit for auto-restart. Warning: LUT_AUTHORITY_KEY_FOGO holds a Solana private key — chmod 600, never commit. Fogo live; Solana coming soon."
+description: "Deploy the Vulcan binary with Docker or a raw binary, then harden it with nginx, SSL, and systemd."
+llmDescription: "Step-by-step deployment guide for the Vulcan (self-hosted) binary on Fogo. Prerequisites: FluxRPC key (fluxrpc.com?ref=VULCX) and community license key (license.vulcx.xyz). Deployment options: Docker Compose (curl docker-compose.yml, fill .env, docker compose up -d) or raw binary (download linux-amd64/arm64 from GitHub releases). Full env var reference: COMMUNITY_MODE=true, CHAIN=fogo (default), RPC_URL (FluxRPC endpoint+key), YELLOWSTONE_URL, YELLOWSTONE_TOKEN (same FluxRPC key), COMMUNITY_LICENSE_KEY, COMMUNITY_LICENSE_API=https://license.vulcx.xyz, LICENSE_CHECK_INTERVAL (default 6h), REFERRER_WALLET (optional — dApp builders only, not bot operators), ALLOWED_IPS (optional comma-separated CIDRs), HTTP_PORT=8080, HTTP_HOST=0.0.0.0, LUT_AUTHORITY_KEY_FOGO (optional, holds private key + SOL — treat as secret). Nginx setup: apt install nginx certbot, copy examples/nginx.conf, set server_name, certbot --nginx. Referral fees: set REFERRER_WALLET for dApp/UI builders to earn on-chain protocol fee split; leave unset for bot/internal use. Systemd unit for auto-restart. Warning: LUT_AUTHORITY_KEY_FOGO holds a Solana private key — chmod 600, never commit. Fogo live; Solana coming soon."
 ---
 
-# Self-hosting Argyros
+# Self-hosting Vulcx
 
-This guide walks through a production deployment of the Argyros community binary — from first credential to an instance running behind nginx with SSL and auto-restart on reboot.
+This guide walks through a production deployment of the Vulcan binary — from first credential to an instance running behind nginx with SSL and auto-restart on reboot.
 
 <Info>
 New to self-hosting? Start with the [self-hosted overview](/get-started/self-hosted) to understand requirements and the quickest path to a running instance.
@@ -15,11 +15,11 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
 
 <Steps>
   <Step title="Get a FluxRPC key">
-    Sign up at [fluxrpc.com](https://fluxrpc.com?ref=ARGYROS) and copy your API key. You'll use the same key for both `RPC_URL` and `YELLOWSTONE_TOKEN`. The binary makes a live RPC call at startup to validate the key — it won't start with an invalid or missing one.
+    Sign up at [fluxrpc.com](https://fluxrpc.com?ref=VULCX) and copy your API key. You'll use the same key for both `RPC_URL` and `YELLOWSTONE_TOKEN`. The binary makes a live RPC call at startup to validate the key — it won't start with an invalid or missing one.
   </Step>
 
   <Step title="Get a community license key">
-    Register at [license.argyros.xyz](https://license.argyros.xyz). After signup your license key (`argycom_...`) appears on the dashboard. The binary fetches your plan's rate limits from the license server at startup and enforces them on every request.
+    Register at [license.vulcx.xyz](https://license.vulcx.xyz). After signup your license key (`argycom_...`) appears on the dashboard. The binary fetches your plan's rate limits from the license server at startup and enforces them on every request.
   </Step>
 
   <Step title="Deploy">
@@ -27,8 +27,8 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
       <Tab title="Docker Compose">
         ```bash
         # Download the env template and compose file
-        curl -O https://raw.githubusercontent.com/argyros-ag/argyros-community/main/.env.example
-        curl -O https://raw.githubusercontent.com/argyros-ag/argyros-community/main/docker-compose.yml
+        curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/.env.example
+        curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/docker-compose.yml
         cp .env.example .env
 
         # Fill in your credentials
@@ -48,16 +48,16 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
       <Tab title="Binary">
         ```bash
         # Download for your platform (use linux-arm64 on ARM servers)
-        curl -L https://github.com/argyros-ag/argyros-community/releases/latest/download/argyros-community-linux-amd64 \
-          -o argyros-community && chmod +x argyros-community
+        curl -L https://github.com/argyros-ag/vulcan/releases/latest/download/vulcan-linux-amd64 \
+          -o vulcan && chmod +x vulcan
 
         # Download and fill the env template
-        curl -O https://raw.githubusercontent.com/argyros-ag/argyros-community/main/.env.example
+        curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/.env.example
         cp .env.example .env && nano .env
 
         # Run
         set -a; source .env; set +a
-        ./argyros-community
+        ./vulcan
         ```
       </Tab>
     </Tabs>
@@ -73,8 +73,8 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
     | `RPC_URL` | yes | — | FluxRPC Fogo endpoint with your API key |
     | `YELLOWSTONE_URL` | yes | — | Yellowstone gRPC endpoint |
     | `YELLOWSTONE_TOKEN` | yes | — | Your FluxRPC API key |
-    | `COMMUNITY_LICENSE_KEY` | yes | — | License key from license.argyros.xyz |
-    | `COMMUNITY_LICENSE_API` | yes | — | `https://license.argyros.xyz` |
+    | `COMMUNITY_LICENSE_KEY` | yes | — | License key from license.vulcx.xyz |
+    | `COMMUNITY_LICENSE_API` | yes | — | `https://license.vulcx.xyz` |
     | `LICENSE_CHECK_INTERVAL` | no | `6h` | How often to re-validate the license |
     | `REFERRER_WALLET` | no | — | Wallet address for referral fees (dApp builders only) |
     | `ALLOWED_IPS` | no | — | Comma-separated CIDRs to allowlist; empty = unrestricted |
@@ -88,19 +88,19 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
   </Step>
 
   <Step title="Set up nginx and SSL">
-    To expose the API publicly over HTTPS, proxy it behind nginx with a Let's Encrypt certificate. A ready-to-use config is in the [argyros-community repo](https://github.com/argyros-ag/argyros-community/blob/main/examples/nginx.conf).
+    To expose the API publicly over HTTPS, proxy it behind nginx with a Let's Encrypt certificate. A ready-to-use config is in the [vulcan repo](https://github.com/argyros-ag/vulcan/blob/main/examples/nginx.conf).
 
     ```bash
     apt install -y nginx certbot python3-certbot-nginx
 
     # Download the reference nginx config
-    curl -o /etc/nginx/sites-available/argyros.conf \
-      https://raw.githubusercontent.com/argyros-ag/argyros-community/main/examples/nginx.conf
+    curl -o /etc/nginx/sites-available/vulcx.conf \
+      https://raw.githubusercontent.com/argyros-ag/vulcan/main/examples/nginx.conf
 
     # Edit server_name to your domain
-    nano /etc/nginx/sites-available/argyros.conf
+    nano /etc/nginx/sites-available/vulcx.conf
 
-    ln -s /etc/nginx/sites-available/argyros.conf /etc/nginx/sites-enabled/
+    ln -s /etc/nginx/sites-available/vulcx.conf /etc/nginx/sites-enabled/
     nginx -t && systemctl reload nginx
 
     # Issue certificate
@@ -125,34 +125,34 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
 
     ```bash
     # Create a dedicated user (optional but recommended)
-    useradd -r -s /bin/false argyros
+    useradd -r -s /bin/false vulcx
 
     # Install the binary and env file
-    cp argyros-community /opt/argyros/
-    cp .env /opt/argyros/.env
-    chmod 600 /opt/argyros/.env
-    chown -R argyros:argyros /opt/argyros
+    cp vulcan /opt/vulcx/
+    cp .env /opt/vulcx/.env
+    chmod 600 /opt/vulcx/.env
+    chown -R vulcx:vulcx /opt/vulcx
 
     # Create the unit file
-    cat > /etc/systemd/system/argyros.service << 'EOF'
+    cat > /etc/systemd/system/vulcx.service << 'EOF'
     [Unit]
-    Description=Argyros Community
+    Description=Vulcan
     After=network.target
 
     [Service]
-    EnvironmentFile=/opt/argyros/.env
-    ExecStart=/opt/argyros/argyros-community
+    EnvironmentFile=/opt/vulcx/.env
+    ExecStart=/opt/vulcx/vulcan
     Restart=always
     RestartSec=5
-    User=argyros
+    User=vulcx
 
     [Install]
     WantedBy=multi-user.target
     EOF
 
     systemctl daemon-reload
-    systemctl enable --now argyros
-    journalctl -u argyros -f
+    systemctl enable --now vulcx
+    journalctl -u vulcx -f
     ```
   </Step>
 </Steps>

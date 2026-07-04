@@ -1,8 +1,8 @@
 ---
-title: "Argyros FAQ — Fogo swaps, chains, fees & limits"
+title: "Vulcx FAQ — Fogo swaps, chains, fees & limits"
 sidebarTitle: "FAQ"
-description: "Frequently asked questions about the Argyros API."
-llmDescription: "Frequently asked questions about Argyros. Covers supported chains (Fogo live, Solana coming soon), P-Token benefits preview, supported tokens on Fogo (Vortex, Fluxbeam, Fogo.fun, Moonit), quote freshness, devnet support, transaction size limits, ExactIn vs ExactOut, fee structure, rate limits, multi-hop behavior, and how to monitor API status."
+description: "Frequently asked questions about the Vulcx API."
+llmDescription: "Frequently asked questions about Vulcx. Covers supported chains (Fogo live, Solana coming soon), P-Token benefits preview, supported tokens on Fogo (Vortex, Fluxbeam, Fogo.fun, Moonit), quote freshness, devnet support, transaction size limits, ExactIn vs ExactOut, fee structure, rate limits, multi-hop behavior, and how to monitor API status."
 ---
 
 ## General
@@ -14,7 +14,7 @@ Fogo today. **Solana support is coming soon** — see [Supported Chains](/concep
 </Accordion>
 
 <Accordion title="What will Solana support bring?">
-When Solana launches, Argyros will use **P-Token**, an optimized token program that enables:
+When Solana launches, Vulcx will use **P-Token**, an optimized token program that enables:
 
 - Up to **7 hops** (vs 5 on Fogo) for deeper route search
 - **Lower compute costs** per transaction
@@ -92,7 +92,7 @@ Nothing. All swap instructions execute atomically on-chain. If any hop fails (in
 </Accordion>
 
 <Accordion title="How do I monitor API status?">
-Call `GET https://api.argyros.xyz/health`. It returns `{"status": "ok"}` when the service is running. For production integrations, poll this endpoint periodically and alert if it returns a non-200 status.
+Call `GET https://api.vulcx.xyz/health`. It returns `{"status": "ok"}` when the service is running. For production integrations, poll this endpoint periodically and alert if it returns a non-200 status.
 </Accordion>
 
 </AccordionGroup>

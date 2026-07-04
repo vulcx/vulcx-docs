@@ -1,13 +1,13 @@
 ---
 title: "Self-hosted"
 sidebarTitle: "Self-Hosted"
-description: "Run your own Argyros routing engine on your infrastructure using the community binary."
-llmDescription: "Overview of the Argyros community (self-hosted) binary for Fogo. Explains hosted API vs self-hosted comparison (auth: API key vs license key; rate limits: gateway-enforced vs built-in; infra: managed vs self-managed; cost: subscription vs RPC fees only). Requirements: FluxRPC key (fluxrpc.com?ref=ARGYROS), community license key (license.argyros.xyz), Linux amd64 or arm64 server. Docker Compose quickstart: copy .env, fill RPC_URL/YELLOWSTONE_TOKEN/COMMUNITY_LICENSE_KEY, docker compose up -d, curl /health. Same API surface as the hosted instance — all endpoints (quote, swap, instructions, price, stream) work identically. Links to full self-hosting guide (/guides/self-hosting) and argyros-community GitHub. Fogo live; Solana coming soon."
+description: "Run your own Vulcx routing engine on your infrastructure using the community binary."
+llmDescription: "Overview of the Vulcan (self-hosted) binary for Fogo. Explains hosted API vs self-hosted comparison (auth: API key vs license key; rate limits: gateway-enforced vs built-in; infra: managed vs self-managed; cost: subscription vs RPC fees only). Requirements: FluxRPC key (fluxrpc.com?ref=VULCX), community license key (license.vulcx.xyz), Linux amd64 or arm64 server. Docker Compose quickstart: copy .env, fill RPC_URL/YELLOWSTONE_TOKEN/COMMUNITY_LICENSE_KEY, docker compose up -d, curl /health. Same API surface as the hosted instance — all endpoints (quote, swap, instructions, price, stream) work identically. Links to full self-hosting guide (/guides/self-hosting) and vulcan GitHub. Fogo live; Solana coming soon."
 ---
 
 # Self-hosted
 
-The Argyros community binary lets you run the full routing engine on your own server. It exposes the same API as the hosted instance — same endpoints, same response shapes — with no shared infrastructure.
+The Vulcan binary lets you run the full routing engine on your own server. It exposes the same API as the hosted instance — same endpoints, same response shapes — with no shared infrastructure.
 
 <Info>
 **Hosted API vs self-hosted.** Use the [hosted API](/get-started/authentication) for managed infrastructure with no ops overhead. Choose self-hosted if you need full control, want to avoid third-party rate limits, or are building systems that can't depend on an external service.
@@ -19,8 +19,8 @@ The Argyros community binary lets you run the full routing engine on your own se
 |---|---|---|
 | Auth | API key (per plan) | Community license key |
 | Rate limits | Gateway-enforced per plan | Built into the binary, per license |
-| Infrastructure | Managed by Argyros | Your server |
-| RPC provider | Managed by Argyros | FluxRPC (your key) |
+| Infrastructure | Managed by Vulcx | Your server |
+| RPC provider | Managed by Vulcx | FluxRPC (your key) |
 | Cost | Subscription | RPC fees only |
 | SLA | Covered | Your responsibility |
 
@@ -28,8 +28,8 @@ The Argyros community binary lets you run the full routing engine on your own se
 
 | Requirement | Where to get it |
 |---|---|
-| FluxRPC key | [fluxrpc.com](https://fluxrpc.com?ref=ARGYROS) |
-| Community license key | [license.argyros.xyz](https://license.argyros.xyz) |
+| FluxRPC key | [fluxrpc.com](https://fluxrpc.com?ref=VULCX) |
+| Community license key | [license.vulcx.xyz](https://license.vulcx.xyz) |
 | Linux server (amd64 or arm64) | Any VPS or bare metal |
 
 The binary validates both at startup and refuses to start if either is missing or invalid.
@@ -39,7 +39,7 @@ The binary validates both at startup and refuses to start if either is missing o
 <Steps>
   <Step title="Copy the env file">
     ```bash
-    curl -O https://raw.githubusercontent.com/argyros-ag/argyros-community/main/.env.example
+    curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/.env.example
     cp .env.example .env
     ```
   </Step>
@@ -49,12 +49,12 @@ The binary validates both at startup and refuses to start if either is missing o
     RPC_URL=https://eu.fogo.fluxrpc.com?key=YOUR_FLUX_RPC_KEY
     YELLOWSTONE_TOKEN=YOUR_FLUX_RPC_KEY
     COMMUNITY_LICENSE_KEY=argycom_xxxxxxxxxxxxxxxxxxxx
-    COMMUNITY_LICENSE_API=https://license.argyros.xyz
+    COMMUNITY_LICENSE_API=https://license.vulcx.xyz
     ```
   </Step>
   <Step title="Run">
     ```bash
-    curl -O https://raw.githubusercontent.com/argyros-ag/argyros-community/main/docker-compose.yml
+    curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/docker-compose.yml
     docker compose up -d
     curl http://localhost:8080/health
     # → {"status":"ok"}
@@ -66,7 +66,7 @@ The binary validates both at startup and refuses to start if either is missing o
   <Card title="Full deployment guide" icon="book" href="/guides/self-hosting">
     Nginx, SSL, systemd, referral fees, and the complete configuration reference.
   </Card>
-  <Card title="argyros-community on GitHub" icon="github" href="https://github.com/argyros-ag/argyros-community">
+  <Card title="vulcan on GitHub" icon="github" href="https://github.com/argyros-ag/vulcan">
     Docker images, binary releases, and the `.env.example` reference.
   </Card>
 </CardGroup>

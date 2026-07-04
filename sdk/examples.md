@@ -1,7 +1,7 @@
 ---
 title: "SDK examples"
-description: "Complete @argyros/sdk integration examples for React, Next.js, Node.js, browser/CDN, and ExactOut mode."
-llmDescription: "End-to-end Argyros TypeScript SDK examples for React, Next.js (App Router), Node.js, and browser/CDN, plus an ExactOut-mode example. Each shows initializing ArgyrosSDK, quoting, building a transaction, and signing/submitting on Fogo."
+description: "Complete @vulcx/sdk integration examples for React, Next.js, Node.js, browser/CDN, and ExactOut mode."
+llmDescription: "End-to-end Vulcx TypeScript SDK examples for React, Next.js (App Router), Node.js, and browser/CDN, plus an ExactOut-mode example. Each shows initializing VulcxSDK, quoting, building a transaction, and signing/submitting on Fogo."
 ---
 
 Complete integration examples for different environments.
@@ -11,11 +11,11 @@ Complete integration examples for different environments.
 ## React
 
 ```tsx
-import { ArgyrosSDK, NoRouteError } from "@argyros/sdk";
-import type { QuoteResponse } from "@argyros/sdk";
+import { VulcxSDK, NoRouteError } from "@vulcx/sdk";
+import type { QuoteResponse } from "@vulcx/sdk";
 import { useEffect, useState } from "react";
 
-const sdk = new ArgyrosSDK({ apiKey: "argy_your_api_key" });
+const sdk = new VulcxSDK({ apiKey: "argy_your_api_key" });
 
 function SwapPage() {
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
@@ -66,13 +66,13 @@ function SwapPage() {
 ```tsx
 "use client";
 
-import { ArgyrosSDK } from "@argyros/sdk";
-import type { SwapResponse } from "@argyros/sdk";
+import { VulcxSDK } from "@vulcx/sdk";
+import type { SwapResponse } from "@vulcx/sdk";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useState } from "react";
 
-const sdk = new ArgyrosSDK({ apiKey: process.env.NEXT_PUBLIC_ARGYROS_KEY! });
+const sdk = new VulcxSDK({ apiKey: process.env.NEXT_PUBLIC_VULCX_KEY! });
 
 export default function SwapButton() {
   const { publicKey, signTransaction } = useWallet();
@@ -124,13 +124,13 @@ export default function SwapButton() {
 ## Node.js
 
 ```javascript
-const { ArgyrosSDK } = require("@argyros/sdk");
+const { VulcxSDK } = require("@vulcx/sdk");
 const { Connection, VersionedTransaction, Keypair } = require("@solana/web3.js");
 const bs58 = require("bs58");
 
 async function main() {
-  const sdk = new ArgyrosSDK({
-    apiKey: process.env.ARGYROS_API_KEY,
+  const sdk = new VulcxSDK({
+    apiKey: process.env.VULCX_API_KEY,
   });
 
   const wallet = Keypair.fromSecretKey(bs58.decode(process.env.WALLET_KEY));
@@ -183,14 +183,14 @@ main().catch(console.error);
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://cdn.argyros.trade/sdk.umd.js"></script>
+  <script src="https://cdn.vulcx.xyz/sdk.umd.js"></script>
 </head>
 <body>
   <button id="quote-btn">Get Quote</button>
   <pre id="result"></pre>
 
   <script>
-    const sdk = new ArgyrosSDK({ apiKey: "argy_your_api_key" });
+    const sdk = new VulcxSDK({ apiKey: "argy_your_api_key" });
 
     document.getElementById("quote-btn").addEventListener("click", async () => {
       try {

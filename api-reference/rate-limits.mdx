@@ -1,10 +1,10 @@
 ---
 title: "Rate Limits"
-description: "Request rate limits and retry strategy for the Argyros API."
-llmDescription: "Argyros API rate limits. Default: 60 requests/minute, 10 requests/second burst. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (cache quotes, batch wisely, use instructions endpoint)."
+description: "Request rate limits and retry strategy for the Vulcx API."
+llmDescription: "Vulcx API rate limits. Default: 60 requests/minute, 10 requests/second burst. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (cache quotes, batch wisely, use instructions endpoint)."
 ---
 
-The Argyros API applies rate limiting to ensure fair usage and service stability.
+The Vulcx API applies rate limiting to ensure fair usage and service stability.
 
 ## Limits
 
@@ -37,7 +37,7 @@ Use exponential backoff when you receive a `429`:
 <CodeGroup>
 ```bash cURL
 for i in 1 2 3; do
-  response=$(curl -s -w "\n%{http_code}" "https://api.argyros.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn")
+  response=$(curl -s -w "\n%{http_code}" "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn")
   http_code=$(echo "$response" | tail -1)
   [ "$http_code" != "429" ] && echo "$response" && break
   sleep $((2 ** i))
