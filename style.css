@@ -1,13 +1,13 @@
 /* ============================================================
-   Vulcx docs — visual parity with the landing page
-   (modern black + silver). Mintlify auto-loads any .css file.
-   Keep this small and resilient: prefer global, version-stable
-   rules over Mintlify's internal class names.
+   Vulcx docs — volcanic identity (molten ember on basalt black).
+   Mintlify auto-loads any .css file. Keep this small and resilient:
+   prefer global, version-stable rules over Mintlify's internal
+   class names.
    ============================================================ */
 
-/* Text selection — matches the landing page's silver selection. */
+/* Text selection — warm ember tint. */
 ::selection {
-  background: rgba(201, 206, 214, 0.28);
+  background: rgba(244, 112, 38, 0.28);
   color: #fff;
 }
 
@@ -36,35 +36,35 @@ body::after {
   z-index: 0;
 }
 
-/* Best-effort: give the primary CTA the landing's brushed-silver gradient.
+/* Best-effort: give the primary CTA a molten ember gradient.
    Targets Mintlify chrome, which can shift between versions — if it stops
    matching, nothing breaks (the docs.json `colors` still drives the button).
    Verify against the live render and remove if it misfires. */
 a[class*="bg-primary"],
 button[class*="bg-primary"] {
-  background-image: linear-gradient(135deg, #e8eaef, #9ca3af) !important;
+  background-image: linear-gradient(135deg, #FD944C, #B03118) !important;
   color: #08080a !important;
 }
 
-/* ── Sidebar / active-link parity ─────────────────────────────
-   Mirrors the landing's `.sidebar-link` states (hover = faint silver
-   wash, active = stronger wash + white text). Uses the standard
-   aria-current="page" hook and a low-specificity sidebar scope, so it
-   degrades harmlessly if Mintlify's markup differs. `colors.primary`
-   already drives the active text color — this just adds the wash. */
+/* ── Sidebar / active-link states ─────────────────────────────
+   Hover = faint ember wash, active = stronger wash + white text.
+   Uses the standard aria-current="page" hook and a low-specificity
+   sidebar scope, so it degrades harmlessly if Mintlify's markup
+   differs. `colors.primary` already drives the active text color —
+   this just adds the wash. */
 #sidebar a:hover,
 nav[aria-label="Sidebar"] a:hover {
-  background-color: rgba(201, 206, 214, 0.07);
+  background-color: rgba(244, 112, 38, 0.07);
   border-radius: 8px;
 }
 #sidebar a[aria-current="page"],
 nav[aria-label="Sidebar"] a[aria-current="page"] {
-  background-color: rgba(201, 206, 214, 0.12);
+  background-color: rgba(244, 112, 38, 0.12);
   color: #ffffff;
   border-radius: 8px;
 }
 
-/* Hairline borders and dividers toned to the landing's silver-on-black. */
+/* Hairline borders and dividers toned to ember-on-black. */
 hr {
-  border-color: rgba(201, 206, 214, 0.12);
+  border-color: rgba(244, 112, 38, 0.12);
 }

@@ -24,9 +24,9 @@
     "options": ["copy", "view", "chatgpt", "claude", "cursor"]
   },
   "colors": {
-    "primary": "#c9ced6",
-    "light": "#e8eaef",
-    "dark": "#9ca3af"
+    "primary": "#F47026",
+    "light": "#FD944C",
+    "dark": "#B03118"
   },
   "appearance": {
     "default": "dark",
@@ -54,7 +54,7 @@
       "theme": "github-dark"
     }
   },
-  "favicon": "/favicon.png",
+  "favicon": "/favicon-vx.png",
   "openapi": ["/api-reference/openapi.json"],
   "api": {
     "asyncapi": "/api-reference/asyncapi.json"
@@ -207,8 +207,8 @@
     }
   },
   "logo": {
-    "light": "/logo/vulcx-silver.png",
-    "dark": "/logo/vulcx-silver.png"
+    "light": "/logo/vulcx-icon.png",
+    "dark": "/logo/vulcx-icon.png"
   },
   "navbar": {
     "links": [
