@@ -1,7 +1,7 @@
 ---
 title: "Stream Quotes"
 description: "WS /api/v1/stream — Subscribe to live swap quotes over WebSocket and receive a push whenever the price changes."
-llmDescription: "Protocol reference for the Vulcx WebSocket quote stream at wss://api.vulcx.xyz/api/v1/stream on Fogo. Requires an API key as a ?key=argy_... query parameter (not a header — browsers can't set custom headers on a WS handshake); connecting without one fails the handshake. Raw JSON-over-WebSocket (not socket.io). Clients send subscribe/unsubscribe ops with a pairs array ({in, out, amount, exactIn}); the server replies with an immediate first quote, an ack ({type:subscribed|unsubscribed|error, count}), and thereafter pushes a quote message ({type:quote, in, out, amount, amountOut, priceImpactBps, hops, slot}) only when the quote materially changes. Limits: 256 subscriptions per connection, change-only pushes, ~50ms debounce. Solana coming soon."
+llmDescription: "Protocol reference for the Vulcx WebSocket quote stream at wss://api.vulcx.xyz/api/v1/stream on Fogo. Requires an API key as a ?key=vulcx_... query parameter (not a header — browsers can't set custom headers on a WS handshake); connecting without one fails the handshake. Raw JSON-over-WebSocket (not socket.io). Clients send subscribe/unsubscribe ops with a pairs array ({in, out, amount, exactIn}); the server replies with an immediate first quote, an ack ({type:subscribed|unsubscribed|error, count}), and thereafter pushes a quote message ({type:quote, in, out, amount, amountOut, priceImpactBps, hops, slot}) only when the quote materially changes. Limits: 256 subscriptions per connection, change-only pushes, ~50ms debounce."
 asyncapi: "api-reference/asyncapi.json stream"
 ---
 
@@ -12,7 +12,7 @@ more token pairs and the server sends an updated quote whenever the on-chain pri
 materially changes — no polling required.
 
 ```
-wss://api.vulcx.xyz/api/v1/stream?key=argy_your_key_here
+wss://api.vulcx.xyz/api/v1/stream?key=vulcx_your_key_here
 ```
 
 The transport is **raw JSON over WebSocket** (plain text frames — not socket.io or STOMP). Open a
@@ -45,13 +45,13 @@ Send a JSON text frame with an `op` and a `pairs` array.
   One or more pair specifications to subscribe or unsubscribe.
   <Expandable title="pair fields">
     <ParamField body="in" type="string" required>
-      Input token mint address (Solana base58 public key).
+      Input token mint address (base58-encoded public key).
     </ParamField>
     <ParamField body="out" type="string" required>
-      Output token mint address (Solana base58 public key).
+      Output token mint address (base58-encoded public key).
     </ParamField>
     <ParamField body="amount" type="string" required>
-      Amount in smallest token units, as a string. For SOL (9 decimals): `1000000000` = 1 SOL.
+      Amount in smallest token units, as a string. For FOGO (9 decimals): `1000000000` = 1 FOGO.
     </ParamField>
     <ParamField body="exactIn" type="boolean" required>
       `true` to quote `amount` as the exact input (ExactIn). `false` to treat it as the exact

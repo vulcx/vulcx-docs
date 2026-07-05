@@ -2,7 +2,7 @@
 title: "Self-hosting Vulcx"
 sidebarTitle: "Self-Hosting"
 description: "Deploy the Vulcan binary with Docker or a raw binary, then harden it with nginx, SSL, and systemd."
-llmDescription: "Step-by-step deployment guide for the Vulcan (self-hosted) binary on Fogo. Prerequisites: FluxRPC key (fluxrpc.com?ref=VULCX) and community license key (license.vulcx.xyz). Deployment options: Docker Compose (curl docker-compose.yml, fill .env, docker compose up -d) or raw binary (download linux-amd64/arm64 from GitHub releases). Full env var reference: COMMUNITY_MODE=true, CHAIN=fogo (default), RPC_URL (FluxRPC endpoint+key), YELLOWSTONE_URL, YELLOWSTONE_TOKEN (same FluxRPC key), COMMUNITY_LICENSE_KEY, COMMUNITY_LICENSE_API=https://license.vulcx.xyz, LICENSE_CHECK_INTERVAL (default 6h), REFERRER_WALLET (optional — dApp builders only, not bot operators), ALLOWED_IPS (optional comma-separated CIDRs), HTTP_PORT=8080, HTTP_HOST=0.0.0.0, LUT_AUTHORITY_KEY_FOGO (optional, holds private key + SOL — treat as secret). Nginx setup: apt install nginx certbot, copy examples/nginx.conf, set server_name, certbot --nginx. Referral fees: set REFERRER_WALLET for dApp/UI builders to earn on-chain protocol fee split; leave unset for bot/internal use. Systemd unit for auto-restart. Warning: LUT_AUTHORITY_KEY_FOGO holds a Solana private key — chmod 600, never commit. Fogo live; Solana coming soon."
+llmDescription: "Step-by-step deployment guide for the Vulcan (self-hosted) binary on Fogo. Prerequisites: FluxRPC key (fluxrpc.com?ref=VULCX) and community license key (license.vulcx.xyz). Deployment options: Docker Compose (curl docker-compose.yml, fill .env, docker compose up -d) or raw binary (download linux-amd64/arm64 from GitHub releases). Full env var reference: COMMUNITY_MODE=true, CHAIN=fogo (default), RPC_URL (FluxRPC endpoint+key), YELLOWSTONE_URL, YELLOWSTONE_TOKEN (same FluxRPC key), COMMUNITY_LICENSE_KEY, COMMUNITY_LICENSE_API=https://license.vulcx.xyz, LICENSE_CHECK_INTERVAL (default 6h), REFERRER_WALLET (optional — dApp builders only, not bot operators), ALLOWED_IPS (optional comma-separated CIDRs), HTTP_PORT=8080, HTTP_HOST=0.0.0.0, LUT_AUTHORITY_KEY_FOGO (optional, holds private key + FOGO — treat as secret). Nginx setup: apt install nginx certbot, copy examples/nginx.conf, set server_name, certbot --nginx. Referral fees: set REFERRER_WALLET for dApp/UI builders to earn on-chain protocol fee split; leave unset for bot/internal use. Systemd unit for auto-restart. Warning: LUT_AUTHORITY_KEY_FOGO holds a private key — chmod 600, never commit. Fogo."
 ---
 
 # Self-hosting Vulcx
@@ -19,7 +19,7 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
   </Step>
 
   <Step title="Get a community license key">
-    Register at [license.vulcx.xyz](https://license.vulcx.xyz). After signup your license key (`argycom_...`) appears on the dashboard. The binary fetches your plan's rate limits from the license server at startup and enforces them on every request.
+    Register at [license.vulcx.xyz](https://license.vulcx.xyz). After signup your license key (`vulcxcom_...`) appears on the dashboard. The binary fetches your plan's rate limits from the license server at startup and enforces them on every request.
   </Step>
 
   <Step title="Deploy">
@@ -27,8 +27,8 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
       <Tab title="Docker Compose">
         ```bash
         # Download the env template and compose file
-        curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/.env.example
-        curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/docker-compose.yml
+        curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/.env.example
+        curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/docker-compose.yml
         cp .env.example .env
 
         # Fill in your credentials
@@ -48,11 +48,11 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
       <Tab title="Binary">
         ```bash
         # Download for your platform (use linux-arm64 on ARM servers)
-        curl -L https://github.com/argyros-ag/vulcan/releases/latest/download/vulcan-linux-amd64 \
+        curl -L https://github.com/vulcx/vulcan/releases/latest/download/vulcan-linux-amd64 \
           -o vulcan && chmod +x vulcan
 
         # Download and fill the env template
-        curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/.env.example
+        curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/.env.example
         cp .env.example .env && nano .env
 
         # Run
@@ -83,19 +83,19 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
     | `LUT_AUTHORITY_KEY_FOGO` | no | — | Private key for Address Lookup Table provisioning |
 
     <Warning>
-    `LUT_AUTHORITY_KEY_FOGO` holds a Solana private key that must carry SOL for LUT rent. Treat it as a secret: `chmod 600` its file, never commit it, and never expose it in logs or process listings.
+    `LUT_AUTHORITY_KEY_FOGO` holds a private key that must carry FOGO for LUT rent. Treat it as a secret: `chmod 600` its file, never commit it, and never expose it in logs or process listings.
     </Warning>
   </Step>
 
   <Step title="Set up nginx and SSL">
-    To expose the API publicly over HTTPS, proxy it behind nginx with a Let's Encrypt certificate. A ready-to-use config is in the [vulcan repo](https://github.com/argyros-ag/vulcan/blob/main/examples/nginx.conf).
+    To expose the API publicly over HTTPS, proxy it behind nginx with a Let's Encrypt certificate. A ready-to-use config is in the [vulcan repo](https://github.com/vulcx/vulcan/blob/main/examples/nginx.conf).
 
     ```bash
     apt install -y nginx certbot python3-certbot-nginx
 
     # Download the reference nginx config
     curl -o /etc/nginx/sites-available/vulcx.conf \
-      https://raw.githubusercontent.com/argyros-ag/vulcan/main/examples/nginx.conf
+      https://raw.githubusercontent.com/vulcx/vulcan/main/examples/nginx.conf
 
     # Edit server_name to your domain
     nano /etc/nginx/sites-available/vulcx.conf
@@ -156,7 +156,3 @@ New to self-hosting? Start with the [self-hosted overview](/get-started/self-hos
     ```
   </Step>
 </Steps>
-
-<Info>
-**Solana support coming soon.** The community binary currently runs on Fogo only (`CHAIN=fogo`). See [Supported Chains](/concepts/chains).
-</Info>

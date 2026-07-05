@@ -9,7 +9,7 @@
     "production": {
       "host": "api.vulcx.xyz",
       "protocol": "wss",
-      "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.vulcx.xyz/api/v1/stream?key=argy_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes.",
+      "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.vulcx.xyz/api/v1/stream?key=vulcx_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes.",
       "security": [{ "$ref": "#/components/securitySchemes/ApiKeyQuery" }]
     }
   },
@@ -214,7 +214,7 @@
         "type": "httpApiKey",
         "in": "query",
         "name": "key",
-        "description": "API key as a `?key=argy_...` query parameter. Required — this is the only auth option for the WebSocket stream, since browsers can't set custom headers on a WS handshake."
+        "description": "API key as a `?key=vulcx_...` query parameter. Required — this is the only auth option for the WebSocket stream, since browsers can't set custom headers on a WS handshake."
       }
     },
     "schemas": {
@@ -225,17 +225,17 @@
         "properties": {
           "in": {
             "type": "string",
-            "description": "Input token mint address (Solana base58 public key).",
+            "description": "Input token mint address (base58-encoded public key).",
             "example": "So11111111111111111111111111111111111111112"
           },
           "out": {
             "type": "string",
-            "description": "Output token mint address (Solana base58 public key).",
+            "description": "Output token mint address (base58-encoded public key).",
             "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
           },
           "amount": {
             "type": "string",
-            "description": "Amount in smallest token units, as a string. For SOL (9 decimals): 1000000000 = 1 SOL.",
+            "description": "Amount in smallest token units, as a string. For FOGO (9 decimals): 1000000000 = 1 FOGO.",
             "example": "50000000"
           },
           "exactIn": {

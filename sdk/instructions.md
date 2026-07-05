@@ -62,7 +62,7 @@ const ixs = await sdk.instructions(params: InstructionsRequest): Promise<Instruc
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `instructions` | `RawInstruction[]` | Ordered list of Solana instructions |
+| `instructions` | `RawInstruction[]` | Ordered list of instructions |
 | `addressLookupTableAddresses` | `string[]` | ALT addresses to include in the v0 transaction |
 | `amountIn` | `string` | Input amount |
 | `amountOut` | `string` | Estimated output amount |

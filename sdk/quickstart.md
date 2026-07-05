@@ -1,7 +1,7 @@
 ---
 title: "SDK quickstart"
 description: "Install @vulcx/sdk and run your first Fogo swap — quote, build, sign, submit — in under five minutes."
-llmDescription: "Quickstart for the @vulcx/sdk TypeScript SDK. Covers npm install, initializing VulcxSDK, calling sdk.quote() for a SOL to USDC quote on Fogo, building an unsigned transaction with sdk.swap(), and signing/submitting with @solana/web3.js VersionedTransaction. Fogo live; Solana coming soon."
+llmDescription: "Quickstart for the @vulcx/sdk TypeScript SDK. Covers npm install, initializing VulcxSDK, calling sdk.quote() for a FOGO to USDC quote on Fogo, building an unsigned transaction with sdk.swap(), and signing/submitting with @solana/web3.js VersionedTransaction. Fogo."
 ---
 
 Get a quote and execute a swap in under 5 minutes.
@@ -28,8 +28,7 @@ Or via CDN (exposes `window.VulcxSDK`):
 import { VulcxSDK } from "@vulcx/sdk";
 
 const sdk = new VulcxSDK({
-  apiKey: "argy_your_api_key",
-  chain: "solana",
+  apiKey: "vulcx_your_api_key",
 });
 ```
 
@@ -41,7 +40,7 @@ const sdk = new VulcxSDK({
 const quote = await sdk.quote({
   inputMint: "So11111111111111111111111111111111111111112",
   outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-  amount: "1000000000", // 1 SOL
+  amount: "1000000000", // 1 FOGO
   swapMode: "ExactIn",
   slippageBps: 50,
 });

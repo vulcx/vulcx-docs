@@ -1,8 +1,8 @@
 ---
 title: "Vulcx API reference — quote, swap & instructions"
 sidebarTitle: "Introduction"
-description: "Base URL, response format, and conventions for the Vulcx API."
-llmDescription: "Vulcx API reference overview. Base URL: https://api.vulcx.xyz. Currently supports Fogo chain (Solana coming soon). Covers the JSON response envelope ({success, data, error}), HTTP status codes (200, 400, 401, 403, 404, 429, 500), the auth requirement (every endpoint needs an API key except GET /health and GET /api/v1/tokens — see /get-started/authentication), and the endpoint table with an auth-required column linking to GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, WS /api/v1/stream, GET /api/v1/price, GET /api/v1/tokens, and GET /health."
+description: "Get started with the Vulcx API on Fogo: base URL, the {success, data, error} response envelope, status codes, authentication, and the full endpoint reference."
+llmDescription: "Vulcx API reference overview. Base URL: https://api.vulcx.xyz. Currently supports Fogo chain. Covers the JSON response envelope ({success, data, error}), HTTP status codes (200, 400, 401, 403, 404, 429, 500), the auth requirement (every endpoint needs an API key except GET /health and GET /api/v1/tokens — see /get-started/authentication), and the endpoint table with an auth-required column linking to GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, WS /api/v1/stream, GET /api/v1/price, GET /api/v1/tokens, and GET /health."
 ---
 
 **Base URL**: `https://api.vulcx.xyz`
@@ -10,14 +10,10 @@ llmDescription: "Vulcx API reference overview. Base URL: https://api.vulcx.xyz. 
 All swap endpoints are under `/api/v1`. The API currently operates on **Fogo**.
 
 <Note>
-Every endpoint below requires an API key (`Authorization: Bearer argy_...`, or `?key=` for the
+Every endpoint below requires an API key (`Authorization: Bearer vulcx_...`, or `?key=` for the
 WebSocket stream) **except** `GET /health` and `GET /api/v1/tokens`. See
 [Authentication](/get-started/authentication).
 </Note>
-
-<Info>
-**Solana support coming soon.** When available, all endpoints will accept a `chain` query parameter to select between Fogo and Solana. See [Supported Chains](/concepts/chains).
-</Info>
 
 ## Response format
 

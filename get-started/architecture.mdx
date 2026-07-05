@@ -1,8 +1,8 @@
 ---
 title: "Vulcx architecture — how swaps are routed on Fogo"
 sidebarTitle: "Architecture"
-description: "How Vulcx routes and executes swaps on Fogo."
-llmDescription: "High-level architecture of Vulcx on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Fogo.fun | Moonit bonding curves), and the two integration paths: POST /api/v1/swap for ready-to-sign transactions vs POST /api/v1/instructions for custom transaction composition. Solana support coming soon."
+description: "How Vulcx routes and executes swaps on Fogo: the API server, off-chain routing engine, and on-chain program, plus the /swap vs /instructions paths."
+llmDescription: "High-level architecture of Vulcx on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), and the two integration paths: POST /api/v1/swap for ready-to-sign transactions vs POST /api/v1/instructions for custom transaction composition."
 ---
 
 <Frame caption="Your app calls the Vulcx API, which finds the best-price route and returns an unsigned transaction; your wallet signs and submits it to Fogo.">
@@ -35,15 +35,11 @@ Client                    Vulcx API                 Fogo
 
 **API Server.** HTTP service that handles quote requests, builds swap transactions, and returns raw instructions. Stateless and horizontally scalable.
 
-**Routing Engine.** Off-chain route search that evaluates routes across all supported DEXs on Fogo. Finds direct swaps, multi-hop paths (e.g., Token A → SOL → USDC → Token B), and split routes across multiple pools.
+**Routing Engine.** Off-chain route search that evaluates routes across all supported DEXs on Fogo. Finds direct swaps, multi-hop paths (e.g., Token A → FOGO → USDC → Token B), and split routes across multiple pools.
 
 **Supported DEXs.** Vortex (concentrated liquidity), Fluxbeam (AMM), Fogo.fun (bonding curves), and Moonit (bonding curves).
 
 **On-chain Program.** Verifies and executes the swap instructions atomically. If any hop fails or slippage is exceeded, the entire transaction reverts.
-
-<Info>
-**Solana support coming soon** with additional DEXs including Raydium, Orca, and Meteora. See [Supported Chains](/concepts/chains).
-</Info>
 
 ## Two integration paths
 

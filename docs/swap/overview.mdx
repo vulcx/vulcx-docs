@@ -1,10 +1,8 @@
 ---
 title: "Swap Overview"
-description: "How token swaps work on Vulcx and which integration path to choose."
-llmDescription: "Overview of the Vulcx swap lifecycle on Fogo: get quote, build transaction or get instructions, sign and submit. Explains when to use POST /swap vs POST /instructions, ExactIn vs ExactOut swap modes, Fogo capabilities (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs), supported tokens, and links to detailed pages for each step. Solana support coming soon."
+description: "The Vulcx swap lifecycle on Fogo: quote, build or get instructions, then sign and submit. When to use /swap vs /instructions, ExactIn vs ExactOut, and supported DEXs."
+llmDescription: "Overview of the Vulcx swap lifecycle on Fogo: get quote, build transaction or get instructions, sign and submit. Explains when to use POST /swap vs POST /instructions, ExactIn vs ExactOut swap modes, Fogo capabilities (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs), supported tokens, and links to detailed pages for each step."
 ---
-
-import SolanaComingSoon from "/snippets/solana-coming-soon.mdx";
 
 # Swap Overview
 
@@ -40,7 +38,7 @@ Every swap follows the same three-phase pattern:
 
 | Mode | Behavior | Use case |
 |------|----------|----------|
-| `ExactIn` | You specify the exact input amount. Output is estimated. | "I want to sell exactly 1 SOL" |
+| `ExactIn` | You specify the exact input amount. Output is estimated. | "I want to sell exactly 1 FOGO" |
 | `ExactOut` | You specify the exact output amount. Input is estimated. | "I want to buy exactly 100 USDC" |
 
 Both modes support slippage protection. For `ExactIn`, the response includes `minAmountOut` (minimum you'll receive). For `ExactOut`, it includes `maxAmountIn` (maximum you'll spend).
@@ -52,8 +50,6 @@ Both modes support slippage protection. For `ExactIn`, the response includes `mi
 | Max hops | 5 |
 | Compute cost | Standard |
 | Supported DEXs | Vortex, Fluxbeam, Fogo.fun, Moonit |
-
-<SolanaComingSoon />
 
 ## Supported tokens
 

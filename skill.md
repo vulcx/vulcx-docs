@@ -1,6 +1,6 @@
 ---
 name: vulcx-swap
-description: Integrate Vulcx swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, and handling errors across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves. Solana support coming soon.
+description: Integrate Vulcx swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, and handling errors across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves.
 version: "1.2.0"
 tags:
   - vulcx
@@ -23,8 +23,8 @@ tags:
 
 Every endpoint requires an API key **except** `GET /health` and `GET /api/v1/tokens`. Send it as:
 
-- `Authorization: Bearer argy_your_key_here` on REST calls, or
-- `?key=argy_your_key_here` query parameter — **required** for the WebSocket stream
+- `Authorization: Bearer vulcx_your_key_here` on REST calls, or
+- `?key=vulcx_your_key_here` query parameter — **required** for the WebSocket stream
   (`GET /api/v1/stream`), since a browser WS handshake can't carry custom headers.
 
 ```bash
@@ -37,9 +37,7 @@ key). Keys are free during beta — see [Authentication](https://docs.vulcx.xyz/
 
 ## Chain Support
 
-Currently: **Fogo** (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs).
-
-**Coming soon**: Solana with P-Token (7 max hops, lower compute, Raydium/Orca/Meteora). When available, a `chain` query parameter will be added to all endpoints.
+**Fogo** (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs).
 
 ## Use / Do Not Use
 
@@ -49,7 +47,7 @@ Use when:
 - The user needs help debugging Vulcx API errors.
 
 Do not use when:
-- The task is generic Solana development with no Vulcx API usage.
+- The task is generic blockchain development with no Vulcx API usage.
 - The task involves other aggregators (Jupiter, etc.).
 
 **Triggers**: `swap`, `quote`, `best route`, `token swap`, `vulcx`, `multi-hop`, `price impact`, `slippage`, `build transaction`, `raw instructions`, `fogo`
@@ -232,7 +230,7 @@ Same as `/swap` without `skipSimulation`.
 
 | Token | Mint | Decimals |
 |-------|------|----------|
-| SOL | `So11111111111111111111111111111111111111112` | 9 |
+| FOGO | `So11111111111111111111111111111111111111112` | 9 |
 | USDC | `uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG` | 6 |
 
 ## Rate Limits

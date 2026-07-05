@@ -1,7 +1,7 @@
 ---
 title: "Get Quote"
 description: "How to request a swap quote and interpret routing, price impact, and slippage fields."
-llmDescription: "Detailed guide for GET /api/v1/quote on Fogo. Covers all parameters (inputMint, outputMint, amount, swapMode, slippageBps), complete response schema (QuoteResponse with RouteInfo array, price impact fields, otherAmountThreshold), cURL, TypeScript, and Python examples, and price impact severity guidance. Solana chain support coming soon."
+llmDescription: "Detailed guide for GET /api/v1/quote on Fogo. Covers all parameters (inputMint, outputMint, amount, swapMode, slippageBps), complete response schema (QuoteResponse with RouteInfo array, price impact fields, otherAmountThreshold), cURL, TypeScript, and Python examples, and price impact severity guidance."
 ---
 
 # Get Quote
@@ -11,15 +11,15 @@ llmDescription: "Detailed guide for GET /api/v1/quote on Fogo. Covers all parame
 ## Parameters
 
 <ParamField query="inputMint" type="string" required>
-  Input token mint address (Solana base58 public key).
+  Input token mint address (base58-encoded public key).
 </ParamField>
 
 <ParamField query="outputMint" type="string" required>
-  Output token mint address (Solana base58 public key).
+  Output token mint address (base58-encoded public key).
 </ParamField>
 
 <ParamField query="amount" type="string" required>
-  Amount in smallest token units. For SOL (9 decimals): `1000000000` = 1 SOL. For USDC (6 decimals): `1000000` = 1 USDC.
+  Amount in smallest token units. For FOGO (9 decimals): `1000000000` = 1 FOGO. For USDC (6 decimals): `1000000` = 1 USDC.
 </ParamField>
 
 <ParamField query="swapMode" type="string" required>
@@ -163,7 +163,7 @@ print(f"Route: {data['hopCount']} hop(s) via {pool_types}")
   Array of hops in the route.
   <Expandable title="RouteInfo fields">
     <ResponseField name="poolAddress" type="string">Pool address for this hop.</ResponseField>
-    <ResponseField name="poolType" type="string">Pool type. On Fogo: `Vortex`, `Fluxbeam`, `Fogo.fun`, `Moonit`. When Solana launches: also `Raydium`, `Orca`, `Meteora`.</ResponseField>
+    <ResponseField name="poolType" type="string">Pool type. On Fogo: `Vortex`, `Fluxbeam`, `Fogo.fun`, `Moonit`.</ResponseField>
     <ResponseField name="percent" type="integer">Percentage of amount routed through this pool (100 for single route).</ResponseField>
     <ResponseField name="inputMint" type="string">Input token for this hop.</ResponseField>
     <ResponseField name="outputMint" type="string">Output token for this hop.</ResponseField>

@@ -2,7 +2,7 @@
 title: "Self-hosted"
 sidebarTitle: "Self-Hosted"
 description: "Run your own Vulcx routing engine on your infrastructure using the community binary."
-llmDescription: "Overview of the Vulcan (self-hosted) binary for Fogo. Explains hosted API vs self-hosted comparison (auth: API key vs license key; rate limits: gateway-enforced vs built-in; infra: managed vs self-managed; cost: subscription vs RPC fees only). Requirements: FluxRPC key (fluxrpc.com?ref=VULCX), community license key (license.vulcx.xyz), Linux amd64 or arm64 server. Docker Compose quickstart: copy .env, fill RPC_URL/YELLOWSTONE_TOKEN/COMMUNITY_LICENSE_KEY, docker compose up -d, curl /health. Same API surface as the hosted instance — all endpoints (quote, swap, instructions, price, stream) work identically. Links to full self-hosting guide (/guides/self-hosting) and vulcan GitHub. Fogo live; Solana coming soon."
+llmDescription: "Overview of the Vulcan (self-hosted) binary for Fogo. Explains hosted API vs self-hosted comparison (auth: API key vs license key; rate limits: gateway-enforced vs built-in; infra: managed vs self-managed; cost: subscription vs RPC fees only). Requirements: FluxRPC key (fluxrpc.com?ref=VULCX), community license key (license.vulcx.xyz), Linux amd64 or arm64 server. Docker Compose quickstart: copy .env, fill RPC_URL/YELLOWSTONE_TOKEN/COMMUNITY_LICENSE_KEY, docker compose up -d, curl /health. Same API surface as the hosted instance — all endpoints (quote, swap, instructions, price, stream) work identically. Links to full self-hosting guide (/guides/self-hosting) and vulcan GitHub. Fogo."
 ---
 
 # Self-hosted
@@ -39,7 +39,7 @@ The binary validates both at startup and refuses to start if either is missing o
 <Steps>
   <Step title="Copy the env file">
     ```bash
-    curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/.env.example
+    curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/.env.example
     cp .env.example .env
     ```
   </Step>
@@ -48,13 +48,13 @@ The binary validates both at startup and refuses to start if either is missing o
     ```env
     RPC_URL=https://eu.fogo.fluxrpc.com?key=YOUR_FLUX_RPC_KEY
     YELLOWSTONE_TOKEN=YOUR_FLUX_RPC_KEY
-    COMMUNITY_LICENSE_KEY=argycom_xxxxxxxxxxxxxxxxxxxx
+    COMMUNITY_LICENSE_KEY=vulcxcom_xxxxxxxxxxxxxxxxxxxx
     COMMUNITY_LICENSE_API=https://license.vulcx.xyz
     ```
   </Step>
   <Step title="Run">
     ```bash
-    curl -O https://raw.githubusercontent.com/argyros-ag/vulcan/main/docker-compose.yml
+    curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/docker-compose.yml
     docker compose up -d
     curl http://localhost:8080/health
     # → {"status":"ok"}
@@ -66,7 +66,7 @@ The binary validates both at startup and refuses to start if either is missing o
   <Card title="Full deployment guide" icon="book" href="/guides/self-hosting">
     Nginx, SSL, systemd, referral fees, and the complete configuration reference.
   </Card>
-  <Card title="vulcan on GitHub" icon="github" href="https://github.com/argyros-ag/vulcan">
+  <Card title="vulcan on GitHub" icon="github" href="https://github.com/vulcx/vulcan">
     Docker images, binary releases, and the `.env.example` reference.
   </Card>
 </CardGroup>

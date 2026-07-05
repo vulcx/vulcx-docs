@@ -164,7 +164,7 @@ function SwapWidget() {
     return () => el.removeEventListener("quote-update", onQuote);
   }, []);
 
-  return <vulcx-swap ref={ref} api-key="argy_..." />;
+  return <vulcx-swap ref={ref} api-key="vulcx_..." />;
 }
 ```
 
@@ -173,7 +173,7 @@ function SwapWidget() {
 ```vue
 <template>
   <vulcx-swap
-    api-key="argy_..."
+    api-key="vulcx_..."
     @quote-update="onQuote"
     @swap-complete="onSwap"
     @connect-wallet="onConnect"

@@ -1,7 +1,7 @@
 ---
 title: "Widget quickstart"
 description: "Add the vulcx-swap Web Component swap UI to any app — HTML/CDN, React, Vue, or Next.js — in two minutes."
-llmDescription: "Quickstart for the @vulcx/widget vulcx-swap Web Component. Shows installation via npm and CDN UMD, and embedding in plain HTML, React, Vue, and Next.js. Framework-agnostic swap UI for Fogo; Solana coming soon."
+llmDescription: "Quickstart for the @vulcx/widget vulcx-swap Web Component. Shows installation via npm and CDN UMD, and embedding in plain HTML, React, Vue, and Next.js. Framework-agnostic swap UI for Fogo."
 ---
 
 Add a swap UI to your app in 2 minutes. The `<vulcx-swap>` Web Component works in any framework or plain HTML.
@@ -28,8 +28,7 @@ Or via CDN (no build step):
 <script src="https://cdn.vulcx.xyz/vulcx-widget.umd.js"></script>
 
 <vulcx-swap
-  api-key="argy_your_api_key"
-  chain="solana"
+  api-key="vulcx_your_api_key"
   default-input-mint="So11111111111111111111111111111111111111112"
   default-output-mint="uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
   theme="dark"
@@ -48,8 +47,7 @@ import "@vulcx/widget";
 function App() {
   return (
     <vulcx-swap
-      api-key="argy_your_api_key"
-      chain="solana"
+      api-key="vulcx_your_api_key"
       default-input-mint="So11111111111111111111111111111111111111112"
       default-output-mint="uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
       theme="dark"
@@ -86,8 +84,7 @@ declare namespace JSX {
 ```vue
 <template>
   <vulcx-swap
-    api-key="argy_your_api_key"
-    chain="solana"
+    api-key="vulcx_your_api_key"
     default-input-mint="So11111111111111111111111111111111111111112"
     default-output-mint="uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
     theme="dark"
@@ -129,8 +126,7 @@ export default function SwapWidget() {
   return (
     <vulcx-swap
       ref={ref}
-      api-key="argy_your_api_key"
-      chain="solana"
+      api-key="vulcx_your_api_key"
       theme="dark"
     />
   );

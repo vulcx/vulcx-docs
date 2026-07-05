@@ -1,10 +1,10 @@
 ---
 title: "sdk.swap()"
 description: "Build an unsigned, ready-to-sign swap transaction with the Vulcx SDK, then sign and submit it."
-llmDescription: "Reference for sdk.swap() in the Vulcx TypeScript SDK. Documents SwapRequest params and SwapResponse (base64 transaction, lastValidBlockHeight, amountIn/amountOut, SimulationResult). Shows signing and submitting with @solana/web3.js VersionedTransaction and with a React wallet adapter. Fogo; Solana coming soon."
+llmDescription: "Reference for sdk.swap() in the Vulcx TypeScript SDK. Documents SwapRequest params and SwapResponse (base64 transaction, lastValidBlockHeight, amountIn/amountOut, SimulationResult). Shows signing and submitting with @solana/web3.js VersionedTransaction and with a React wallet adapter. Fogo."
 ---
 
-Build an unsigned swap transaction ready to be signed and submitted to the Solana network.
+Build an unsigned swap transaction ready to be signed and submitted to the network.
 
 ```typescript
 const swap = await sdk.swap(params: SwapRequest): Promise<SwapResponse>
@@ -161,5 +161,5 @@ const sig = await connection.sendRawTransaction(signed.serialize());
 
 - The transaction includes automatic ATA (Associated Token Account) creation if the user doesn't have token accounts for the swap tokens.
 - Compute budget is set based on hop count and DEX complexity.
-- Address Lookup Tables are used to keep the transaction within Solana's size limits.
+- Address Lookup Tables are used to keep the transaction within the network's size limits.
 - Submit the transaction quickly -- it expires after `lastValidBlockHeight` (~60 seconds).

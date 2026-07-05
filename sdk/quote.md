@@ -1,7 +1,7 @@
 ---
 title: "sdk.quote()"
 description: "Get the best swap rate for a token pair with the Vulcx SDK — parameters, response schema, and price impact."
-llmDescription: "Reference for sdk.quote() in the Vulcx TypeScript SDK. Documents QuoteRequest params (inputMint, outputMint, amount in smallest units, swapMode ExactIn/ExactOut, slippageBps default 50) and QuoteResponse fields (amountIn, amountOut, priceImpactBps, priceImpactPercent, priceImpactSeverity none/low/moderate/high/extreme, feeBps, otherAmountThreshold, routes RouteInfo array). Includes a token-decimals table (SOL 9, USDC 6, BONK 5) and error cases. Fogo; Solana coming soon."
+llmDescription: "Reference for sdk.quote() in the Vulcx TypeScript SDK. Documents QuoteRequest params (inputMint, outputMint, amount in smallest units, swapMode ExactIn/ExactOut, slippageBps default 50) and QuoteResponse fields (amountIn, amountOut, priceImpactBps, priceImpactPercent, priceImpactSeverity none/low/moderate/high/extreme, feeBps, otherAmountThreshold, routes RouteInfo array). Includes a token-decimals table (FOGO 9, USDC 6, FISH 6) and error cases. Fogo."
 ---
 
 Find the best swap rate for a token pair. The aggregator searches across all supported DEXs and returns the optimal route.
@@ -18,7 +18,7 @@ const quote = await sdk.quote(params: QuoteRequest): Promise<QuoteResponse>
 |-------|------|----------|---------|-------------|
 | `inputMint` | `string` | yes | -- | Input token mint address (base58) |
 | `outputMint` | `string` | yes | -- | Output token mint address (base58) |
-| `amount` | `string` | yes | -- | Amount in smallest token units (lamports for SOL, base units for SPL) |
+| `amount` | `string` | yes | -- | Amount in smallest token units (lamports for FOGO, base units for SPL) |
 | `swapMode` | `"ExactIn" \| "ExactOut"` | yes | -- | `ExactIn`: specify input, get estimated output. `ExactOut`: specify desired output, get required input. |
 | `slippageBps` | `number` | no | `50` | Slippage tolerance in basis points (1 bps = 0.01%) |
 
@@ -28,9 +28,9 @@ All amounts use the smallest token unit (no decimals):
 
 | Token | Decimals | 1 token = |
 |-------|----------|-----------|
-| SOL | 9 | `1000000000` |
+| FOGO | 9 | `1000000000` |
 | USDC | 6 | `1000000` |
-| BONK | 5 | `100000` |
+| FISH | 6 | `1000000` |
 
 ---
 
@@ -121,7 +121,7 @@ See [Error Handling](./error-handling.md) for details.
 ## Notes
 
 - The engine automatically selects direct swap, multi-hop, or split routing based on available liquidity.
-- Multi-hop routes go through intermediate tokens (typically SOL or USDC) when no direct pool exists.
+- Multi-hop routes go through intermediate tokens (typically FOGO or USDC) when no direct pool exists.
 - Split routes divide liquidity across multiple pools for the same hop to reduce price impact.
 - `otherAmountThreshold` is calculated as:
   - ExactIn: `amountOut * (10000 - slippageBps) / 10000`

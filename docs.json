@@ -5,10 +5,6 @@
   "metadata": {
     "timestamp": true
   },
-  "banner": {
-    "content": "Vulcx is in active development and not yet live in production. APIs and documentation may change.",
-    "dismissible": true
-  },
   "seo": {
     "indexing": "navigable",
     "metatags": {
@@ -200,35 +196,24 @@
       "anchors": [
         {
           "anchor": "Support",
-          "href": "https://t.me/vulcx",
+          "href": "https://t.me/vulcxsupport",
           "icon": "telegram"
         }
       ]
     }
   },
-  "logo": {
-    "light": "/logo/vulcx-icon.png",
-    "dark": "/logo/vulcx-icon.png"
-  },
   "navbar": {
-    "links": [
-      {
-        "label": "Website",
-        "href": "https://vulcx.xyz"
-      }
-    ],
     "primary": {
       "type": "button",
       "label": "Get API key",
-      "href": "https://discord.gg/z98Zmk6chP"
+      "href": "https://t.me/vulcxsupport"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/vulcx_ag",
-      "github": "https://github.com/argyros-ag",
-      "discord": "https://discord.gg/z98Zmk6chP",
-      "telegram": "https://t.me/vulcx"
+      "x": "https://x.com/vulcx_xyz",
+      "github": "https://github.com/vulcx",
+      "telegram": "https://t.me/vulcxsupport"
     }
   }
 }

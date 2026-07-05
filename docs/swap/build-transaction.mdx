@@ -1,12 +1,12 @@
 ---
 title: "Build Transaction"
-description: "Build an unsigned swap transaction using POST /api/v1/swap."
-llmDescription: "Detailed guide for POST /api/v1/swap on Fogo. Covers request body (userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation), complete response schema (SwapHandlerResponse with base64 transaction, lastValidBlockHeight, SimulationResult), simulation error handling, and cURL + TypeScript + Python examples. Solana chain support coming soon."
+description: "Build an unsigned Fogo swap transaction with POST /api/v1/swap: request fields, the base64 transaction, simulation results, and cURL, TypeScript, and Python examples."
+llmDescription: "Detailed guide for POST /api/v1/swap on Fogo. Covers request body (userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation), complete response schema (SwapHandlerResponse with base64 transaction, lastValidBlockHeight, SimulationResult), simulation error handling, and cURL + TypeScript + Python examples."
 ---
 
 # Build Transaction
 
-`POST /api/v1/swap` builds a complete unsigned Solana transaction for a token swap. Sign it with the user's wallet and submit to the network.
+`POST /api/v1/swap` builds a complete unsigned transaction for a token swap. Sign it with the user's wallet and submit to the network.
 
 ## Request
 
@@ -170,7 +170,7 @@ By default, the API simulates the transaction before returning it. This catches 
 
 | `simulation` field | Meaning | What to do |
 |--------------------|---------|------------|
-| `insufficientFunds: true` | Wallet doesn't have enough tokens or SOL for fees | Show balance error to user |
+| `insufficientFunds: true` | Wallet doesn't have enough tokens or FOGO for fees | Show balance error to user |
 | `slippageExceeded: true` | Price changed between quote and transaction build | Retry with a fresh quote |
 | `success: false` + `error` | Other simulation failure | Check `logs` for details |
 

@@ -1,12 +1,12 @@
 ---
 title: "Get Instructions"
-description: "Get raw instructions for composing swaps into custom transactions."
-llmDescription: "Detailed guide for POST /api/v1/instructions on Fogo. Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body, response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables. Solana chain support coming soon."
+description: "Get raw swap instructions from POST /api/v1/instructions to compose Vulcx swaps with your own logic — memos, account creation, batching — into one Fogo transaction."
+llmDescription: "Detailed guide for POST /api/v1/instructions on Fogo. Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body, response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables."
 ---
 
 # Get Instructions
 
-`POST /api/v1/instructions` returns raw Solana instructions instead of a complete transaction. Use this when you need to combine swap instructions with other logic in a single transaction.
+`POST /api/v1/instructions` returns raw instructions instead of a complete transaction. Use this when you need to combine swap instructions with other logic in a single transaction.
 
 ## When to use this instead of `/swap`
 

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Vulcx API",
-    "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Vortex, Fluxbeam, Fogo.fun, and Moonit. Solana support coming soon.",
+    "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Vortex, Fluxbeam, Fogo.fun, and Moonit.",
     "version": "1.0.0",
     "contact": {
       "name": "Vulcx",
@@ -59,7 +59,7 @@
             "name": "inputMint",
             "in": "query",
             "required": true,
-            "description": "Input token mint address (Solana base58 public key).",
+            "description": "Input token mint address (base58-encoded public key).",
             "schema": {
               "type": "string",
               "example": "So11111111111111111111111111111111111111112"
@@ -69,7 +69,7 @@
             "name": "outputMint",
             "in": "query",
             "required": true,
-            "description": "Output token mint address (Solana base58 public key).",
+            "description": "Output token mint address (base58-encoded public key).",
             "schema": {
               "type": "string",
               "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
@@ -79,7 +79,7 @@
             "name": "amount",
             "in": "query",
             "required": true,
-            "description": "Amount in smallest token units (lamports for SOL, base units for SPL tokens). For SOL with 9 decimals: 1000000000 = 1 SOL.",
+            "description": "Amount in smallest token units (lamports for FOGO, base units for SPL tokens). For FOGO with 9 decimals: 1000000000 = 1 FOGO.",
             "schema": {
               "type": "string",
               "example": "1000000000"
@@ -146,7 +146,7 @@
       "post": {
         "operationId": "buildSwap",
         "summary": "Build swap transaction",
-        "description": "Build an unsigned Solana transaction for a token swap. The returned base64-encoded transaction must be signed by the user's wallet and submitted to the network. Optionally runs a simulation to validate the transaction before returning it.",
+        "description": "Build an unsigned transaction for a token swap. The returned base64-encoded transaction must be signed by the user's wallet and submitted to the network. Optionally runs a simulation to validate the transaction before returning it.",
         "tags": ["Swap"],
         "requestBody": {
           "required": true,
@@ -209,7 +209,7 @@
             "name": "mint",
             "in": "path",
             "required": true,
-            "description": "Token mint address (Solana base58 public key).",
+            "description": "Token mint address (base58-encoded public key).",
             "schema": {
               "type": "string",
               "example": "So11111111111111111111111111111111111111112"
@@ -307,10 +307,10 @@
                         "type": "object",
                         "properties": {
                           "mint": { "type": "string", "example": "So11111111111111111111111111111111111111112" },
-                          "symbol": { "type": "string", "example": "SOL" },
-                          "name": { "type": "string", "example": "Solana" },
+                          "symbol": { "type": "string", "example": "FOGO" },
+                          "name": { "type": "string", "example": "Fogo" },
                           "decimals": { "type": "integer", "example": 9 },
-                          "logoURI": { "type": "string", "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" }
+                          "logoURI": { "type": "string", "example": "https://api.fogo.io/tokens/fogo.svg" }
                         },
                         "required": ["mint", "symbol", "name", "decimals"]
                       }
@@ -328,7 +328,7 @@
       "post": {
         "operationId": "buildInstructions",
         "summary": "Get raw swap instructions",
-        "description": "Returns raw Solana instructions for a swap without wrapping them in a transaction. Use this when you need to compose swap instructions with other instructions in a custom transaction. The caller is responsible for fetching a recent blockhash, building the transaction, signing, and submitting.",
+        "description": "Returns raw instructions for a swap without wrapping them in a transaction. Use this when you need to compose swap instructions with other instructions in a custom transaction. The caller is responsible for fetching a recent blockhash, building the transaction, signing, and submitting.",
         "tags": ["Instructions"],
         "requestBody": {
           "required": true,
@@ -386,13 +386,13 @@
       "ApiKeyHeader": {
         "type": "http",
         "scheme": "bearer",
-        "description": "API key sent as `Authorization: Bearer argy_...`. Required on every endpoint except `GET /health` and `GET /api/v1/tokens`."
+        "description": "API key sent as `Authorization: Bearer vulcx_...`. Required on every endpoint except `GET /health` and `GET /api/v1/tokens`."
       },
       "ApiKeyQuery": {
         "type": "apiKey",
         "in": "query",
         "name": "key",
-        "description": "API key as a `?key=argy_...` query parameter — the only option for the WebSocket stream (`GET /api/v1/stream`), since browsers can't set custom headers on a WS handshake. Also accepted on REST endpoints as a fallback to the `Authorization` header."
+        "description": "API key as a `?key=vulcx_...` query parameter — the only option for the WebSocket stream (`GET /api/v1/stream`), since browsers can't set custom headers on a WS handshake. Also accepted on REST endpoints as a fallback to the `Authorization` header."
       }
     },
     "schemas": {
@@ -442,8 +442,8 @@
           },
           "poolType": {
             "type": "string",
-            "description": "Liquidity pool type (Raydium, Orca, Meteora, PumpFun, Moonit, etc.).",
-            "example": "Raydium"
+            "description": "Liquidity pool type (Vortex, Fluxbeam, Fogo.fun, Moonit, etc.).",
+            "example": "Vortex"
           },
           "percent": {
             "type": "integer",
@@ -673,7 +673,7 @@
       },
       "RawInstruction": {
         "type": "object",
-        "description": "A single Solana instruction.",
+        "description": "A single instruction.",
         "properties": {
           "programId": { "type": "string", "description": "Base58-encoded program ID." },
           "data": { "type": "string", "description": "Base64-encoded instruction data." },

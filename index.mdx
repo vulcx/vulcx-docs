@@ -1,8 +1,8 @@
 ---
 mode: "custom"
 title: "Vulcx"
-description: "Fogo Swap Aggregator with best-price routing across Vortex, Fluxbeam, Fogo.fun and Moonit. Solana support coming soon."
-llmDescription: "Vulcx documentation home. Vulcx is a best-price swap aggregator on Fogo with multi-hop routing across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves, exposed via three endpoints (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions). Includes a quickstart cURL example (1 SOL to USDC) and links to the SDK, widget, and API reference. Solana support coming soon."
+description: "Fogo Swap Aggregator with best-price routing across Vortex, Fluxbeam, Fogo.fun and Moonit."
+llmDescription: "Vulcx documentation home. Vulcx is a best-price swap aggregator on Fogo with multi-hop routing across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves, exposed via three endpoints (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions). Includes a quickstart cURL example (1 FOGO to USDC) and links to the SDK, widget, and API reference."
 ---
 
 <div className="relative min-h-screen text-[#181D27] dark:text-[#F9F9FB] overflow-hidden">
@@ -16,7 +16,7 @@ llmDescription: "Vulcx documentation home. Vulcx is a best-price swap aggregator
         Build with <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FD944C] to-[#B03118]">Vulcx</span>
       </h1>
       <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10">
-        Best-price token swaps on Fogo. Multi-hop routing across Vortex, Fluxbeam, Fogo.fun and Moonit, with three endpoints and zero complexity. Solana support coming soon.
+        Best-price token swaps on Fogo. Multi-hop routing across Vortex, Fluxbeam, Fogo.fun and Moonit, with three endpoints and zero complexity.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -39,7 +39,7 @@ llmDescription: "Vulcx documentation home. Vulcx is a best-price swap aggregator
 
   <div className="max-w-4xl mx-auto px-4 pb-12">
     <div className="rounded-2xl bg-gradient-to-b from-white to-gray-50 dark:from-[#121214] dark:to-[#08080a] border border-gray-100 dark:border-zinc-800 p-6">
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 font-medium">Get a quote: 1 SOL → USDC on Fogo</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 font-medium">Get a quote: 1 FOGO → USDC on Fogo</p>
 
 ```bash
 curl "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn"
@@ -57,7 +57,7 @@ curl "https://api.vulcx.xyz/api/v1/quote?inputMint=So111111111111111111111111111
         </div>
         <h3 className="text-xl font-bold mb-2">Multi-Hop Routing</h3>
         <p className="text-gray-500 dark:text-gray-400">
-          Finds the best path across Vortex, Fluxbeam, and Fogo.fun | Moonit bonding curves with up to 5 hops.
+          Finds the best path across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves with up to 5 hops.
         </p>
       </div>
 

@@ -1,7 +1,7 @@
 ---
 title: "SDK types reference"
 description: "Every type exported from @vulcx/sdk — unions, config, quote, swap, and instructions."
-llmDescription: "TypeScript types exported from @vulcx/sdk. Unions: SwapMode (ExactIn or ExactOut), Chain (fogo; solana coming soon), PriceImpactSeverity (none/low/moderate/high/extreme). Config: SDKConfig. Quote: QuoteRequest, QuoteResponse, RouteInfo. Swap: SwapRequest, SwapResponse, SimulationResult. Plus instruction types."
+llmDescription: "TypeScript types exported from @vulcx/sdk. Unions: SwapMode (ExactIn or ExactOut), PriceImpactSeverity (none/low/moderate/high/extreme). Config: SDKConfig. Quote: QuoteRequest, QuoteResponse, RouteInfo. Swap: SwapRequest, SwapResponse, SimulationResult. Plus instruction types."
 ---
 
 All types exported from `@vulcx/sdk`.
@@ -14,12 +14,6 @@ All types exported from `@vulcx/sdk`.
 
 ```typescript
 type SwapMode = "ExactIn" | "ExactOut";
-```
-
-### `Chain`
-
-```typescript
-type Chain = "solana" | "fogo";
 ```
 
 ### `PriceImpactSeverity`

@@ -1,11 +1,9 @@
 ---
 title: "Swap routing — multi-hop best-price paths on Fogo"
 sidebarTitle: "Routing"
-description: "How Vulcx finds the best swap path across DEXs on Fogo."
-llmDescription: "How Vulcx routing works at a high level on Fogo. Covers direct swaps, multi-hop routing through intermediate tokens (up to 5 hops), supported liquidity sources (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), price impact severity levels, and slippage protection mechanics. Solana support coming soon with up to 7 hops via P-Token."
+description: "How Vulcx routing works on Fogo: direct, multi-hop (up to 5 hops), and split routes across Vortex, Fluxbeam, Fogo.fun, and Moonit, with slippage protection."
+llmDescription: "How Vulcx routing works at a high level on Fogo. Covers direct swaps, multi-hop routing through intermediate tokens (up to 5 hops), supported liquidity sources (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), price impact severity levels, and slippage protection mechanics."
 ---
-
-import SolanaComingSoon from "/snippets/solana-coming-soon.mdx";
 
 # Routing
 
@@ -17,21 +15,19 @@ Vulcx evaluates multiple paths to find the best execution for every swap.
 
 ## Direct swaps
 
-For common pairs with deep liquidity (e.g., SOL/USDC), a single pool often provides the best price. Vulcx compares rates across all supported pools and picks the one with the lowest price impact.
+For common pairs with deep liquidity (e.g., FOGO/USDC), a single pool often provides the best price. Vulcx compares rates across all supported pools and picks the one with the lowest price impact.
 
 ## Multi-hop routing
 
 When a direct swap isn't optimal, Vulcx routes through intermediate tokens. For example, swapping Token A → Token B might execute as:
 
 ```
-Token A → SOL → USDC → Token B
+Token A → FOGO → USDC → Token B
 ```
 
 Each hop uses the best available pool. The routing engine evaluates all viable paths and selects the one that maximizes output (ExactIn) or minimizes input (ExactOut).
 
 The routing engine supports up to **5 hops** on Fogo.
-
-<SolanaComingSoon />
 
 ## Supported liquidity sources
 

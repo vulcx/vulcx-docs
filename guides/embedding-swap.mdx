@@ -1,7 +1,7 @@
 ---
 title: "Embedding Swap in a dApp"
-description: "How to integrate Vulcx swap functionality into a web application."
-llmDescription: "Complete guide to embedding Vulcx swap in a React web app on Fogo. Includes TypeScript functions for getQuote and buildSwapTransaction (both sending the required Authorization: Bearer API key header), an executeSwap function using @solana/wallet-adapter-react signTransaction, a full React SwapButton component example, error handling table for UI messages, and best practices (show price impact, refresh quotes, handle rate limits). Solana chain support coming soon."
+description: "Embed a Vulcx swap in your React app on Fogo: getQuote and buildSwapTransaction helpers, a wallet-adapter executeSwap flow, a SwapButton component, and error handling."
+llmDescription: "Complete guide to embedding Vulcx swap in a React web app on Fogo. Includes TypeScript functions for getQuote and buildSwapTransaction (both sending the required Authorization: Bearer API key header), an executeSwap function using @solana/wallet-adapter-react signTransaction, a full React SwapButton component example, error handling table for UI messages, and best practices (show price impact, refresh quotes, handle rate limits)."
 ---
 
 # Embedding Swap in a dApp
@@ -127,7 +127,7 @@ function SwapButton() {
       const quote = await getQuote({
         inputMint: "So11111111111111111111111111111111111111112",
         outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-        amount: "100000000", // 0.1 SOL
+        amount: "100000000", // 0.1 FOGO
         swapMode: "ExactIn",
       });
 
@@ -152,7 +152,7 @@ function SwapButton() {
   return (
     <div>
       <button onClick={handleSwap} disabled={!publicKey}>
-        Swap 0.1 SOL → USDC
+        Swap 0.1 FOGO → USDC
       </button>
       {status && <p>{status}</p>}
     </div>

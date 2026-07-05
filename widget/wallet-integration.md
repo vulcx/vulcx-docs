@@ -19,7 +19,7 @@ The widget does not bundle a wallet adapter. Instead, it exposes a `setWallet()`
 
 ## `setWallet(address)`
 
-Set the wallet address programmatically. When called with a non-empty address, the widget fetches native SOL balance and SPL token balances via the configured `rpc-url`.
+Set the wallet address programmatically. When called with a non-empty address, the widget fetches native FOGO balance and SPL token balances via the configured `rpc-url`.
 
 ```javascript
 const widget = document.querySelector("vulcx-swap");
@@ -87,8 +87,7 @@ export default function SwapWidget() {
   return (
     <vulcx-swap
       ref={ref}
-      api-key="argy_your_api_key"
-      chain="solana"
+      api-key="vulcx_your_api_key"
       theme="dark"
     />
   );
@@ -103,8 +102,7 @@ export default function SwapWidget() {
 <script src="https://cdn.vulcx.xyz/vulcx-widget.umd.js"></script>
 
 <vulcx-swap
-  api-key="argy_your_api_key"
-  chain="solana"
+  api-key="vulcx_your_api_key"
   theme="dark"
 ></vulcx-swap>
 
@@ -135,7 +133,7 @@ export default function SwapWidget() {
 
 Once `setWallet()` is called with a valid address, the widget automatically:
 
-1. Fetches native SOL balance via `getBalance` RPC call
+1. Fetches native FOGO balance via `getBalance` RPC call
 2. Fetches all SPL token balances via `getTokenAccountsByOwner`
 3. Displays balances next to the selected input/output tokens
 4. Enables HALF and MAX buttons for quick amount entry

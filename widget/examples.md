@@ -35,8 +35,7 @@ Complete standalone page with wallet connection:
 <body>
   <div class="container">
     <vulcx-swap
-      api-key="argy_your_api_key"
-      chain="solana"
+      api-key="vulcx_your_api_key"
       default-input-mint="So11111111111111111111111111111111111111112"
       default-output-mint="uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
       theme="dark"
@@ -129,7 +128,6 @@ export default function SwapPage() {
       <vulcx-swap
         ref={ref as any}
         api-key={process.env.NEXT_PUBLIC_VULCX_KEY}
-        chain="solana"
         rpc-url="https://mainnet.fogo.io"
         theme="dark"
       />
@@ -168,8 +166,7 @@ declare namespace JSX {
   <div class="swap-wrapper">
     <vulcx-swap
       ref="widgetRef"
-      api-key="argy_your_api_key"
-      chain="solana"
+      api-key="vulcx_your_api_key"
       default-input-mint="So11111111111111111111111111111111111111112"
       default-output-mint="uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
       theme="dark"
@@ -264,8 +261,7 @@ export default function SwapWidget() {
   return (
     <vulcx-swap
       ref={ref}
-      api-key="argy_your_api_key"
-      chain="solana"
+      api-key="vulcx_your_api_key"
       theme="dark"
       default-input-mint="So11111111111111111111111111111111111111112"
       default-output-mint="uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
@@ -303,8 +299,7 @@ export default function SwapWidget() {
 
 <vulcx-swap
   bind:this={widgetEl}
-  api-key="argy_your_api_key"
-  chain="solana"
+  api-key="vulcx_your_api_key"
   theme="dark"
 />
 ```
@@ -315,7 +310,7 @@ export default function SwapWidget() {
 
 ```html
 <vulcx-swap
-  api-key="argy_your_api_key"
+  api-key="vulcx_your_api_key"
   theme="light"
 ></vulcx-swap>
 

@@ -1,7 +1,7 @@
 ---
 title: "Get Price"
 description: "GET /api/v1/price/:mint — Spot USD price for a token, derived from live pool state."
-llmDescription: "Reference for GET /api/v1/price on the Vulcx API (Fogo). Requires an API key (Authorization: Bearer) like every endpoint except GET /health and GET /api/v1/tokens. Returns the spot/mid USD price for a token mint, derived from live on-chain pool state (not an external feed). Anchored on stablecoins = $1 and the native FOGO token priced from the deepest native↔stable pool; every other token is priced from its deepest anchor-paired pool. Single lookup GET /api/v1/price/:mint and batch GET /api/v1/price?mints=a,b,c (max 100). Response fields: mint, price, slot, updatedAt. price is 0 when unknown (no anchor-paired pool yet, or decimals pending). This is a spot oracle distinct from GET /api/v1/quote, which is size- and slippage-aware. Solana coming soon."
+llmDescription: "Reference for GET /api/v1/price on the Vulcx API (Fogo). Requires an API key (Authorization: Bearer) like every endpoint except GET /health and GET /api/v1/tokens. Returns the spot/mid USD price for a token mint, derived from live on-chain pool state (not an external feed). Anchored on stablecoins = $1 and the native FOGO token priced from the deepest native↔stable pool; every other token is priced from its deepest anchor-paired pool. Single lookup GET /api/v1/price/:mint and batch GET /api/v1/price?mints=a,b,c (max 100). Response fields: mint, price, slot, updatedAt. price is 0 when unknown (no anchor-paired pool yet, or decimals pending). This is a spot oracle distinct from GET /api/v1/quote, which is size- and slippage-aware."
 openapi: "GET /api/v1/price/{mint}"
 ---
 
@@ -29,7 +29,7 @@ resolved). `slot` and `updatedAt` are `0` in that case.
 ## Single lookup
 
 <ParamField path="mint" type="string" required>
-  Token mint address (Solana base58 public key).
+  Token mint address (base58-encoded public key).
 </ParamField>
 
 ```bash cURL
@@ -85,8 +85,3 @@ mints=So11111111111111111111111111111111111111112,uSd2czE61Evaf76RNbq4KPpXnkiL3i
 <ResponseField name="price" type="number">Spot USD price. `0` when no price is known yet (no anchor-paired pool observed, or decimals pending).</ResponseField>
 <ResponseField name="slot" type="integer">Fogo slot the price was derived at. `0` for the constant stablecoin price or an unknown token.</ResponseField>
 <ResponseField name="updatedAt" type="integer">Unix seconds when the price was last updated. `0` for constants/unknowns — use it to detect staleness.</ResponseField>
-
-<Info>
-**Solana support coming soon.** Prices today are derived from Fogo pools. See
-[Supported Chains](/concepts/chains).
-</Info>

@@ -1,6 +1,6 @@
 ---
 title: "Send Transaction"
-description: "Sign, submit, and confirm a swap transaction on Fogo."
+description: "Sign, submit, and confirm a Vulcx swap on Fogo: deserialize the base64 transaction, send with @solana/web3.js, handle blockhash expiry, and retry safely."
 llmDescription: "How to sign, submit, and confirm an Vulcx swap transaction on Fogo. Covers deserializing the base64 transaction from POST /api/v1/swap, signing with @solana/web3.js VersionedTransaction, sendRawTransaction, confirmTransaction with lastValidBlockHeight, transaction expiry handling, retry strategy, preflight checks, and confirmation levels (processed, confirmed, finalized). Includes TypeScript and Python examples."
 ---
 

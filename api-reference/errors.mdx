@@ -1,6 +1,6 @@
 ---
 title: "Error Codes"
-description: "Complete error code reference for the Vulcx API."
+description: "Every Vulcx API error in one place: HTTP status codes, per-endpoint messages, simulation failures, and on-chain errors — each with its recovery action."
 llmDescription: "Complete Vulcx error reference. Covers HTTP status codes, per-endpoint error messages (quote: invalid inputMint, no route found, insufficient liquidity; swap: invalid user wallet, simulation failed; instructions: missing pool data), SimulationResult fields (insufficientFunds, slippageExceeded), and on-chain errors (SlippageExceeded, BlockhashExpired, InvalidAccountData) with recovery actions."
 ---
 
@@ -72,7 +72,7 @@ When `skipSimulation` is `false`, the swap response includes a `simulation` obje
 
 ## On-chain errors
 
-These errors occur after submitting a signed transaction to Solana:
+These errors occur after submitting a signed transaction to the network:
 
 | Error | Cause | Recovery |
 |-------|-------|----------|

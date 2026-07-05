@@ -2,13 +2,13 @@
 title: "Authentication — API keys & the Authorization header"
 sidebarTitle: "Authentication"
 description: "Authenticate Vulcx API requests with an API key using the Authorization: Bearer header. How to get a key, use it from the SDK, widget, and WebSocket, and keep it secure."
-llmDescription: "How to authenticate with the Vulcx API. Every request to https://api.vulcx.xyz is authenticated with an API key (format argy_...) sent in the Authorization: Bearer header, EXCEPT GET /health and GET /api/v1/tokens, which require no key. Covers getting a key (free during beta via Discord), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey) and widget (api-key attribute), the WebSocket query-param form (/api/v1/stream?key=argy_...) which is required (not optional) since browsers can't set custom headers on a WS handshake, 401/403 errors for missing or invalid keys, key security best practices, and a link to rate limits. Fogo; Solana coming soon."
+llmDescription: "How to authenticate with the Vulcx API. Every request to https://api.vulcx.xyz is authenticated with an API key (format vulcx_...) sent in the Authorization: Bearer header, EXCEPT GET /health and GET /api/v1/tokens, which require no key. Covers getting a key (free during beta via Telegram), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey) and widget (api-key attribute), the WebSocket query-param form (/api/v1/stream?key=vulcx_...) which is required (not optional) since browsers can't set custom headers on a WS handshake, 401/403 errors for missing or invalid keys, key security best practices, and a link to rate limits. Fogo."
 icon: "key"
 ---
 
 Every request to the Vulcx API (`https://api.vulcx.xyz`) is authenticated with an API key,
 **except** `GET /health` and `GET /api/v1/tokens`, which are public and require no key. Keys look
-like `argy_` followed by a long hex string, and you send them in the standard `Authorization:
+like `vulcx_` followed by a long hex string, and you send them in the standard `Authorization:
 Bearer` header (or as a `?key=` query parameter — the only option for the WebSocket stream).
 
 <Note>
@@ -25,18 +25,18 @@ apply [rate limits](/api-reference/rate-limits) and keep the service healthy.
 
 <Steps>
   <Step title="Request a key">
-    During beta, keys are issued in our community Discord. Join and ask in the
-    developer channel — keys are granted at no cost.
+    During beta, keys are issued through our Telegram. Reach out and ask —
+    keys are granted at no cost.
 
-    <Card title="Get an API key on Discord" icon="discord" href="https://discord.gg/z98Zmk6chP" horizontal>
-      Join the Vulcx Discord and request a key.
+    <Card title="Get an API key on Telegram" icon="telegram" href="https://t.me/vulcxsupport" horizontal>
+      Message the Vulcx team on Telegram and request a key.
     </Card>
   </Step>
   <Step title="Store it as an environment variable">
     Never hard-code a key in source. Keep it in an environment variable:
 
     ```bash
-    export VULCX_KEY="argy_your_key_here"
+    export VULCX_KEY="vulcx_your_key_here"
     ```
   </Step>
 </Steps>
@@ -87,7 +87,7 @@ const sdk = new VulcxSDK({ apiKey: process.env.VULCX_KEY });
 ```
 
 ```html Widget
-<vulcx-swap api-key="argy_your_key_here" chain="fogo" theme="dark"></vulcx-swap>
+<vulcx-swap api-key="vulcx_your_key_here" theme="dark"></vulcx-swap>
 ```
 </CodeGroup>
 
@@ -97,7 +97,7 @@ Browsers can't set custom headers on a WebSocket connection, so the streaming en
 key as a `key` query parameter instead:
 
 ```text
-wss://api.vulcx.xyz/api/v1/stream?key=argy_your_key_here
+wss://api.vulcx.xyz/api/v1/stream?key=vulcx_your_key_here
 ```
 
 ## Keep your key secret

@@ -15,7 +15,7 @@ import { VulcxSDK, NoRouteError } from "@vulcx/sdk";
 import type { QuoteResponse } from "@vulcx/sdk";
 import { useEffect, useState } from "react";
 
-const sdk = new VulcxSDK({ apiKey: "argy_your_api_key" });
+const sdk = new VulcxSDK({ apiKey: "vulcx_your_api_key" });
 
 function SwapPage() {
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
@@ -113,7 +113,7 @@ export default function SwapButton() {
 
   return (
     <button onClick={handleSwap} disabled={loading || !publicKey}>
-      {loading ? "Swapping..." : "Swap 1 SOL → USDC"}
+      {loading ? "Swapping..." : "Swap 1 FOGO → USDC"}
     </button>
   );
 }
@@ -190,7 +190,7 @@ main().catch(console.error);
   <pre id="result"></pre>
 
   <script>
-    const sdk = new VulcxSDK({ apiKey: "argy_your_api_key" });
+    const sdk = new VulcxSDK({ apiKey: "vulcx_your_api_key" });
 
     document.getElementById("quote-btn").addEventListener("click", async () => {
       try {
@@ -223,5 +223,5 @@ const quote = await sdk.quote({
   slippageBps: 100,
 });
 
-console.log(`Need ${quote.amountIn} lamports of SOL to get 100 USDC`);
+console.log(`Need ${quote.amountIn} lamports of FOGO to get 100 USDC`);
 ```
