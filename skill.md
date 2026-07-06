@@ -59,6 +59,7 @@ Do not use when:
 | `/api/v1/quote` | GET | required | Get best route and estimated output |
 | `/api/v1/swap` | POST | required | Build unsigned swap transaction |
 | `/api/v1/instructions` | POST | required | Get raw instructions for custom tx |
+| `/api/v1/cpi/route-accounts` | POST | required | Build the `route` instruction for on-chain CPI (PDA-signed) — Beta |
 | `/api/v1/stream` | GET (WS) | required (`?key=`) | Live-updating quotes over WebSocket |
 | `/api/v1/tokens` | GET | — | Curated list of well-known token mints |
 | `/health` | GET | — | Service health check |
@@ -112,6 +113,22 @@ Do not use when:
    - Add your custom instructions before/after
    - Compile to V0Message with ALTs
    - Sign and submit
+```
+
+### "I want to call the swap from my own on-chain program (CPI)" — Beta
+
+```
+Use when ANOTHER on-chain program must swap atomically, signed by its PDA
+(not a user wallet). See guide: /guides/onchain-cpi
+
+1. POST /api/v1/cpi/route-accounts
+   body: { authority (your program PDA), inputMint, outputMint, amount, swapMode, slippageBps }
+   → data.routeInstruction (forward its accounts into your `route` CPI)
+   → data.requiredTokenAccounts (ATAs your PDA must own + fund first; no wrap/unwrap emitted)
+   → data.addressLookupTableAddresses
+
+2. On-chain: invoke_signed into `route` with your PDA seeds (vulcx_aggregator::route_cpi).
+   Split routes are not supported (400).
 ```
 
 ### "I want to buy exactly X amount of a token"

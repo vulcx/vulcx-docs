@@ -2,7 +2,7 @@
 title: "Vulcx architecture — how swaps are routed on Fogo"
 sidebarTitle: "Architecture"
 description: "How Vulcx routes and executes swaps on Fogo: the API server, off-chain routing engine, and on-chain program, plus the /swap vs /instructions paths."
-llmDescription: "High-level architecture of Vulcx on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), and the two integration paths: POST /api/v1/swap for ready-to-sign transactions vs POST /api/v1/instructions for custom transaction composition."
+llmDescription: "High-level architecture of Vulcx on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), and the three integration paths: POST /api/v1/swap for ready-to-sign transactions, POST /api/v1/instructions for custom off-chain transaction composition, and POST /api/v1/cpi/route-accounts for calling the route instruction on-chain from another program via CPI (PDA-signed, atomic)."
 ---
 
 <Frame caption="Your app calls the Vulcx API, which finds the best-price route and returns an unsigned transaction; your wallet signs and submits it to Fogo.">
@@ -41,13 +41,14 @@ Client                    Vulcx API                 Fogo
 
 **On-chain Program.** Verifies and executes the swap instructions atomically. If any hop fails or slippage is exceeded, the entire transaction reverts.
 
-## Two integration paths
+## Three integration paths
 
 | Path | Endpoint | Use case |
 |------|----------|----------|
 | **Transaction** | `POST /api/v1/swap` | Get a ready-to-sign transaction. Sign it and submit. Simplest integration. |
 | **Instructions** | `POST /api/v1/instructions` | Get raw instructions to compose with your own transaction logic (e.g., adding custom instructions before/after the swap). |
+| **CPI accounts** | `POST /api/v1/cpi/route-accounts` | Call the `route` instruction **on-chain** from another program via CPI, signed by your program's PDA. Makes a swap one atomic step inside your protocol. See [Composing Swaps On-Chain](/guides/onchain-cpi). |
 
-Both paths start with `GET /api/v1/quote` to find the best route. For prices that update in real
-time, the API also exposes a WebSocket [quote stream](/docs/swap/stream-quotes) that pushes a new
+The first two paths start with `GET /api/v1/quote` to find the best route. For prices that update in
+real time, the API also exposes a WebSocket [quote stream](/docs/swap/stream-quotes) that pushes a new
 quote whenever a pair's price changes.

@@ -1,0 +1,402 @@
+---
+title: "Composing Swaps On-Chain (CPI)"
+sidebarTitle: "On-Chain Swaps (CPI)"
+description: "Call the Vulcx route instruction from your own Fogo program via CPI, signed by your PDA — make a best-price swap one atomic step inside your protocol's logic."
+llmDescription: "Guide to composing Vulcx swaps on-chain via Cross-Program Invocation (CPI) on Fogo. Another Solana program calls the Vulcx aggregator's `route` instruction with invoke_signed, using its own PDA as the swap authority instead of a user wallet — so a best-price multi-hop swap becomes an atomic step inside a lending liquidation, vault rebalance, pay-with-any-token flow, perps collateral conversion, DAO treasury swap, or zap. Covers: when to use CPI vs POST /swap vs POST /instructions; the off-chain step POST /api/v1/cpi/route-accounts (cURL/TypeScript/Python) which returns routeInstruction + requiredTokenAccounts + addressLookupTableAddresses; the on-chain step in Rust/Anchor using vulcx_aggregator::route_cpi (RouteAccounts, Hop, VortexHop, invoke_route_signed) with a full worked minimal integrator instruction and #[derive(Accounts)] context; the exact route account layout (6 fixed accounts + per-hop account groups for Vortex 7, Vortex V2 10, Fluxbeam 14, Moonit 14, with writable/signer flags); and gotchas (ATAs must be pre-created and funded, no wrap/unwrap emitted, simulate:false for real execution, Moonit hops make the authority writable, split routes unsupported). Beta feature."
+---
+
+<Note>
+**Beta.** On-chain CPI composability is newly available. The `POST /api/v1/cpi/route-accounts`
+endpoint and the `vulcx-aggregator` on-chain helpers may change before general availability. If you
+hit a rough edge, reach out on [Telegram](https://t.me/vulcxsupport).
+</Note>
+
+Most integrations call Vulcx from off-chain: get a quote, build a transaction, sign with a wallet.
+This guide is for the other case — when **another on-chain program** needs a swap as one atomic step
+inside its own instruction, signed by a **program-derived address (PDA)** rather than a user wallet.
+
+Your program calls the Vulcx aggregator's `route` instruction via **Cross-Program Invocation (CPI)**,
+`invoke_signed` with your PDA seeds. Because it happens inside your transaction, the swap and the logic
+around it (repay a loan, rebalance a vault, credit a merchant) either all succeed or all revert.
+
+## Why call route on-chain
+
+| Property | What it gives you |
+|---|---|
+| **Atomicity** | The swap and your surrounding logic succeed or revert together — no half-done state, no price window between steps. |
+| **PDA as authority** | Your *program* owns the funds and signs the swap. No user-wallet round-trip — works for autonomous keepers, vaults, and strategies. |
+| **Composability** | The swap is a middle step, not the whole transaction. Stack it with anything your program does. |
+
+Typical use cases: lending liquidations and collateral swaps, vault auto-compounding and rebalancing,
+pay-with-any-token settlement, perps cross-collateral conversion, DAO treasury diversification, and
+zaps (swap-then-LP in one transaction).
+
+## When to use CPI vs the HTTP paths
+
+| Path | Endpoint | Signer | Use it when |
+|------|----------|--------|-------------|
+| **Transaction** | `POST /api/v1/swap` | User wallet | You want a ready-to-sign transaction. Simplest integration. |
+| **Instructions** | `POST /api/v1/instructions` | User wallet | You compose the swap with other instructions in an **off-chain**-built transaction. |
+| **CPI accounts** | `POST /api/v1/cpi/route-accounts` | **Your program's PDA** | Another **on-chain** program calls `route` inside its own instruction. |
+
+All three start from the same routing engine. Only the CPI path signs with a PDA and returns an
+instruction shaped to be forwarded from inside your program.
+
+## Flow
+
+```
+your program's instruction
+  ├─ (optional) your own logic before  ──── all atomic ────┐
+  ├─ off-chain: POST /api/v1/cpi/route-accounts             │
+  │      → routeInstruction + requiredTokenAccounts         │
+  ├─ build RouteAccounts { token_accounts, hops, .. }       │
+  ├─ invoke_route_signed(seeds = [b"vault_authority", ..])  │  ← your PDA signs
+  │      └─ CPI → Vulcx `route` → executes the swap          │
+  └─ (optional) your own logic after (repay, LP, credit)   ─┘
+```
+
+## Step 1 — Get the account list (off-chain)
+
+Your backend calls `POST /api/v1/cpi/route-accounts` with your program's **PDA** as the `authority`.
+The response contains the `route` instruction (with the PDA already wired in as the swap authority)
+plus the token accounts that PDA must own.
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.vulcx.xyz/api/v1/cpi/route-accounts" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $VULCX_KEY" \
+  -d '{
+    "authority": "YOUR_PROGRAM_PDA",
+    "inputMint": "So11111111111111111111111111111111111111112",
+    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+    "amount": "1000000000",
+    "swapMode": "ExactIn",
+    "slippageBps": 50
+  }'
+```
+
+```typescript TypeScript
+const res = await fetch("https://api.vulcx.xyz/api/v1/cpi/route-accounts", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${process.env.VULCX_KEY}`,
+  },
+  body: JSON.stringify({
+    authority: programPda.toBase58(), // your program's PDA, NOT a wallet
+    inputMint: "So11111111111111111111111111111111111111112",
+    outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+    amount: "1000000000",
+    swapMode: "ExactIn",
+    slippageBps: 50,
+  }),
+});
+const { data } = await res.json();
+// data.routeInstruction            → forward its accounts into your `route` CPI
+// data.requiredTokenAccounts       → ATAs your PDA must own + fund first
+// data.addressLookupTableAddresses → LUTs to include in your v0 transaction
+```
+
+```python Python
+import os, requests
+
+res = requests.post(
+    "https://api.vulcx.xyz/api/v1/cpi/route-accounts",
+    json={
+        "authority": "YOUR_PROGRAM_PDA",
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        "amount": "1000000000",
+        "swapMode": "ExactIn",
+        "slippageBps": 50,
+    },
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
+)
+data = res.json()["data"]
+```
+</CodeGroup>
+
+The `data` payload:
+
+```jsonc
+{
+  "authority": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP",
+  "amountIn": "1000000000",
+  "amountOut": "145320000",
+  "otherAmountThreshold": "144593400",   // min out (ExactIn) / max in (ExactOut)
+  "route": ["So111...", "uSd2..."],
+  "hopCount": 1,
+  "pools": ["..."],
+  "routeInstruction": {                   // the `route` instruction to CPI into
+    "programId": "ArgyFuvk4S2vjC5XWuCWbcozjKwNrRzopLBJjCcTTWTH",
+    "data": "<base64>",
+    "accounts": [ { "publicKey": "...", "isSigner": true, "isWritable": false }, ... ]
+  },
+  "requiredTokenAccounts": ["<inputAta>", "<outputAta>"],  // your PDA must own + fund these
+  "addressLookupTableAddresses": ["..."]
+}
+```
+
+<Warning>
+`requiredTokenAccounts` are ATAs owned by your **PDA**, ordered `[inputMint, …intermediates, outputMint]`.
+This endpoint emits **no** ATA-create and **no** SOL wrap/unwrap instructions — your program is
+responsible for creating and funding them before the CPI runs.
+</Warning>
+
+See the full schema in the [CPI Route Accounts](/api-reference/cpi-route-accounts/index) API reference.
+
+## Step 2 — Call route from your program (on-chain)
+
+Add the Vulcx aggregator as a library dependency and use its `route_cpi` helper to assemble the
+account list and invoke `route`, signing with your PDA seeds.
+
+<Note>
+The on-chain helpers ship in the `vulcx-aggregator` crate. Pull it in with the `cpi` feature so it
+builds as a library (no duplicate entrypoint):
+
+```toml Cargo.toml
+[dependencies]
+vulcx-aggregator = { version = "0.1", features = ["cpi"] }
+```
+</Note>
+
+The instruction below swaps the vault's source token → destination token through a single Vortex hop,
+signed by the vault PDA. It maps 1:1 to the reference program — the only difference from a no-op probe
+is `num_steps = 1` plus a populated `token_accounts`/`hops`.
+
+```rust lib.rs
+use anchor_lang::prelude::*;
+use vulcx_aggregator::instruction::Route as RouteIxArgs;
+use vulcx_aggregator::route_cpi::{invoke_route_signed, Hop, RouteAccounts, VortexHop};
+use vulcx_aggregator::{RoutePlanStep, MAX_HOPS};
+
+pub const VAULT_AUTHORITY_SEED: &[u8] = b"vault_authority";
+
+/// Swap `in_amount` of the vault's source token -> dest token via one Vortex hop,
+/// signed by the vault PDA. `quoted_out_amount` / `slippage_bps` come from the
+/// off-chain quote returned in Step 1.
+pub fn swap_treasury(
+    ctx: Context<SwapTreasury>,
+    in_amount: u64,
+    quoted_out_amount: u64,
+    slippage_bps: u16,
+) -> Result<()> {
+    let bump = ctx.bumps.vault_authority;
+
+    // 1. instruction args: one Vortex step, source(idx0) -> dest(idx1)
+    let mut route_plan = [RoutePlanStep::default(); MAX_HOPS];
+    route_plan[0] = RoutePlanStep::new_vortex(
+        /* a_to_b        */ true,
+        /* exact_out     */ false,
+        /* percent       */ 100,
+        /* input_index   */ 0, // -> token_accounts[0]
+        /* output_index  */ 1, // -> token_accounts[1]
+    );
+    let args = RouteIxArgs {
+        num_token_accounts: 2,
+        num_steps: 1,
+        route_plan,
+        in_amount,
+        quoted_out_amount,
+        slippage_bps,
+        simulate: false, // real execution — `true` makes route bail early
+    };
+
+    // 2. account list. token_accounts + the 7 Vortex accounts arrive in
+    //    remaining_accounts — exactly what /cpi/route-accounts hands you.
+    let ra = ctx.remaining_accounts;
+    let accounts = RouteAccounts {
+        token_program:           ctx.accounts.token_program.key(),
+        user_transfer_authority: ctx.accounts.vault_authority.key(), // PDA, not a wallet
+        protocol_config:         ctx.accounts.protocol_config.key(),
+        vortex_program:          ctx.accounts.vortex_program.key(),
+        fluxbeam_program:        ctx.accounts.fluxbeam_program.key(),
+        program_signer:          ctx.accounts.program_signer.key(),
+        token_accounts: vec![ra[0].key(), ra[1].key()], // source, dest ATAs
+        hops: vec![Hop::Vortex(VortexHop {
+            pool:    ra[2].key(),
+            vault_a: ra[3].key(),
+            vault_b: ra[4].key(),
+            tick_0:  ra[5].key(),
+            tick_1:  ra[6].key(),
+            tick_2:  ra[7].key(),
+            oracle:  ra[8].key(),
+        })],
+        protocol_fee_ata: None,
+        referrer_ata:     None,
+    };
+
+    // 3. cheap pre-flight — catches off-by-one / swap-type mismatch with a clear
+    //    error instead of a deep CPI failure.
+    accounts.validate(&args)?;
+
+    // 4. CPI, signing as the vault PDA. account_infos must contain every
+    //    AccountInfo the metas reference + the aggregator program; order among
+    //    them does not matter to the runtime.
+    let mut infos = vec![
+        ctx.accounts.token_program.to_account_info(),
+        ctx.accounts.vault_authority.to_account_info(),
+        ctx.accounts.protocol_config.to_account_info(),
+        ctx.accounts.vortex_program.to_account_info(),
+        ctx.accounts.fluxbeam_program.to_account_info(),
+        ctx.accounts.program_signer.to_account_info(),
+        ctx.accounts.vulcx_program.to_account_info(),
+    ];
+    infos.extend_from_slice(ra); // token accounts + hop accounts
+
+    invoke_route_signed(
+        &ctx.accounts.vulcx_program,
+        &accounts,
+        args,
+        &infos,
+        &[&[VAULT_AUTHORITY_SEED, &[bump]]],
+    )
+    // ...your post-swap logic runs in the SAME transaction, atomically.
+}
+
+#[derive(Accounts)]
+pub struct SwapTreasury<'info> {
+    /// CHECK: the Vulcx aggregator we CPI into.
+    #[account(address = vulcx_aggregator::ID)]
+    pub vulcx_program: AccountInfo<'info>,
+
+    /// CHECK: SPL Token or Token-2022, forwarded to route.
+    pub token_program: AccountInfo<'info>,
+
+    /// The vault PDA that owns the token accounts and signs the swap.
+    /// CHECK: seeds-derived; owns the source/dest ATAs.
+    #[account(mut, seeds = [VAULT_AUTHORITY_SEED], bump)]
+    pub vault_authority: AccountInfo<'info>,
+
+    /// CHECK: Vulcx protocol_config PDA (already initialized).
+    pub protocol_config: AccountInfo<'info>,
+    /// CHECK: forwarded to route (address-checked inside route).
+    pub vortex_program: AccountInfo<'info>,
+    /// CHECK: forwarded to route (address-checked inside route).
+    pub fluxbeam_program: AccountInfo<'info>,
+    /// CHECK: forwarded to route.program_signer.
+    pub program_signer: AccountInfo<'info>,
+    // remaining_accounts: [ source_ata, dest_ata, pool, vault_a, vault_b,
+    //                       tick_0, tick_1, tick_2, oracle ]
+}
+```
+
+The PDA-as-signer mechanic (`&[&[SEED, &[bump]]]`) is the whole point: `route` accepts your program's
+PDA as `user_transfer_authority`, so the swap is authorized by your program, not a wallet.
+
+## Account layout reference
+
+`route` reads a fixed set of accounts followed by `remaining_accounts` (your token accounts, then one
+group per hop). `RouteAccounts::account_metas()` produces this exact order and flags for you — you
+rarely assemble it by hand — but here it is for reference and debugging.
+
+**Fixed accounts** (always first, in this order):
+
+| # | Account | Flags |
+|---|---------|-------|
+| 0 | `token_program` | readonly |
+| 1 | `authority` (`user_transfer_authority`) | **signer** — writable **iff** any hop is Moonit |
+| 2 | `protocol_config` | readonly |
+| 3 | `vortex_program` | readonly |
+| 4 | `fluxbeam_program` | readonly |
+| 5 | `program_signer` | readonly |
+
+**Then**, in `remaining_accounts`: all your `token_accounts` (writable), then each hop's account group
+in route order, then optional `protocol_fee_ata` / `referrer_ata` (writable).
+
+**Per-hop account groups** (count and flags depend on the DEX):
+
+<Tabs>
+<Tab title="Vortex (7)">
+| # | Account | Flags |
+|---|---------|-------|
+| 0 | `pool` | writable |
+| 1 | `vault_a` | writable |
+| 2 | `vault_b` | writable |
+| 3 | `tick_0` | writable |
+| 4 | `tick_1` | writable |
+| 5 | `tick_2` | writable |
+| 6 | `oracle` | readonly |
+</Tab>
+<Tab title="Vortex V2 (10)">
+| # | Account | Flags |
+|---|---------|-------|
+| 0 | `pool` | writable |
+| 1 | `token_mint_a` | readonly |
+| 2 | `token_mint_b` | readonly |
+| 3 | `vault_a` | writable |
+| 4 | `vault_b` | writable |
+| 5 | `tick_0` | writable |
+| 6 | `tick_1` | writable |
+| 7 | `tick_2` | writable |
+| 8 | `oracle` | writable |
+| 9 | `memo_program` | readonly |
+</Tab>
+<Tab title="Fluxbeam (14)">
+| # | Account | Flags |
+|---|---------|-------|
+| 0 | `swap_info` | readonly |
+| 1 | `authority` | readonly |
+| 2 | `user_transfer_authority` | **signer** (injected as the route authority) |
+| 3 | `source` | writable |
+| 4 | `swap_source` | writable |
+| 5 | `swap_destination` | writable |
+| 6 | `destination` | writable |
+| 7 | `source_token_mint` | readonly |
+| 8 | `dest_token_mint` | readonly |
+| 9 | `source_token_program` | readonly |
+| 10 | `dest_token_program` | readonly |
+| 11 | `platform_fee` | writable |
+| 12 | `creator_fee` | writable |
+| 13 | `global_fee` | writable |
+
+Covers both standard and bonding Fluxbeam swaps (identical layout; only the discriminator differs).
+</Tab>
+<Tab title="Moonit (14)">
+| # | Account | Flags |
+|---|---------|-------|
+| 0 | `curve_account` | writable |
+| 1 | `curve_token_account` | writable |
+| 2 | `curve_wsol_account` | writable |
+| 3 | `dex_fee` | writable |
+| 4 | `dex_fee_wsol_account` | writable |
+| 5 | `helio_fee` | writable |
+| 6 | `helio_fee_wsol_account` | writable |
+| 7 | `mint` | readonly |
+| 8 | `config_account` | readonly |
+| 9 | `token_program` | readonly |
+| 10 | `associated_token_program` | readonly |
+| 11 | `system_program` | readonly |
+| 12 | `moonit_program` | readonly |
+| 13 | `wsol_mint` | readonly |
+
+A Moonit hop makes the top-level `authority` a **writable** signer (it is the Moonit payer);
+`RouteAccounts` sets that flag for you.
+</Tab>
+</Tabs>
+
+## Gotchas
+
+<Warning>
+**Your PDA must already own funded ATAs.** The CPI builder emits no ATA-create or SOL wrap/unwrap
+instructions. Create and fund the accounts listed in `requiredTokenAccounts` before the CPI runs.
+</Warning>
+
+- **`simulate: false` for real execution.** `simulate: true` makes `route` bail early — it's only for
+  probing the account wiring without touching liquidity.
+- **Moonit hops need a writable authority.** If your route includes a Moonit hop, the authority must be
+  a *writable* signer. `RouteAccounts` detects this and sets the flag; make sure your PDA account is
+  marked `mut` in the context (harmless for non-Moonit routes).
+- **Split routes aren't supported yet.** A split route returns `400` from `POST /api/v1/cpi/route-accounts`.
+  Retry with a pair that routes through a single path.
+- **Keep the layout in sync.** If you hand-assemble accounts instead of forwarding what the endpoint
+  returns, a single wrong writable/signer flag surfaces as an opaque privilege-escalation or
+  not-writable failure deep inside the CPI. Prefer forwarding `routeInstruction.accounts` verbatim.
+
+## Reference program
+
+<Card title="vulcx-cpi-consumer" icon="rust" href="https://t.me/vulcxsupport">
+The worked, end-to-end example program that CPIs into `route` with its own PDA — the tested template
+this guide is built from. Ask on Telegram for access.
+</Card>

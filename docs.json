@@ -148,6 +148,7 @@
               "api-reference/quote/index",
               "api-reference/swap/index",
               "api-reference/instructions/index",
+              "api-reference/cpi-route-accounts/index",
               "api-reference/stream/index",
               "api-reference/price/index",
               "api-reference/health/index"
@@ -162,6 +163,7 @@
             "group": "Guides",
             "pages": [
               "guides/executing-swaps",
+              "guides/onchain-cpi",
               "guides/handling-errors",
               "guides/embedding-swap",
               "guides/self-hosting"

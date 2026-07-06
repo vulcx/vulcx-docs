@@ -379,6 +379,62 @@
           }
         }
       }
+    },
+    "/api/v1/cpi/route-accounts": {
+      "post": {
+        "operationId": "buildRouteCpiAccounts",
+        "summary": "Get CPI account list for calling route from another program",
+        "description": "Builds the Vulcx `route` instruction shaped for a Cross-Program Invocation (CPI): the supplied program PDA is wired in as the swap authority (signer, and writable when a Moonit hop is involved). Forward `routeInstruction.accounts` into your program's `route` CPI and sign with your PDA seeds (`invoke_signed`). No ATA-create or SOL wrap/unwrap instructions are emitted — the returned `requiredTokenAccounts` are ATAs your PDA must own and fund before the CPI runs. Split routes are not yet supported and return 400. See the on-chain CPI guide for the full flow.",
+        "tags": ["CPI"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CPIRouteAccountsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Route CPI account list built successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/RouteCPIAccountsResponse" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters, or a split route that CPI does not yet support.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "No route found between the tokens.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to build the account list.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -744,6 +800,88 @@
           }
         },
         "required": ["amountIn", "amountOut", "otherAmountThreshold", "feeAmount", "route", "hopCount", "pools", "instructions", "addressLookupTableAddresses"]
+      },
+      "CPIRouteAccountsRequest": {
+        "type": "object",
+        "description": "Parameters for building the `route` instruction as a CPI target. Like InstructionsRequest, but the signer is a calling program's PDA (the on-chain authority that will `invoke_signed` into `route`) rather than a wallet.",
+        "properties": {
+          "authority": {
+            "type": "string",
+            "description": "The calling program's PDA authority — owns the token accounts and signs the swap via invoke_signed inside the integrating program.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "inputMint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Amount in the smallest token units.",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "enum": ["ExactIn", "ExactOut"],
+            "example": "ExactIn"
+          },
+          "slippageBps": {
+            "type": "integer",
+            "default": 50,
+            "example": 50
+          }
+        },
+        "required": ["authority", "inputMint", "outputMint", "amount", "swapMode"]
+      },
+      "RouteCPIAccountsResponse": {
+        "type": "object",
+        "description": "The `route` instruction shaped for a CPI caller. Forward `routeInstruction.accounts` into your program's `route` CPI and sign with the PDA seeds. `requiredTokenAccounts` are the ATAs the authority PDA must own and fund before the CPI runs — this builder emits no ATA-create or wrap/unwrap instructions.",
+        "properties": {
+          "authority": {
+            "type": "string",
+            "description": "The calling program's PDA that owns the token accounts and signs the swap. Echoed back for clarity.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "amountIn": { "type": "string", "example": "1000000000" },
+          "amountOut": { "type": "string", "example": "145320000" },
+          "otherAmountThreshold": {
+            "type": "string",
+            "description": "Slippage-adjusted threshold. ExactIn: minimum output. ExactOut: maximum input.",
+            "example": "144593400"
+          },
+          "feeAmount": { "type": "string", "example": "100005" },
+          "platformFeeBps": { "type": "integer", "example": 0 },
+          "platformFeeAmount": { "type": "string", "example": "0" },
+          "route": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Token path from input to output."
+          },
+          "hopCount": { "type": "integer", "example": 1 },
+          "pools": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Pool addresses used in the route."
+          },
+          "routeInstruction": {
+            "$ref": "#/components/schemas/RawInstruction",
+            "description": "The Vulcx `route` instruction to CPI into. Its account list is the ordered set the calling program must forward (authority is marked signer, and writable when any hop is Moonit)."
+          },
+          "requiredTokenAccounts": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "ATAs owned by the authority PDA that must exist and hold the input funds before the CPI runs. Ordered [inputMint, ...intermediates, outputMint]."
+          },
+          "addressLookupTableAddresses": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Address Lookup Table addresses that compress accounts in routeInstruction."
+          }
+        },
+        "required": ["authority", "amountIn", "amountOut", "otherAmountThreshold", "feeAmount", "platformFeeBps", "platformFeeAmount", "route", "hopCount", "pools", "routeInstruction", "requiredTokenAccounts", "addressLookupTableAddresses"]
       }
     }
   }
