@@ -1,19 +1,24 @@
 ---
 title: "Rate Limits"
-description: "Vulcx API rate limits: 60 requests/minute and 10/second per key, the 429 response shape, and an exponential-backoff retry strategy in cURL, TypeScript, and Python."
-llmDescription: "Vulcx API rate limits. Default: 60 requests/minute, 10 requests/second burst. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (cache quotes, batch wisely, use instructions endpoint)."
+description: "Vulcx API rate limits by plan (free: 5 requests/second with a burst of 10), the 429 response shape, and an exponential-backoff retry strategy in cURL, TypeScript, and Python."
+llmDescription: "Vulcx API rate limits, applied per plan. Free: 5 requests/second sustained, burst 10. Pro: 50 requests/second. Enterprise: 500 requests/second. During beta all issued keys are on the free plan. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (cache quotes, batch wisely, use instructions endpoint)."
 ---
 
 The Vulcx API applies rate limiting to ensure fair usage and service stability.
 
 ## Limits
 
-| Tier | Rate | Burst |
-|------|------|-------|
-| Default | 60 requests/minute | 10 requests/second |
+Limits are applied per API key, based on the key's plan:
+
+| Plan | Sustained rate | Burst |
+|------|----------------|-------|
+| Free | 5 requests/second | 10 requests |
+| Pro | 50 requests/second | 100 requests |
+| Scale | 150 requests/second | 300 requests |
+| Enterprise | 500 requests/second | 1,000 requests |
 
 <Note>
-Rate limits are subject to change. Contact the team for higher limits if you need them for production integrations.
+During the beta, all issued keys are on the **free** plan. Contact the team for higher limits if you need them for production integrations.
 </Note>
 
 Rate limiting is applied per API key. `GET /health` and `GET /api/v1/tokens` don't require a key

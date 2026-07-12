@@ -109,6 +109,9 @@
           }
         ],
         "responses": {
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "200": {
             "description": "Quote calculated successfully.",
             "content": {
@@ -157,6 +160,9 @@
           }
         },
         "responses": {
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "200": {
             "description": "Swap transaction built successfully.",
             "content": {
@@ -217,6 +223,9 @@
           }
         ],
         "responses": {
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "200": {
             "description": "Price retrieved successfully.",
             "content": {
@@ -253,6 +262,9 @@
           }
         ],
         "responses": {
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "200": {
             "description": "Prices retrieved successfully.",
             "content": {
@@ -339,6 +351,9 @@
           }
         },
         "responses": {
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "200": {
             "description": "Instructions generated successfully.",
             "content": {
@@ -395,6 +410,9 @@
           }
         },
         "responses": {
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
           "200": {
             "description": "Route CPI account list built successfully.",
             "content": {
@@ -438,6 +456,35 @@
     }
   },
   "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "No API key was provided.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "success": false, "error": "missing api key" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The API key is invalid, disabled, revoked, or blocked by its origin allowlist.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "success": false, "error": "invalid api key" }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded for this API key's plan.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "success": false, "error": "rate limit exceeded" }
+          }
+        }
+      }
+    },
     "securitySchemes": {
       "ApiKeyHeader": {
         "type": "http",
@@ -716,7 +763,7 @@
             "description": "Percentage split across pools (only if isSplitRoute is true)."
           }
         },
-        "required": ["transaction", "lastValidBlockHeight", "amountIn", "amountOut", "feeAmount", "route", "hopCount", "pools"]
+        "required": ["transaction", "lastValidBlockHeight", "amountIn", "amountOut", "feeAmount", "route", "hopCount", "pools", "computeUnitsEstimate", "isSplitRoute"]
       },
       "RawAccountMeta": {
         "type": "object",

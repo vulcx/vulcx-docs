@@ -21,11 +21,23 @@ All error responses use the same format:
 |------|---------|------|
 | `200` | Success | Request processed successfully |
 | `400` | Bad Request | Invalid parameters, missing required fields, insufficient liquidity |
+| `401` | Unauthorized | No API key was provided |
+| `403` | Forbidden | The key is invalid, disabled, or revoked — or blocked by the key's origin allowlist |
 | `404` | Not Found | No route or pool found for the given parameters |
 | `429` | Too Many Requests | Rate limit exceeded |
 | `500` | Internal Server Error | Transaction build failed, simulation error, or unexpected server issue |
 
 ## API errors
+
+### Authentication errors (all `/api/v1/*` endpoints)
+
+| Error message | HTTP | Cause |
+|---------------|------|-------|
+| `missing api key` | 401 | No `Authorization: Bearer` header or `?key=` parameter was sent |
+| `invalid api key` | 403 | The key doesn't exist, is disabled, or was revoked |
+| `origin required for this api key` | 403 | The key has an origin allowlist and the request sent no `Origin`/`Referer` |
+| `origin not allowed for this api key` | 403 | The request's origin isn't on the key's allowlist |
+| `rate limit exceeded` | 429 | Too many requests — see [Rate limits](/api-reference/rate-limits) |
 
 ### Quote errors (`GET /api/v1/quote`)
 

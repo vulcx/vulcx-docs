@@ -290,7 +290,7 @@ building token pickers. No API key required. Served with `Cache-Control: public,
 
 ## Rate Limits
 
-Default: 60 requests/minute, 10 requests/second burst. 429 response on limit. Use exponential backoff.
+Limits are per API key by plan — free: 5 requests/second sustained, burst 10 (all beta keys); pro: 50 rps; scale: 150 rps; enterprise: 500 rps. 429 response on limit. Use exponential backoff.
 
 ## Error Recovery Summary
 

@@ -239,7 +239,7 @@ Same as `/swap` without `skipSimulation`.
 | `invalid inputMint` | 400 | Verify base58 public key format |
 | `invalid user wallet` | 400 | Verify wallet address |
 | `simulation failed` | 500 | Check simulation.logs, verify balance |
-| Rate limited | 429 | Exponential backoff: 1s, 2s, 4s. Max 3 retries |
+| `rate limit exceeded` | 429 | Exponential backoff: 1s, 2s, 4s. Max 3 retries |
 | `SlippageExceeded` (on-chain) | — | Get fresh quote, rebuild transaction |
 | `BlockhashExpired` (on-chain) | — | Rebuild transaction from scratch |
 
@@ -252,4 +252,4 @@ Same as `/swap` without `skipSimulation`.
 
 ## Rate Limits
 
-Default: 60 requests/minute, 10 requests/second burst.
+Limits are per API key by plan — free: 5 requests/second sustained, burst 10 (all beta keys); pro: 50 rps; scale: 150 rps; enterprise: 500 rps.

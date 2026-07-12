@@ -116,11 +116,11 @@ interface SwapResponse {
   maxAmountIn?: string;
   feeAmount: string;
   simulation?: SimulationResult;
-  computeUnitsEstimate?: number;
+  computeUnitsEstimate: number;
   route: string[];
   hopCount: number;
   pools: string[];
-  isSplitRoute?: boolean;
+  isSplitRoute: boolean;
   splitPercents?: number[];
 }
 ```

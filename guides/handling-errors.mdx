@@ -28,7 +28,7 @@ All errors follow the same envelope:
 | `404` | `no pool found` | No pool exists for one of the hops | The token may not have any listed pools |
 | `400` | `insufficient liquidity` | Pools exist but don't have enough liquidity for this amount | Reduce the swap amount |
 | `500` | `simulation failed` | Transaction simulation failed on-chain | Check simulation logs, ensure wallet has sufficient balance |
-| `429` | (rate limit) | Too many requests | Back off and retry with exponential delay |
+| `429` | `rate limit exceeded` | Too many requests | Back off and retry with exponential delay |
 
 ## Handling errors in code
 
