@@ -31,7 +31,6 @@ type PriceImpactSeverity = "none" | "low" | "moderate" | "high" | "extreme";
 ```typescript
 interface SDKConfig {
   apiKey: string;
-  chain?: Chain;
   baseUrl?: string;
   timeout?: number;
   retries?: number;
