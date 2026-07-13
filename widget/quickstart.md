@@ -17,7 +17,7 @@ npm install @vulcx/widget
 Or via CDN (no build step):
 
 ```html
-<script src="https://cdn.vulcx.xyz/vulcx-widget.umd.js"></script>
+<script src="https://unpkg.com/@vulcx/widget/dist/vulcx-widget.umd.js"></script>
 ```
 
 ---
@@ -25,7 +25,7 @@ Or via CDN (no build step):
 ## HTML / CDN
 
 ```html
-<script src="https://cdn.vulcx.xyz/vulcx-widget.umd.js"></script>
+<script src="https://unpkg.com/@vulcx/widget/dist/vulcx-widget.umd.js"></script>
 
 <vulcx-swap
   api-key="vulcx_your_api_key"

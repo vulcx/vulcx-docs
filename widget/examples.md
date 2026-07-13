@@ -19,7 +19,7 @@ Complete standalone page with wallet connection:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vulcx Swap</title>
-  <script src="https://cdn.vulcx.xyz/vulcx-widget.umd.js"></script>
+  <script src="https://unpkg.com/@vulcx/widget/dist/vulcx-widget.umd.js"></script>
   <style>
     body {
       margin: 0;

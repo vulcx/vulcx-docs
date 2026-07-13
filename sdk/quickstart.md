@@ -17,7 +17,7 @@ npm install @vulcx/sdk
 Or via CDN (exposes `window.VulcxSDK`):
 
 ```html
-<script src="https://cdn.vulcx.xyz/sdk.umd.js"></script>
+<script src="https://unpkg.com/@vulcx/sdk/dist/index.umd.js"></script>
 ```
 
 ---

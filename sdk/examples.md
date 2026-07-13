@@ -183,7 +183,7 @@ main().catch(console.error);
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://cdn.vulcx.xyz/sdk.umd.js"></script>
+  <script src="https://unpkg.com/@vulcx/sdk/dist/index.umd.js"></script>
 </head>
 <body>
   <button id="quote-btn">Get Quote</button>
