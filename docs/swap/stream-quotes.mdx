@@ -1,7 +1,7 @@
 ---
 title: "Stream Quotes"
 description: "Subscribe to live swap quotes over WebSocket and update prices in real time without polling."
-llmDescription: "Guide to the Vulcx WebSocket quote stream (wss://api.vulcx.xyz/api/v1/stream) on Fogo. Requires an API key as a ?key=vulcx_... query parameter, same as every endpoint except GET /health and GET /api/v1/tokens. Explains when to stream vs poll GET /api/v1/quote, how to connect, the subscribe/unsubscribe protocol with a pairs array ({in, out, amount, exactIn}), how to handle quote and ack messages, reconnection, and limits (256 subscriptions/connection, change-only pushes, ~50ms debounce). Includes runnable Browser and Node.js (ws) examples with the key in the connection URL."
+llmDescription: "Guide to the Vulcx WebSocket quote stream (wss://api.vulcx.xyz/api/v1/stream) on Fogo. Requires an API key as a ?key=vulcx_... query parameter, same as every endpoint except GET /health and GET /api/v1/tokens. Explains when to stream vs poll GET /api/v1/quote, how to connect, the subscribe/unsubscribe protocol with a pairs array ({in, out, amount, exactIn}), how to handle quote, invalidate (firm-quote drift), and ack messages, that every quote push carries a firm-quote quoteId/validForMs/firmForMs redeemable on POST /swap, reconnection, and limits (256 subscriptions/connection, change-only pushes, ~50ms debounce). Includes runnable Browser and Node.js (ws) examples with the key in the connection URL."
 ---
 
 # Stream Quotes
@@ -57,9 +57,13 @@ Each pair is `{ in, out, amount, exactIn }`:
 
 ## Handle messages
 
-Two server message types arrive on the socket:
+Three server message types arrive on the socket:
 
-- **`quote`** — a live quote: `{ type, in, out, amount, amountOut, priceImpactBps, hops, slot }`.
+- **`quote`** — a live quote: `{ type, in, out, amount, amountOut, priceImpactBps, hops, slot, quoteId, validForMs, firmForMs }`.
+  The `quoteId` is a [firm-quote](/docs/swap/firm-quotes) commitment: pass it to
+  [`POST /swap`](/docs/swap/build-transaction) to execute at exactly the streamed price.
+- **`invalidate`** — `{ type, quoteId }`: the last quote pushed for a pair drifted past the firm
+  margin, so stop offering that `quoteId` as a firm price (a fresh `quote` follows).
 - **`subscribed` / `unsubscribed` / `error`** — acks. Errors include a `message`; subscribe/unsubscribe acks include a `count` of accepted pairs.
 
 A `quote` is only re-sent when `amountOut`, `priceImpactBps`, or `hops` changes — so every message

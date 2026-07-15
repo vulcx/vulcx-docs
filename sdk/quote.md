@@ -71,7 +71,10 @@ const quote = await sdk.quote({
     "So11111111111111111111111111111111111111112",
     "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
   ],
-  "hopCount": 1
+  "hopCount": 1,
+  "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a",
+  "validForMs": 3000,
+  "firmForMs": 400
 }
 ```
 
@@ -104,6 +107,14 @@ const quote = await sdk.quote({
 | `outputMint` | `string` | Output mint for this hop |
 
 ---
+
+## Firm quotes
+
+`quoteId` is a short-lived commitment to this exact route and price. Pass it to
+[`sdk.swap()`](/sdk/swap) or `sdk.instructions()` within `validForMs` to replay the quoted route
+with min-out anchored to this quote; add `firm: true` within `firmForMs` for price-or-fail
+redemption. It is omitted when the quote can't be pinned (e.g. split routes). See
+[Firm quotes](/docs/swap/firm-quotes).
 
 ## Errors
 

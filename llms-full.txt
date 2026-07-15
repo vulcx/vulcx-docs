@@ -8,7 +8,7 @@ Base URL: `https://api.vulcx.xyz`
 
 ## Chain Support
 
-Currently: **Fogo** (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs).
+Currently: **Fogo** (5 max hops, Vortex/Fluxbeam/Moonit DEXs).
 
 
 ---
@@ -86,7 +86,10 @@ Get the best swap route and estimated output for a token pair.
     ],
     "routePath": ["So11111111111111111111111111111111111111112", "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"],
     "hopCount": 1,
-    "otherAmountThreshold": "144593400"
+    "otherAmountThreshold": "144593400",
+    "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a",
+    "validForMs": 3000,
+    "firmForMs": 400
   }
 }
 ```
@@ -95,9 +98,11 @@ Get the best swap route and estimated output for a token pair.
 
 - `amountIn` / `amountOut`: In smallest token units. For ExactIn, amountIn=requested, amountOut=calculated. Vice versa for ExactOut.
 - `priceImpactSeverity`: `none` (<0.1%), `low` (0.1-1%), `moderate` (1-3%), `high` (3-5%), `extreme` (>5%).
-- `routes[]`: Each hop. poolAddress, poolType (Fogo: Vortex|Fluxbeam|Fogo.fun|Moonit), percent, inputMint, outputMint.
+- `routes[]`: Each hop. poolAddress, poolType (Fogo: Vortex|Fluxbeam|Moonit), percent, inputMint, outputMint.
 - `routePath`: Token mints in order. Direct: [A, B]. Multi-hop: [A, X, Y, B].
 - `otherAmountThreshold`: ExactIn → minimum output. ExactOut → maximum input. Enforced on-chain.
+- `quoteId`: Firm-quote commitment ID. Pass it to POST /swap or POST /instructions within `validForMs` to replay this exact route with min-out anchored to this price. Omitted when the quote can't be pinned (e.g. split routes). Bound to the issuing API key.
+- `validForMs` / `firmForMs`: How long `quoteId` stays redeemable — normally (~3000ms) and with `firm: true` (~400ms, price-or-fail).
 
 ### Errors
 
@@ -168,6 +173,8 @@ Build an unsigned transaction for a token swap.
 | swapMode | string | yes | — | `ExactIn` or `ExactOut` |
 | slippageBps | integer | no | 50 | Slippage tolerance in bps |
 | skipSimulation | boolean | no | false | Skip pre-flight simulation |
+| quoteId | string | no | — | Firm-quote ID from /quote or a stream push — replays the exact quoted route with min-out anchored to the quoted price. Pair/amount/swapMode must match the quote |
+| firm | boolean | no | false | Price-or-fail redemption. Requires quoteId, only within firmForMs. Slippage collapses to the server firm margin (~10 bps); drift past it returns 409 before building |
 
 ### Response: SwapResponse
 
@@ -208,7 +215,10 @@ Build an unsigned transaction for a token swap.
 
 ### Errors
 
-- 400: All quote errors + `invalid user wallet`
+- 400: All quote errors + `invalid user wallet`, `firm redemption requires a quoteId`, `request does not match the quoted pair, amount, or swap mode`
+- 403: `quoteId was issued to a different api key`
+- 409: `quoted route is no longer available: request a fresh quote` — pinned route gone, or (firm) price drifted past the margin. Re-quote and retry
+- 410: `quote expired: request a fresh quote` — quoteId past validForMs (or firmForMs for firm)
 - 500: `simulation failed: ...`, `failed to build transaction`
 
 ### Sign and submit flow (TypeScript)
@@ -226,7 +236,7 @@ await connection.confirmTransaction({ signature: sig, blockhash: tx.message.rece
 
 ## POST /api/v1/instructions
 
-Get raw instructions for custom transaction composition. Same request as /swap without skipSimulation.
+Get raw instructions for custom transaction composition. Same request as /swap without skipSimulation (quoteId and firm supported, same error contract).
 
 ### Response: InstructionsResponse
 
@@ -261,6 +271,18 @@ Get raw instructions for custom transaction composition. Same request as /swap w
 - No simulation field.
 - Includes `addressLookupTableAddresses` — must include when building v0 transactions.
 - Use when composing swap with other instructions (create accounts, memos, close accounts).
+
+---
+
+## Firm quotes (quoteId / firm)
+
+Every /quote response and WebSocket quote push carries `quoteId` + `validForMs` (~3000) + `firmForMs` (~400).
+
+- **Route pinning**: pass `quoteId` to POST /swap or /instructions within `validForMs` — the exact quoted route is replayed (no fresh pathfinding) and min-out anchors to the QUOTED price minus your slippageBps, so the displayed price is what the chain enforces.
+- **Firm (price-or-fail)**: add `"firm": true` within `firmForMs` — slippage collapses to the server firm margin (default 10 bps) around the quoted price; slippageBps is ignored. If the live route drifted past the margin the API returns 409 WITHOUT building a transaction (no fee spent). Favorable drift always passes.
+- **Errors**: 410 expired → re-quote; 409 stale/drifted → re-quote, retry (immediately for firm); 403 quoteId minted under another API key; 400 pair/amount/swapMode mismatch or firm without quoteId.
+- **Stream integration**: the WS stream pushes `{"type":"invalidate","quoteId":"q_..."}` when the last broadcast quote for a pair drifts past the firm margin (best-effort; the redemption-time check is the real gate). Quote pushes carry the same quoteId fields.
+- Firm is **price-or-fail, not a fill guarantee**. The sub-second firm window targets machine flows (session-key signing, bots); human popup flows should use plain route pinning.
 
 ---
 

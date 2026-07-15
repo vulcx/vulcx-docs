@@ -1,6 +1,6 @@
 ---
 title: "Get Quote"
 description: "GET /api/v1/quote — Get the best swap route and estimated output for a token pair."
-llmDescription: "OpenAPI reference for GET /api/v1/quote on the Vulcx API (Fogo). Returns the best route and estimated output for a token pair. Query params: inputMint, outputMint, amount in smallest units, swapMode (ExactIn/ExactOut), slippageBps (default 50). Response includes amountIn, amountOut, priceImpactBps, feeBps, otherAmountThreshold, hopCount, and a routes array. Interactive playground included."
+llmDescription: "OpenAPI reference for GET /api/v1/quote on the Vulcx API (Fogo). Returns the best route and estimated output for a token pair. Query params: inputMint, outputMint, amount in smallest units, swapMode (ExactIn/ExactOut), slippageBps (default 50). Response includes amountIn, amountOut, priceImpactBps, feeBps, otherAmountThreshold, hopCount, a routes array, and a firm-quote quoteId with validForMs/firmForMs — pass quoteId to POST /swap or POST /instructions to replay this exact route at this price. Interactive playground included."
 openapi: "GET /api/v1/quote"
 ---

@@ -2,11 +2,11 @@
 title: "Vulcx architecture — how swaps are routed on Fogo"
 sidebarTitle: "Architecture"
 description: "How Vulcx routes and executes swaps on Fogo: the API server, off-chain routing engine, and on-chain program, plus the /swap vs /instructions paths."
-llmDescription: "High-level architecture of Vulcx on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), and the three integration paths: POST /api/v1/swap for ready-to-sign transactions, POST /api/v1/instructions for custom off-chain transaction composition, and POST /api/v1/cpi/route-accounts for calling the route instruction on-chain from another program via CPI (PDA-signed, atomic)."
+llmDescription: "High-level architecture of Vulcx on Fogo. Covers the data flow (client → API → Fogo network), components (API server, routing engine, on-chain program), supported DEXs (Vortex, Fluxbeam, Moonit bonding curves), and the three integration paths: POST /api/v1/swap for ready-to-sign transactions, POST /api/v1/instructions for custom off-chain transaction composition, and POST /api/v1/cpi/route-accounts for calling the route instruction on-chain from another program via CPI (PDA-signed, atomic)."
 ---
 
 <Frame caption="Your app calls the Vulcx API, which finds the best-price route and returns an unsigned transaction; your wallet signs and submits it to Fogo.">
-  <img src="/images/architecture.png" alt="Vulcx system overview: the widget, SDK, and your app call the Vulcx API at api.vulcx.xyz over HTTPS (GET /quote, POST /swap). The API finds the best-price route across all pools and returns an unsigned transaction. Your wallet signs and submits it on-chain to Fogo, where liquidity comes from Vortex, Fluxbeam, Fogo.fun, and Moonit." />
+  <img src="/images/architecture.png" alt="Vulcx system overview: the widget, SDK, and your app call the Vulcx API at api.vulcx.xyz over HTTPS (GET /quote, POST /swap). The API finds the best-price route across all pools and returns an unsigned transaction. Your wallet signs and submits it on-chain to Fogo, where liquidity comes from Vortex, Fluxbeam, and Moonit." />
 </Frame>
 
 ## Data flow
@@ -37,7 +37,7 @@ Client                    Vulcx API                 Fogo
 
 **Routing Engine.** Off-chain route search that evaluates routes across all supported DEXs on Fogo. Finds direct swaps, multi-hop paths (e.g., Token A → FOGO → USDC → Token B), and split routes across multiple pools.
 
-**Supported DEXs.** Vortex (concentrated liquidity), Fluxbeam (AMM), Fogo.fun (bonding curves), and Moonit (bonding curves).
+**Supported DEXs.** Vortex (concentrated liquidity), Fluxbeam (AMM) (bonding curves), and Moonit (bonding curves).
 
 **On-chain Program.** Verifies and executes the swap instructions atomically. If any hop fails or slippage is exceeded, the entire transaction reverts.
 

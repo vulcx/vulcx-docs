@@ -1,6 +1,6 @@
 ---
 title: "Build Swap"
 description: "POST /api/v1/swap — Build an unsigned swap transaction ready to sign and submit."
-llmDescription: "OpenAPI reference for POST /api/v1/swap on the Vulcx API (Fogo). Builds an unsigned, ready-to-sign swap transaction. Request body: userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation. Response: base64 transaction, lastValidBlockHeight, amountIn/amountOut, and a SimulationResult. Interactive playground included."
+llmDescription: "OpenAPI reference for POST /api/v1/swap on the Vulcx API (Fogo). Builds an unsigned, ready-to-sign swap transaction. Request body: userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation, plus optional quoteId (replay the exact quoted route, min-out anchored to the quoted price) and firm (price-or-fail within firmForMs; slippage collapses to the firm margin). Firm-quote errors: 410 quote expired, 409 route gone or price drifted past margin, 403 quoteId from another key, 400 request mismatch. Response: base64 transaction, lastValidBlockHeight, amountIn/amountOut, and a SimulationResult. Interactive playground included."
 openapi: "POST /api/v1/swap"
 ---

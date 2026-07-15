@@ -1,7 +1,7 @@
 ---
 title: "Introduction to Vulcx — best-price swaps on Fogo"
 sidebarTitle: "Introduction"
-description: "Vulcx is a swap aggregator on Fogo with multi-hop routing across Vortex, Fluxbeam, Fogo.fun, Moonit, and more."
+description: "Vulcx is a swap aggregator on Fogo with multi-hop routing across Vortex, Fluxbeam, Moonit, and more."
 llmDescription: "Introduction to Vulcx, a swap aggregator on Fogo. Covers what Vulcx is, its value props (best-price multi-hop routing, fast execution, simple 3-endpoint API), the endpoint table (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /health, GET /api/v1/tokens) with an auth-required column, and quick cURL + TypeScript + Python examples (each including the required Authorization: Bearer header) for getting a FOGO→USDC quote on Fogo. Notes that every endpoint requires an API key except GET /health and GET /api/v1/tokens — see /get-started/authentication. Also available as a self-hosted community binary (see /get-started/self-hosted) for operators who want full control with their own FluxRPC key and community license."
 ---
 
@@ -11,7 +11,7 @@ Vulcx aggregates liquidity across the **Fogo** ecosystem to find the best swap e
 
 ## Why Vulcx?
 
-- **Best-price routing.** Multi-hop routing across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves to find optimal execution.
+- **Best-price routing.** Multi-hop routing across Vortex, Fluxbeam, and Moonit bonding curves to find optimal execution.
 - **Fast execution.** Get a quote and build a ready-to-sign transaction in a single API call.
 - **Simple integration.** Three endpoints cover the entire swap lifecycle: quote, build transaction, submit.
 

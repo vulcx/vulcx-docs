@@ -2,7 +2,7 @@
 title: "Vulcx FAQ — Fogo swaps, chains, fees & limits"
 sidebarTitle: "FAQ"
 description: "Answers to common Vulcx questions: supported Fogo tokens, quote freshness, fees, rate limits, transaction size, ExactIn vs ExactOut, and multi-hop behavior."
-llmDescription: "Frequently asked questions about Vulcx. Covers supported chains (Fogo), supported tokens on Fogo (Vortex, Fluxbeam, Fogo.fun, Moonit), quote freshness, devnet support, transaction size limits, ExactIn vs ExactOut, fee structure, rate limits, multi-hop behavior, and how to monitor API status."
+llmDescription: "Frequently asked questions about Vulcx. Covers supported chains (Fogo), supported tokens on Fogo (Vortex, Fluxbeam, Moonit), quote freshness, devnet support, transaction size limits, ExactIn vs ExactOut, fee structure, rate limits, multi-hop behavior, and how to monitor API status."
 ---
 
 ## General
@@ -14,7 +14,7 @@ Fogo. See [Supported Chains](/concepts/chains) for capabilities and supported DE
 </Accordion>
 
 <Accordion title="What tokens are supported?">
-Any SPL token with liquidity on a supported DEX on Fogo: Vortex, Fluxbeam, Fogo.fun, or Moonit. If a direct pool doesn't exist, the routing engine tries multi-hop paths through intermediate tokens like FOGO or USDC.
+Any SPL token with liquidity on a supported DEX on Fogo: Vortex, Fluxbeam, or Moonit. If a direct pool doesn't exist, the routing engine tries multi-hop paths through intermediate tokens like FOGO or USDC.
 
 If `GET /api/v1/quote` returns `no route found`, the token either has no listed pools or insufficient liquidity for the requested amount.
 </Accordion>

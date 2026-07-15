@@ -135,6 +135,13 @@ export default function SwapWidget() {
 
 ---
 
+## Price integrity
+
+Since v0.3.0 the widget redeems each displayed quote's [firm-quote `quoteId`](/docs/swap/firm-quotes)
+when the user confirms — the route and price the user approved are what the transaction enforces,
+not a silent re-quote. If the quote expired or the route moved (`410`/`409`), the widget fetches a
+fresh quote and retries once automatically. No configuration needed.
+
 ## Next Steps
 
 - [Attributes](./attributes.md) -- all configurable HTML attributes

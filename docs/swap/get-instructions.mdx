@@ -1,7 +1,7 @@
 ---
 title: "Get Instructions"
 description: "Get raw swap instructions from POST /api/v1/instructions to compose Vulcx swaps with your own logic — memos, account creation, batching — into one Fogo transaction."
-llmDescription: "Detailed guide for POST /api/v1/instructions on Fogo. Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body, response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables."
+llmDescription: "Detailed guide for POST /api/v1/instructions on Fogo. Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body (including optional quoteId and firm for firm-quote redemption), response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables."
 ---
 
 # Get Instructions
@@ -44,6 +44,17 @@ The request body is identical to `/swap` except there is no `skipSimulation` fie
 
 <ParamField body="slippageBps" type="integer" default="50">
   Slippage tolerance in basis points.
+</ParamField>
+
+<ParamField body="quoteId" type="string">
+  Firm-quote ID from [`GET /quote`](/docs/swap/get-quote) or a
+  [stream push](/docs/swap/stream-quotes). Replays the exact quoted route with min-out anchored to
+  the quoted price. See [Firm quotes](/docs/swap/firm-quotes).
+</ParamField>
+
+<ParamField body="firm" type="boolean" default="false">
+  Price-or-fail redemption — requires `quoteId`, only within the quote's `firmForMs` window.
+  See [Firm quotes](/docs/swap/firm-quotes).
 </ParamField>
 
 ## Example

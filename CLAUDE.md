@@ -40,7 +40,7 @@ There is no build step and no test suite. **Publishing is automatic**: pushing t
 - `skill.md` (root) is a standalone **agent-skill definition** (`name: vulcx-swap`) that teaches an AI agent to call the Vulcx API. It duplicates the API surface in condensed form — when endpoints, params, or error behavior change, update it alongside the page content and `openapi.json`. `Assistant.md` is currently empty.
 - `style.css` (root) is custom CSS that Mintlify **auto-loads** (no registration needed); it exists to match the landing page's black-and-silver look. Prefer global, version-stable selectors over Mintlify's internal class names, per the note at the top of the file.
 - Mintlify components (e.g. `<Card>`, `<CodeGroup>`, accordions) are available inside MDX — match the components already used by neighboring pages rather than introducing new patterns.
-- Product framing is consistent across the docs: **Vulcx runs on Fogo.** Multi-hop routing spans Vortex, Fluxbeam, Fogo.fun, and Moonit. There is no `chain` query parameter — the API is Fogo-only; a future chain would ship as a separate endpoint, not a proxied param. Keep new copy consistent with this.
+- Product framing is consistent across the docs: **Vulcx runs on Fogo.** Multi-hop routing spans Vortex, Fluxbeam, and Moonit. There is no `chain` query parameter — the API is Fogo-only; a future chain would ship as a separate endpoint, not a proxied param. Keep new copy consistent with this.
 
 ## Assets
 

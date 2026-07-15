@@ -1,0 +1,166 @@
+---
+title: "Firm Quotes"
+description: "Pin the exact quoted route and price with quoteId, and redeem it firm — the price you saw is the price you commit, or the swap cleanly fails."
+llmDescription: "Guide to Vulcx firm quotes on Fogo. Every GET /api/v1/quote response and WebSocket quote push carries a quoteId (with validForMs and firmForMs). Passing quoteId to POST /swap or POST /instructions replays the exact quoted route with min-out anchored to the quoted price (route pinning, Tier 1, default ~3s window). Adding firm: true within firmForMs (~400ms) collapses slippage to the server's firm margin (default 10 bps) around the quoted price — price-or-fail: if the price drifted past the margin the API returns 409 before any transaction is built. Error contract: 410 quote expired, 409 route gone or drifted, 403 quoteId from another key, 400 request mismatch. The WebSocket stream pushes {type:invalidate, quoteId} when a quote drifts past the firm margin. Includes cURL/TypeScript examples and retry guidance."
+---
+
+# Firm Quotes
+
+Every quote Vulcx serves carries a **`quoteId`** — a short-lived commitment to the exact route and
+price you were shown. Hand it back when you build the swap and the engine **replays that route**
+instead of silently re-quoting, with your minimum-out anchored to the quoted price. Within a short
+window you can go further and redeem the quote **firm**: slippage collapses to a few basis points
+around the quoted price, and if the market moved past that, the API refuses *before you pay a
+transaction fee*.
+
+<Info>
+Firm redemption is **price-or-fail**, not a fill guarantee. If the pool genuinely moved, your
+request fails cleanly with a `409` and you re-quote — you never execute at a worse price than you
+committed to.
+</Info>
+
+## The three ways to build a swap
+
+| Mode | Request | What's enforced | Window |
+|------|---------|-----------------|--------|
+| Re-quote (default) | no `quoteId` | A fresh quote at build time; min-out = fresh quote − `slippageBps` | — |
+| Route-pinned | `quoteId` | The exact quoted route; min-out = **quoted** price − `slippageBps` | `validForMs` (~3 s) |
+| Firm | `quoteId` + `"firm": true` | The exact quoted route; min-out = quoted price − firm margin (~10 bps). Drift past the margin fails with `409` before building | `firmForMs` (~400 ms) |
+
+## Where quoteIds come from
+
+`GET /api/v1/quote` responses and every [WebSocket quote push](/docs/swap/stream-quotes) include:
+
+<ResponseField name="quoteId" type="string">
+  The commitment ID, e.g. `q_b15372a8d82a93d1e328ae24e5d3669a`. Omitted when the quote can't be
+  pinned (e.g. split routes).
+</ResponseField>
+<ResponseField name="validForMs" type="integer">
+  How long the `quoteId` stays redeemable (default 3000).
+</ResponseField>
+<ResponseField name="firmForMs" type="integer">
+  How long it stays redeemable with `firm: true` (default 400).
+</ResponseField>
+
+A `quoteId` minted over REST is bound to your API key — only requests authenticated with the same
+key can redeem it. Pair, amount, and `swapMode` must match the original quote exactly.
+
+## Route pinning (pass `quoteId`)
+
+<CodeGroup>
+```bash cURL
+QUOTE=$(curl -s "https://api.vulcx.xyz/api/v1/quote?\
+inputMint=So11111111111111111111111111111111111111112&\
+outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&\
+amount=1000000000&swapMode=ExactIn&slippageBps=50" \
+  -H "Authorization: Bearer $VULCX_KEY")
+
+QUOTE_ID=$(echo "$QUOTE" | jq -r .data.quoteId)
+
+curl -s -X POST "https://api.vulcx.xyz/api/v1/swap" \
+  -H "Authorization: Bearer $VULCX_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"userWallet\": \"YOUR_WALLET\",
+    \"inputMint\": \"So11111111111111111111111111111111111111112\",
+    \"outputMint\": \"uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG\",
+    \"amount\": \"1000000000\",
+    \"swapMode\": \"ExactIn\",
+    \"slippageBps\": 50,
+    \"quoteId\": \"$QUOTE_ID\"
+  }"
+```
+
+```typescript TypeScript (@vulcx/sdk)
+import { VulcxClient } from "@vulcx/sdk";
+
+const client = new VulcxClient({ apiKey: process.env.VULCX_KEY! });
+
+const quote = await client.quote({
+  inputMint: "So11111111111111111111111111111111111111112",
+  outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+  amount: "1000000000",
+  swapMode: "ExactIn",
+});
+
+// Show quote.amountOut to the user, then redeem the same quote:
+const swap = await client.swap({
+  userWallet: wallet.publicKey.toBase58(),
+  inputMint: quote.inputMint,
+  outputMint: quote.outputMint,
+  amount: quote.amountIn,
+  swapMode: "ExactIn",
+  quoteId: quote.quoteId, // pins the quoted route + price
+});
+```
+</CodeGroup>
+
+The returned transaction's `minAmountOut` is computed from the **quoted** `amountOut`, not from a
+fresh re-quote — what the user approved is what the chain enforces. Your `slippageBps` still
+applies on top, so a route-pinned swap behaves exactly like today's flow when the price hasn't
+moved, and refuses to quietly degrade when it has.
+
+## Firm redemption (`"firm": true`)
+
+Within `firmForMs` of the quote, add `"firm": true` to the same request. The engine re-evaluates
+the pinned route against live pool state:
+
+- **Price held (or improved)** → the swap builds with slippage collapsed to the server's firm
+  margin (default **10 bps**) around the quoted price. Your `slippageBps` is ignored.
+- **Price drifted past the margin** → `409 Conflict`, no transaction is built, and you can
+  re-quote and retry in one round-trip. Favorable drift always passes.
+
+```json
+{
+  "userWallet": "...",
+  "inputMint": "So11111111111111111111111111111111111111112",
+  "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+  "amount": "1000000000",
+  "swapMode": "ExactIn",
+  "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a",
+  "firm": true
+}
+```
+
+<Warning>
+The firm window is **sub-second** (~400 ms ≈ ten Fogo blocks). It's designed for machine flows —
+session-key signing, bots, protocol integrations — where quote → sign → submit completes in tens of
+milliseconds. A human confirming a wallet popup can't beat it; use route pinning (seconds-long)
+for popup flows.
+</Warning>
+
+Both `POST /api/v1/swap` and [`POST /api/v1/instructions`](/docs/swap/get-instructions) accept
+`quoteId` and `firm` identically.
+
+## Error contract
+
+| Status | Meaning | What to do |
+|--------|---------|------------|
+| `410 Gone` | `quoteId` expired (past `validForMs`, or past `firmForMs` for firm), evicted, or unknown | Re-quote, retry with the fresh `quoteId` |
+| `409 Conflict` | Pinned route no longer exists — or, with `firm`, price drifted past the margin | Re-quote, retry; for firm, retry immediately |
+| `403 Forbidden` | `quoteId` was minted under a different API key | Re-quote with your own key |
+| `400 Bad Request` | Pair, amount, or `swapMode` don't match the quote — or `firm` without a `quoteId` | Send the exact quoted request |
+
+The SDK surfaces these as `QuoteExpiredError` (410) and `QuoteStaleError` (409) — both
+non-retryable as-is; catch them, re-quote, and retry with the new `quoteId`. The
+[widget](/widget/quickstart) does this automatically.
+
+## Live invalidation on the stream
+
+If you subscribe to the [WebSocket stream](/docs/swap/stream-quotes), the server pushes
+
+```json
+{ "type": "invalidate", "quoteId": "q_..." }
+```
+
+when the last quote it broadcast for a pair drifts past the firm margin — so your UI can stop
+offering the firm price the instant it dies instead of discovering it at redemption. It's
+best-effort sugar: the redemption-time check is the real gate.
+
+## Why this works on Fogo
+
+Fogo's ~40 ms blocks mean a 400 ms firm window spans ~10 blocks of runway, and quote → commit
+round-trips fit inside it with session-key signing. The quoted price is enforced on-chain by the
+aggregator program's balance-delta check — if the pool moved past your min-out between build and
+execution, the transaction fails rather than filling worse. Worst case is a failed transaction,
+never a worse price.

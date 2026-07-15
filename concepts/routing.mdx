@@ -1,8 +1,8 @@
 ---
 title: "Swap routing — multi-hop best-price paths on Fogo"
 sidebarTitle: "Routing"
-description: "How Vulcx routing works on Fogo: direct, multi-hop (up to 5 hops), and split routes across Vortex, Fluxbeam, Fogo.fun, and Moonit, with slippage protection."
-llmDescription: "How Vulcx routing works at a high level on Fogo. Covers direct swaps, multi-hop routing through intermediate tokens (up to 5 hops), supported liquidity sources (Vortex, Fluxbeam, Fogo.fun, Moonit bonding curves), price impact severity levels, and slippage protection mechanics."
+description: "How Vulcx routing works on Fogo: direct, multi-hop (up to 5 hops), and split routes across Vortex, Fluxbeam, and Moonit, with slippage protection."
+llmDescription: "How Vulcx routing works at a high level on Fogo. Covers direct swaps, multi-hop routing through intermediate tokens (up to 5 hops), supported liquidity sources (Vortex, Fluxbeam, Moonit bonding curves), price impact severity levels, and slippage protection mechanics."
 ---
 
 # Routing
@@ -10,7 +10,7 @@ llmDescription: "How Vulcx routing works at a high level on Fogo. Covers direct 
 Vulcx evaluates multiple paths to find the best execution for every swap.
 
 <Frame caption="A quote request goes into the routing engine, which compares direct, multi-hop, and split routes across every pool and returns the best-price quote.">
-  <img src="/images/routing.png" alt="Vulcx routing: a quote request (tokenIn, tokenOut, amount, mode) enters the Vulcx routing engine, which searches every pool on Vortex, Fluxbeam, Fogo.fun, and Moonit for the best price. It picks the best of a direct swap, a multi-hop route (up to 5 hops), or a split route across several pools, then returns a quote response (amountOut, price impact, route) that POST /swap turns into an unsigned transaction." />
+  <img src="/images/routing.png" alt="Vulcx routing: a quote request (tokenIn, tokenOut, amount, mode) enters the Vulcx routing engine, which searches every pool on Vortex, Fluxbeam, and Moonit for the best price. It picks the best of a direct swap, a multi-hop route (up to 5 hops), or a split route across several pools, then returns a quote response (amountOut, price impact, route) that POST /swap turns into an unsigned transaction." />
 </Frame>
 
 ## Direct swaps
@@ -35,7 +35,6 @@ The routing engine supports up to **5 hops** on Fogo.
 |--------|------|
 | Vortex | Concentrated liquidity |
 | Fluxbeam | AMM |
-| Fogo.fun | Bonding curves |
 | Moonit | Bonding curves |
 
 ## Price impact

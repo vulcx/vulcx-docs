@@ -70,6 +70,13 @@ interface QuoteResponse {
   routePath: string[];
   hopCount: number;
   otherAmountThreshold: string;
+  /** Firm-quote commitment ID — pass to swap()/instructions() to replay this
+   * exact route at this price. Omitted when the quote can't be pinned. */
+  quoteId?: string;
+  /** How long quoteId stays redeemable, in ms. */
+  validForMs?: number;
+  /** How long quoteId stays redeemable with firm: true, in ms. */
+  firmForMs?: number;
 }
 ```
 
@@ -100,6 +107,10 @@ interface SwapRequest {
   swapMode: SwapMode;
   slippageBps?: number;
   skipSimulation?: boolean;
+  /** Firm-quote ID from quote() — replays the exact quoted route. */
+  quoteId?: string;
+  /** Price-or-fail redemption (requires quoteId, within firmForMs). */
+  firm?: boolean;
 }
 ```
 
@@ -153,6 +164,10 @@ interface InstructionsRequest {
   amount: string;
   swapMode: SwapMode;
   slippageBps?: number;
+  /** Firm-quote ID from quote() — replays the exact quoted route. */
+  quoteId?: string;
+  /** Price-or-fail redemption (requires quoteId, within firmForMs). */
+  firm?: boolean;
 }
 ```
 
@@ -227,6 +242,18 @@ class NoRouteError extends VulcxError {} // statusCode: 404
 
 ```typescript
 class RateLimitError extends VulcxError {} // statusCode: 429
+```
+
+### `QuoteStaleError`
+
+```typescript
+class QuoteStaleError extends VulcxError {} // statusCode: 409 — pinned route gone or firm price drifted
+```
+
+### `QuoteExpiredError`
+
+```typescript
+class QuoteExpiredError extends VulcxError {} // statusCode: 410 — quoteId past its TTL
 ```
 
 ### `ServerError`

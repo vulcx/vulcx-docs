@@ -1,7 +1,7 @@
 ---
 name: vulcx-swap
-description: Integrate Vulcx swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, and handling errors across Vortex, Fluxbeam, Fogo.fun, and Moonit bonding curves.
-version: "1.2.0"
+description: Integrate Vulcx swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, redeeming firm quotes (quoteId, price-or-fail), and handling errors across Vortex, Fluxbeam, and Moonit bonding curves.
+version: "1.3.0"
 tags:
   - vulcx
   - fogo
@@ -37,7 +37,7 @@ key). Keys are free during beta — see [Authentication](https://docs.vulcx.xyz/
 
 ## Chain Support
 
-**Fogo** (5 max hops, Vortex/Fluxbeam/Fogo.fun/Moonit DEXs).
+**Fogo** (5 max hops, Vortex/Fluxbeam/Moonit DEXs).
 
 ## Use / Do Not Use
 
@@ -50,7 +50,7 @@ Do not use when:
 - The task is generic blockchain development with no Vulcx API usage.
 - The task involves other aggregators (Jupiter, etc.).
 
-**Triggers**: `swap`, `quote`, `best route`, `token swap`, `vulcx`, `multi-hop`, `price impact`, `slippage`, `build transaction`, `raw instructions`, `fogo`
+**Triggers**: `swap`, `quote`, `best route`, `token swap`, `vulcx`, `multi-hop`, `price impact`, `slippage`, `build transaction`, `raw instructions`, `firm quote`, `quoteId`, `price-or-fail`, `fogo`
 
 ## Quick Reference
 
@@ -77,7 +77,8 @@ Do not use when:
    - priceImpactSeverity=high|extreme → warn user
    
 3. POST /api/v1/swap
-   body: { userWallet, inputMint, outputMint, amount, swapMode, slippageBps }
+   body: { userWallet, inputMint, outputMint, amount, swapMode, slippageBps, quoteId (from step 1) }
+   quoteId pins the exact quoted route + price (410 expired / 409 stale → re-quote, retry)
    
 4. Check simulation:
    - simulation.insufficientFunds=true → show balance error
@@ -140,6 +141,24 @@ Same as swap flow, but use swapMode=ExactOut:
 - Response maxAmountIn = maximum you'll spend (slippage-adjusted)
 ```
 
+### "I want the price I quoted, or nothing" (firm quotes)
+
+```
+1. GET /api/v1/quote → data.quoteId, data.validForMs (~3000), data.firmForMs (~400)
+
+2. Within validForMs: POST /swap or /instructions with quoteId
+   → replays the EXACT quoted route; min-out anchors to the quoted price (user slippage applies)
+
+3. Within firmForMs: add "firm": true
+   → slippage collapses to the server firm margin (~10 bps); price-or-fail
+   → 409 = price drifted past margin (no tx built, no fee spent) → re-quote, retry immediately
+
+Errors: 410 quote expired · 409 route gone/drifted · 403 quoteId from another key ·
+400 pair/amount/swapMode mismatch or firm without quoteId.
+WS stream pushes {"type":"invalidate","quoteId"} when a broadcast quote drifts past the margin.
+Firm is price-or-fail, NOT a fill guarantee. The firm window is sub-second — machine flows only.
+```
+
 ## Parameter Reference
 
 ### GET /api/v1/quote
@@ -163,10 +182,12 @@ Same as swap flow, but use swapMode=ExactOut:
 | swapMode | string | yes | — | `ExactIn` or `ExactOut` |
 | slippageBps | integer | no | 50 | Slippage tolerance |
 | skipSimulation | boolean | no | false | Skip pre-flight simulation |
+| quoteId | string | no | — | Firm-quote ID from /quote — replays the exact quoted route at the quoted price |
+| firm | boolean | no | false | Price-or-fail redemption (requires quoteId, within firmForMs) |
 
 ### POST /api/v1/instructions
 
-Same as `/swap` without `skipSimulation`.
+Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included).
 
 ## Response Schemas
 
@@ -186,7 +207,10 @@ Same as `/swap` without `skipSimulation`.
   "routes": [{ "poolAddress": "string", "poolType": "string", "percent": 0, "inputMint": "string", "outputMint": "string" }],
   "routePath": ["string"],
   "hopCount": 0,
-  "otherAmountThreshold": "string"
+  "otherAmountThreshold": "string",
+  "quoteId": "q_hex (omitted when unpinnable, e.g. split routes)",
+  "validForMs": 3000,
+  "firmForMs": 400
 }
 ```
 
@@ -240,6 +264,10 @@ Same as `/swap` without `skipSimulation`.
 | `invalid user wallet` | 400 | Verify wallet address |
 | `simulation failed` | 500 | Check simulation.logs, verify balance |
 | `rate limit exceeded` | 429 | Exponential backoff: 1s, 2s, 4s. Max 3 retries |
+| `quote expired: request a fresh quote` | 410 | quoteId past its TTL — re-quote, retry with the new quoteId |
+| `quoted route is no longer available: request a fresh quote` | 409 | Route gone, or firm price drifted past margin — re-quote |
+| `quoteId was issued to a different api key` | 403 | Re-quote with your own key |
+| `firm redemption requires a quoteId` | 400 | Include quoteId when sending firm: true |
 | `SlippageExceeded` (on-chain) | — | Get fresh quote, rebuild transaction |
 | `BlockhashExpired` (on-chain) | — | Rebuild transaction from scratch |
 

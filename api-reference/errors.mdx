@@ -22,8 +22,10 @@ All error responses use the same format:
 | `200` | Success | Request processed successfully |
 | `400` | Bad Request | Invalid parameters, missing required fields, insufficient liquidity |
 | `401` | Unauthorized | No API key was provided |
-| `403` | Forbidden | The key is invalid, disabled, or revoked — or blocked by the key's origin allowlist |
+| `403` | Forbidden | The key is invalid, disabled, or revoked — blocked by the key's origin allowlist — or a `quoteId` issued to a different key |
 | `404` | Not Found | No route or pool found for the given parameters |
+| `409` | Conflict | Firm-quote redemption failed: the pinned route is gone, or the price drifted past the firm margin |
+| `410` | Gone | The `quoteId` expired (or is unknown) — request a fresh quote |
 | `429` | Too Many Requests | Rate limit exceeded |
 | `500` | Internal Server Error | Transaction build failed, simulation error, or unexpected server issue |
 
@@ -68,6 +70,18 @@ All error responses use the same format:
 | All quote errors above | 400/404 | Same causes as quote endpoint |
 | `failed to build instructions` | 500 | Internal error building the instructions |
 | `missing pool data` | 500 | Pool account data unavailable (temporary) |
+
+### Firm-quote errors (`POST /api/v1/swap`, `POST /api/v1/instructions` with `quoteId`)
+
+| Error message | HTTP | Cause | Recovery |
+|---------------|------|-------|----------|
+| `quote expired: request a fresh quote` | 410 | The `quoteId` is past `validForMs` (or past `firmForMs` when `firm: true`), was evicted, or never existed | Fetch a fresh quote and retry with the new `quoteId` |
+| `quoted route is no longer available: request a fresh quote` | 409 | The pinned route's pool disappeared — or, with `firm: true`, the price drifted past the firm margin | Fetch a fresh quote; with `firm`, retry immediately (the window is short) |
+| `quoteId was issued to a different api key` | 403 | The quote was minted under another API key | Re-quote with your own key |
+| `request does not match the quoted pair, amount, or swap mode` | 400 | The swap request's pair/amount/swapMode differ from the original quote | Send the exact quoted request, or drop `quoteId` |
+| `firm redemption requires a quoteId` | 400 | `firm: true` without a `quoteId` | Include the `quoteId` from the quote you're redeeming |
+
+See [Firm quotes](/docs/swap/firm-quotes) for how `quoteId` and `firm` work.
 
 ## Simulation result errors
 

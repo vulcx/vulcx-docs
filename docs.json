@@ -17,7 +17,13 @@
     }
   },
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude", "cursor"]
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "cursor"
+    ]
   },
   "colors": {
     "primary": "#F47026",
@@ -51,7 +57,9 @@
     }
   },
   "favicon": "/favicon-vx.png",
-  "openapi": ["/api-reference/openapi.json"],
+  "openapi": [
+    "/api-reference/openapi.json"
+  ],
   "api": {
     "asyncapi": "/api-reference/asyncapi.json"
   },
@@ -80,6 +88,7 @@
             "pages": [
               "docs/swap/overview",
               "docs/swap/get-quote",
+              "docs/swap/firm-quotes",
               "docs/swap/build-transaction",
               "docs/swap/get-instructions",
               "docs/swap/stream-quotes",

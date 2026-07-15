@@ -10,7 +10,11 @@
       "host": "api.vulcx.xyz",
       "protocol": "wss",
       "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.vulcx.xyz/api/v1/stream?key=vulcx_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes.",
-      "security": [{ "$ref": "#/components/securitySchemes/ApiKeyQuery" }]
+      "security": [
+        {
+          "$ref": "#/components/securitySchemes/ApiKeyQuery"
+        }
+      ]
     }
   },
   "channels": {
@@ -25,7 +29,10 @@
           "contentType": "application/json",
           "payload": {
             "type": "object",
-            "required": ["op", "pairs"],
+            "required": [
+              "op",
+              "pairs"
+            ],
             "properties": {
               "op": {
                 "type": "string",
@@ -36,7 +43,9 @@
               "pairs": {
                 "type": "array",
                 "description": "Token pairs to subscribe to.",
-                "items": { "$ref": "#/components/schemas/PairRequest" }
+                "items": {
+                  "$ref": "#/components/schemas/PairRequest"
+                }
               }
             }
           },
@@ -64,7 +73,10 @@
           "contentType": "application/json",
           "payload": {
             "type": "object",
-            "required": ["op", "pairs"],
+            "required": [
+              "op",
+              "pairs"
+            ],
             "properties": {
               "op": {
                 "type": "string",
@@ -75,7 +87,9 @@
               "pairs": {
                 "type": "array",
                 "description": "Token pairs to unsubscribe from.",
-                "items": { "$ref": "#/components/schemas/PairRequest" }
+                "items": {
+                  "$ref": "#/components/schemas/PairRequest"
+                }
               }
             }
           }
@@ -87,7 +101,16 @@
           "contentType": "application/json",
           "payload": {
             "type": "object",
-            "required": ["type", "in", "out", "amount", "amountOut", "priceImpactBps", "hops", "slot"],
+            "required": [
+              "type",
+              "in",
+              "out",
+              "amount",
+              "amountOut",
+              "priceImpactBps",
+              "hops",
+              "slot"
+            ],
             "properties": {
               "type": {
                 "type": "string",
@@ -128,6 +151,21 @@
                 "type": "integer",
                 "description": "Fogo slot the quote was computed at.",
                 "example": 587964937
+              },
+              "quoteId": {
+                "type": "string",
+                "description": "Firm-quote commitment ID for this exact quote. Pass it as quoteId to POST /swap or POST /instructions to replay the quoted route at the quoted price. Omitted when the quote can't be pinned.",
+                "example": "q_b15372a8d82a93d1e328ae24e5d3669a"
+              },
+              "validForMs": {
+                "type": "integer",
+                "description": "How long quoteId stays redeemable, in milliseconds.",
+                "example": 3000
+              },
+              "firmForMs": {
+                "type": "integer",
+                "description": "How long quoteId stays redeemable with firm: true (price-or-fail), in milliseconds.",
+                "example": 400
               }
             }
           },
@@ -142,7 +180,10 @@
                 "amountOut": "452",
                 "priceImpactBps": 0,
                 "hops": 1,
-                "slot": 587964937
+                "slot": 587964937,
+                "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a",
+                "validForMs": 3000,
+                "firmForMs": 400
               }
             }
           ]
@@ -154,11 +195,17 @@
           "contentType": "application/json",
           "payload": {
             "type": "object",
-            "required": ["type"],
+            "required": [
+              "type"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["subscribed", "unsubscribed", "error"],
+                "enum": [
+                  "subscribed",
+                  "unsubscribed",
+                  "error"
+                ],
                 "description": "Acknowledgement type.",
                 "example": "subscribed"
               },
@@ -177,11 +224,48 @@
           "examples": [
             {
               "name": "Subscribed ack",
-              "payload": { "type": "subscribed", "count": 1 }
+              "payload": {
+                "type": "subscribed",
+                "count": 1
+              }
             },
             {
               "name": "Error",
-              "payload": { "type": "error", "message": "unknown op" }
+              "payload": {
+                "type": "error",
+                "message": "unknown op"
+              }
+            }
+          ]
+        },
+        "invalidatePush": {
+          "name": "InvalidatePush",
+          "title": "Invalidate push",
+          "summary": "The last quote pushed for a pair drifted past the firm margin — its quoteId is no longer firm-redeemable.",
+          "contentType": "application/json",
+          "payload": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "invalidate",
+                "description": "Message type.",
+                "example": "invalidate"
+              },
+              "quoteId": {
+                "type": "string",
+                "description": "The commitment ID that drifted stale. Best-effort: the redemption-time check on the server is the real gate.",
+                "example": "q_b15372a8d82a93d1e328ae24e5d3669a"
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Invalidate",
+              "payload": {
+                "type": "invalidate",
+                "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a"
+              }
             }
           ]
         }
@@ -191,20 +275,32 @@
   "operations": {
     "sendMessages": {
       "action": "send",
-      "channel": { "$ref": "#/channels/stream" },
+      "channel": {
+        "$ref": "#/channels/stream"
+      },
       "summary": "Subscribe or unsubscribe to pair quote streams",
       "messages": [
-        { "$ref": "#/channels/stream/messages/subscribe" },
-        { "$ref": "#/channels/stream/messages/unsubscribe" }
+        {
+          "$ref": "#/channels/stream/messages/subscribe"
+        },
+        {
+          "$ref": "#/channels/stream/messages/unsubscribe"
+        }
       ]
     },
     "receiveMessages": {
       "action": "receive",
-      "channel": { "$ref": "#/channels/stream" },
+      "channel": {
+        "$ref": "#/channels/stream"
+      },
       "summary": "Receive quote pushes and acknowledgements",
       "messages": [
-        { "$ref": "#/channels/stream/messages/quotePush" },
-        { "$ref": "#/channels/stream/messages/ack" }
+        {
+          "$ref": "#/channels/stream/messages/quotePush"
+        },
+        {
+          "$ref": "#/channels/stream/messages/ack"
+        }
       ]
     }
   },
@@ -220,7 +316,12 @@
     "schemas": {
       "PairRequest": {
         "type": "object",
-        "required": ["in", "out", "amount", "exactIn"],
+        "required": [
+          "in",
+          "out",
+          "amount",
+          "exactIn"
+        ],
         "description": "A token pair subscription. The subscription key is the full (in, out, amount, exactIn) tuple — two entries differing only in amount are distinct streams.",
         "properties": {
           "in": {

@@ -115,6 +115,30 @@ try {
 
 ---
 
+### `QuoteExpiredError` (410)
+
+Thrown when a `quoteId` passed to `swap()`/`instructions()` is past its TTL (or past the firm
+window with `firm: true`). Not retried automatically — fetch a fresh quote and retry with the new
+`quoteId`.
+
+### `QuoteStaleError` (409)
+
+Thrown when the pinned route no longer exists, or — with `firm: true` — the price drifted past the
+firm margin. Not retried automatically; re-quote and retry.
+
+```typescript
+import { QuoteExpiredError, QuoteStaleError } from "@vulcx/sdk";
+
+try {
+  await sdk.swap({ ...req, quoteId: quote.quoteId });
+} catch (err) {
+  if (err instanceof QuoteExpiredError || err instanceof QuoteStaleError) {
+    const fresh = await sdk.quote(quoteReq);          // one re-quote
+    await sdk.swap({ ...req, quoteId: fresh.quoteId }); // retry at the fresh price
+  } else throw err;
+}
+```
+
 ## Retry Behavior
 
 The SDK automatically retries on transient failures before throwing:

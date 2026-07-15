@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Vulcx API",
-    "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Vortex, Fluxbeam, Fogo.fun, and Moonit.",
+    "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Vortex, Fluxbeam, and Moonit.",
     "version": "1.0.0",
     "contact": {
       "name": "Vulcx",
@@ -16,8 +16,12 @@
     }
   ],
   "security": [
-    { "ApiKeyHeader": [] },
-    { "ApiKeyQuery": [] }
+    {
+      "ApiKeyHeader": []
+    },
+    {
+      "ApiKeyQuery": []
+    }
   ],
   "paths": {
     "/health": {
@@ -25,7 +29,9 @@
         "operationId": "healthCheck",
         "summary": "Health check",
         "description": "Returns service health status. Does not require an API key — safe for uptime monitors.",
-        "tags": ["Health"],
+        "tags": [
+          "Health"
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -40,7 +46,9 @@
                       "example": "ok"
                     }
                   },
-                  "required": ["status"]
+                  "required": [
+                    "status"
+                  ]
                 }
               }
             }
@@ -53,7 +61,9 @@
         "operationId": "getQuote",
         "summary": "Get swap quote",
         "description": "Calculate the best swap route and estimated output for a token pair. Supports ExactIn (specify input, estimate output) and ExactOut (specify output, estimate input) modes. Returns routing details including multi-hop paths, price impact, and fee breakdown.",
-        "tags": ["Quote"],
+        "tags": [
+          "Quote"
+        ],
         "parameters": [
           {
             "name": "inputMint",
@@ -92,7 +102,10 @@
             "description": "How the amount is interpreted. `ExactIn`: amount is exact input, output is estimated. `ExactOut`: amount is exact desired output, input is estimated.",
             "schema": {
               "type": "string",
-              "enum": ["ExactIn", "ExactOut"],
+              "enum": [
+                "ExactIn",
+                "ExactOut"
+              ],
               "example": "ExactIn"
             }
           },
@@ -109,9 +122,15 @@
           }
         ],
         "responses": {
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "200": {
             "description": "Quote calculated successfully.",
             "content": {
@@ -119,8 +138,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "data": { "$ref": "#/components/schemas/QuoteResponse" }
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QuoteResponse"
+                    }
                   }
                 }
               }
@@ -130,7 +154,9 @@
             "description": "Invalid request parameters.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -138,7 +164,9 @@
             "description": "No route found for the given token pair and amount.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -150,19 +178,30 @@
         "operationId": "buildSwap",
         "summary": "Build swap transaction",
         "description": "Build an unsigned transaction for a token swap. The returned base64-encoded transaction must be signed by the user's wallet and submitted to the network. Optionally runs a simulation to validate the transaction before returning it.",
-        "tags": ["Swap"],
+        "tags": [
+          "Swap"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SwapRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/SwapRequest"
+              }
             }
           }
         },
         "responses": {
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "Forbidden — origin not allowed, or quoteId was minted under a different API key."
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "200": {
             "description": "Swap transaction built successfully.",
             "content": {
@@ -170,8 +209,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "data": { "$ref": "#/components/schemas/SwapResponse" }
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SwapResponse"
+                    }
                   }
                 }
               }
@@ -181,7 +225,9 @@
             "description": "Invalid request parameters or insufficient liquidity.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -189,7 +235,9 @@
             "description": "No route found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -197,7 +245,29 @@
             "description": "Transaction build failed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Quote stale — the pinned route no longer exists, or (with firm: true) the price drifted past the firm margin. Fetch a fresh quote and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Quote expired — quoteId past its validForMs (or firmForMs when firm: true), evicted, or unknown. Fetch a fresh quote.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -209,7 +279,9 @@
         "operationId": "getPrice",
         "summary": "Get token price",
         "description": "Returns the current spot USD price for a token derived from live on-chain pool state. Stablecoins are anchored at $1; FOGO is priced from the deepest native↔stablecoin pool; all other tokens from their deepest anchor-paired pool. Returns `price: 0` when no price is known (no anchor-paired pool observed, or decimals pending).",
-        "tags": ["Price"],
+        "tags": [
+          "Price"
+        ],
         "parameters": [
           {
             "name": "mint",
@@ -223,9 +295,15 @@
           }
         ],
         "responses": {
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "200": {
             "description": "Price retrieved successfully.",
             "content": {
@@ -233,8 +311,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "data": { "$ref": "#/components/schemas/PriceResult" }
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PriceResult"
+                    }
                   }
                 }
               }
@@ -248,7 +331,9 @@
         "operationId": "getBatchPrices",
         "summary": "Batch token prices",
         "description": "Fetch up to 100 spot USD prices in one call. Pass a comma-separated list of mint addresses as the `mints` query parameter. Unknown tokens return `price: 0`.",
-        "tags": ["Price"],
+        "tags": [
+          "Price"
+        ],
         "parameters": [
           {
             "name": "mints",
@@ -262,9 +347,15 @@
           }
         ],
         "responses": {
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "200": {
             "description": "Prices retrieved successfully.",
             "content": {
@@ -272,13 +363,18 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
                         "prices": {
                           "type": "array",
-                          "items": { "$ref": "#/components/schemas/PriceResult" }
+                          "items": {
+                            "$ref": "#/components/schemas/PriceResult"
+                          }
                         }
                       }
                     }
@@ -291,7 +387,9 @@
             "description": "Invalid request — missing or malformed `mints` parameter.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -303,7 +401,9 @@
         "operationId": "listKnownTokens",
         "summary": "List known tokens",
         "description": "Returns a static, curated list of well-known token mints (symbol, name, decimals, logo) for building token pickers. Does not require an API key. Cacheable — served with `Cache-Control: public, max-age=300`.",
-        "tags": ["Tokens"],
+        "tags": [
+          "Tokens"
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -318,17 +418,39 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "mint": { "type": "string", "example": "So11111111111111111111111111111111111111112" },
-                          "symbol": { "type": "string", "example": "FOGO" },
-                          "name": { "type": "string", "example": "Fogo" },
-                          "decimals": { "type": "integer", "example": 9 },
-                          "logoURI": { "type": "string", "example": "https://api.fogo.io/tokens/fogo.svg" }
+                          "mint": {
+                            "type": "string",
+                            "example": "So11111111111111111111111111111111111111112"
+                          },
+                          "symbol": {
+                            "type": "string",
+                            "example": "FOGO"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Fogo"
+                          },
+                          "decimals": {
+                            "type": "integer",
+                            "example": 9
+                          },
+                          "logoURI": {
+                            "type": "string",
+                            "example": "https://api.fogo.io/tokens/fogo.svg"
+                          }
                         },
-                        "required": ["mint", "symbol", "name", "decimals"]
+                        "required": [
+                          "mint",
+                          "symbol",
+                          "name",
+                          "decimals"
+                        ]
                       }
                     }
                   },
-                  "required": ["tokens"]
+                  "required": [
+                    "tokens"
+                  ]
                 }
               }
             }
@@ -341,19 +463,30 @@
         "operationId": "buildInstructions",
         "summary": "Get raw swap instructions",
         "description": "Returns raw instructions for a swap without wrapping them in a transaction. Use this when you need to compose swap instructions with other instructions in a custom transaction. The caller is responsible for fetching a recent blockhash, building the transaction, signing, and submitting.",
-        "tags": ["Instructions"],
+        "tags": [
+          "Instructions"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/InstructionsRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/InstructionsRequest"
+              }
             }
           }
         },
         "responses": {
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "Forbidden — origin not allowed, or quoteId was minted under a different API key."
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "200": {
             "description": "Instructions generated successfully.",
             "content": {
@@ -361,8 +494,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "data": { "$ref": "#/components/schemas/InstructionsResponse" }
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/InstructionsResponse"
+                    }
                   }
                 }
               }
@@ -372,7 +510,9 @@
             "description": "Invalid request parameters.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -380,7 +520,9 @@
             "description": "No route found.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -388,7 +530,29 @@
             "description": "Instruction build failed.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Quote stale — the pinned route no longer exists, or (with firm: true) the price drifted past the firm margin. Fetch a fresh quote and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Quote expired — quoteId past its validForMs (or firmForMs when firm: true), evicted, or unknown. Fetch a fresh quote.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -400,19 +564,29 @@
         "operationId": "buildRouteCpiAccounts",
         "summary": "Get CPI account list for calling route from another program",
         "description": "Builds the Vulcx `route` instruction shaped for a Cross-Program Invocation (CPI): the supplied program PDA is wired in as the swap authority (signer, and writable when a Moonit hop is involved). Forward `routeInstruction.accounts` into your program's `route` CPI and sign with your PDA seeds (`invoke_signed`). No ATA-create or SOL wrap/unwrap instructions are emitted — the returned `requiredTokenAccounts` are ATAs your PDA must own and fund before the CPI runs. Split routes are not yet supported and return 400. See the on-chain CPI guide for the full flow.",
-        "tags": ["CPI"],
+        "tags": [
+          "CPI"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CPIRouteAccountsRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CPIRouteAccountsRequest"
+              }
             }
           }
         },
         "responses": {
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
           "200": {
             "description": "Route CPI account list built successfully.",
             "content": {
@@ -420,8 +594,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "data": { "$ref": "#/components/schemas/RouteCPIAccountsResponse" }
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RouteCPIAccountsResponse"
+                    }
                   }
                 }
               }
@@ -431,7 +610,9 @@
             "description": "Invalid request parameters, or a split route that CPI does not yet support.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -439,7 +620,9 @@
             "description": "No route found between the tokens.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -447,7 +630,9 @@
             "description": "Failed to build the account list.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -461,8 +646,13 @@
         "description": "No API key was provided.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-            "example": { "success": false, "error": "missing api key" }
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "missing api key"
+            }
           }
         }
       },
@@ -470,8 +660,13 @@
         "description": "The API key is invalid, disabled, revoked, or blocked by its origin allowlist.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-            "example": { "success": false, "error": "invalid api key" }
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "invalid api key"
+            }
           }
         }
       },
@@ -479,8 +674,13 @@
         "description": "Rate limit exceeded for this API key's plan.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-            "example": { "success": false, "error": "rate limit exceeded" }
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "rate limit exceeded"
+            }
           }
         }
       }
@@ -524,15 +724,29 @@
             "example": 1782798694
           }
         },
-        "required": ["mint", "price", "slot", "updatedAt"]
+        "required": [
+          "mint",
+          "price",
+          "slot",
+          "updatedAt"
+        ]
       },
       "ErrorResponse": {
         "type": "object",
         "properties": {
-          "success": { "type": "boolean", "example": false },
-          "error": { "type": "string", "example": "no route found" }
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "no route found"
+          }
         },
-        "required": ["success", "error"]
+        "required": [
+          "success",
+          "error"
+        ]
       },
       "RouteInfo": {
         "type": "object",
@@ -545,7 +759,7 @@
           },
           "poolType": {
             "type": "string",
-            "description": "Liquidity pool type (Vortex, Fluxbeam, Fogo.fun, Moonit, etc.).",
+            "description": "Liquidity pool type (Vortex, Fluxbeam, Moonit, etc.).",
             "example": "Vortex"
           },
           "percent": {
@@ -564,14 +778,26 @@
             "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
           }
         },
-        "required": ["poolAddress", "poolType", "percent", "inputMint", "outputMint"]
+        "required": [
+          "poolAddress",
+          "poolType",
+          "percent",
+          "inputMint",
+          "outputMint"
+        ]
       },
       "QuoteResponse": {
         "type": "object",
         "description": "Swap quote with routing and price impact details.",
         "properties": {
-          "inputMint": { "type": "string", "example": "So11111111111111111111111111111111111111112" },
-          "outputMint": { "type": "string", "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG" },
+          "inputMint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
           "amountIn": {
             "type": "string",
             "description": "Input amount in smallest token units.",
@@ -594,7 +820,13 @@
           },
           "priceImpactSeverity": {
             "type": "string",
-            "enum": ["none", "low", "moderate", "high", "extreme"],
+            "enum": [
+              "none",
+              "low",
+              "moderate",
+              "high",
+              "extreme"
+            ],
             "description": "Price impact severity: none (<0.1%), low (0.1-1%), moderate (1-3%), high (3-5%), extreme (>5%).",
             "example": "low"
           },
@@ -610,14 +842,21 @@
           },
           "routes": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/RouteInfo" },
+            "items": {
+              "$ref": "#/components/schemas/RouteInfo"
+            },
             "description": "Detailed information about each hop in the route."
           },
           "routePath": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Token path from input to output. Direct: [inputMint, outputMint]. Multi-hop: [inputMint, ...intermediates, outputMint].",
-            "example": ["So11111111111111111111111111111111111111112", "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"]
+            "example": [
+              "So11111111111111111111111111111111111111112",
+              "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+            ]
           },
           "hopCount": {
             "type": "integer",
@@ -628,9 +867,37 @@
             "type": "string",
             "description": "Slippage-adjusted threshold. ExactIn: minimum output. ExactOut: maximum input.",
             "example": "144593400"
+          },
+          "quoteId": {
+            "type": "string",
+            "example": "q_b15372a8d82a93d1e328ae24e5d3669a",
+            "description": "Firm-quote commitment ID. Pass it as quoteId to POST /swap or POST /instructions within validForMs to replay this exact route with min-out anchored to this quote's price. Omitted when the quote cannot be pinned (e.g. split routes)."
+          },
+          "validForMs": {
+            "type": "integer",
+            "example": 3000,
+            "description": "How long quoteId stays redeemable, in milliseconds."
+          },
+          "firmForMs": {
+            "type": "integer",
+            "example": 400,
+            "description": "How long quoteId stays redeemable with firm: true, in milliseconds. Firm redemption collapses slippage to the server's firm margin around this exact price — price-or-fail."
           }
         },
-        "required": ["inputMint", "outputMint", "amountIn", "amountOut", "priceImpactBps", "priceImpactPercent", "priceImpactSeverity", "feeBps", "routes", "routePath", "hopCount", "otherAmountThreshold"]
+        "required": [
+          "inputMint",
+          "outputMint",
+          "amountIn",
+          "amountOut",
+          "priceImpactBps",
+          "priceImpactPercent",
+          "priceImpactSeverity",
+          "feeBps",
+          "routes",
+          "routePath",
+          "hopCount",
+          "otherAmountThreshold"
+        ]
       },
       "SwapRequest": {
         "type": "object",
@@ -658,7 +925,10 @@
           },
           "swapMode": {
             "type": "string",
-            "enum": ["ExactIn", "ExactOut"],
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
             "description": "ExactIn: amount is exact input. ExactOut: amount is exact desired output.",
             "example": "ExactIn"
           },
@@ -673,18 +943,39 @@
             "description": "Skip transaction simulation. Faster but no pre-flight validation. Default: false.",
             "default": false,
             "example": false
+          },
+          "quoteId": {
+            "type": "string",
+            "example": "q_b15372a8d82a93d1e328ae24e5d3669a",
+            "description": "Optional firm-quote ID from GET /quote (or a WebSocket quote push). Pair, amount, and swapMode must match the original quote. The exact quoted route is replayed and min-out anchors to the quoted price instead of a fresh re-quote."
+          },
+          "firm": {
+            "type": "boolean",
+            "example": false,
+            "description": "Firm (price-or-fail) redemption — requires quoteId and only works within the quote's firmForMs window. Slippage collapses to the server's firm margin (default 10 bps) around the quoted price; slippageBps is ignored. If the route drifted past the margin the request fails with 409 instead of executing at a worse price."
           }
         },
-        "required": ["userWallet", "inputMint", "outputMint", "amount", "swapMode"]
+        "required": [
+          "userWallet",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
       },
       "SimulationResult": {
         "type": "object",
         "description": "Transaction simulation result.",
         "properties": {
-          "success": { "type": "boolean", "example": true },
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
           "logs": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Simulation log messages."
           },
           "computeUnitsConsumed": {
@@ -705,7 +996,13 @@
             "description": "True if the price moved beyond slippage tolerance."
           }
         },
-        "required": ["success", "logs", "computeUnitsConsumed", "insufficientFunds", "slippageExceeded"]
+        "required": [
+          "success",
+          "logs",
+          "computeUnitsConsumed",
+          "insufficientFunds",
+          "slippageExceeded"
+        ]
       },
       "SwapResponse": {
         "type": "object",
@@ -720,8 +1017,14 @@
             "description": "Transaction expires after this block height (~60 seconds).",
             "example": 245832190
           },
-          "amountIn": { "type": "string", "example": "1000000000" },
-          "amountOut": { "type": "string", "example": "145320000" },
+          "amountIn": {
+            "type": "string",
+            "example": "1000000000"
+          },
+          "amountOut": {
+            "type": "string",
+            "example": "145320000"
+          },
           "minAmountOut": {
             "type": "string",
             "description": "Minimum output after slippage (ExactIn only). Transaction fails if actual output is less."
@@ -735,7 +1038,9 @@
             "description": "Aggregator fee in output token units.",
             "example": "0"
           },
-          "simulation": { "$ref": "#/components/schemas/SimulationResult" },
+          "simulation": {
+            "$ref": "#/components/schemas/SimulationResult"
+          },
           "computeUnitsEstimate": {
             "type": "integer",
             "description": "Estimated compute units for execution.",
@@ -743,13 +1048,20 @@
           },
           "route": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Token path from input to output."
           },
-          "hopCount": { "type": "integer", "example": 1 },
+          "hopCount": {
+            "type": "integer",
+            "example": 1
+          },
           "pools": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Pool addresses used in the route."
           },
           "isSplitRoute": {
@@ -759,33 +1071,69 @@
           },
           "splitPercents": {
             "type": "array",
-            "items": { "type": "integer" },
+            "items": {
+              "type": "integer"
+            },
             "description": "Percentage split across pools (only if isSplitRoute is true)."
           }
         },
-        "required": ["transaction", "lastValidBlockHeight", "amountIn", "amountOut", "feeAmount", "route", "hopCount", "pools", "computeUnitsEstimate", "isSplitRoute"]
+        "required": [
+          "transaction",
+          "lastValidBlockHeight",
+          "amountIn",
+          "amountOut",
+          "feeAmount",
+          "route",
+          "hopCount",
+          "pools",
+          "computeUnitsEstimate",
+          "isSplitRoute"
+        ]
       },
       "RawAccountMeta": {
         "type": "object",
         "properties": {
-          "publicKey": { "type": "string", "description": "Base58-encoded account public key." },
-          "isSigner": { "type": "boolean" },
-          "isWritable": { "type": "boolean" }
+          "publicKey": {
+            "type": "string",
+            "description": "Base58-encoded account public key."
+          },
+          "isSigner": {
+            "type": "boolean"
+          },
+          "isWritable": {
+            "type": "boolean"
+          }
         },
-        "required": ["publicKey", "isSigner", "isWritable"]
+        "required": [
+          "publicKey",
+          "isSigner",
+          "isWritable"
+        ]
       },
       "RawInstruction": {
         "type": "object",
         "description": "A single instruction.",
         "properties": {
-          "programId": { "type": "string", "description": "Base58-encoded program ID." },
-          "data": { "type": "string", "description": "Base64-encoded instruction data." },
+          "programId": {
+            "type": "string",
+            "description": "Base58-encoded program ID."
+          },
+          "data": {
+            "type": "string",
+            "description": "Base64-encoded instruction data."
+          },
           "accounts": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/RawAccountMeta" }
+            "items": {
+              "$ref": "#/components/schemas/RawAccountMeta"
+            }
           }
         },
-        "required": ["programId", "data", "accounts"]
+        "required": [
+          "programId",
+          "data",
+          "accounts"
+        ]
       },
       "InstructionsRequest": {
         "type": "object",
@@ -796,57 +1144,115 @@
             "description": "User's wallet address (signer).",
             "example": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
           },
-          "inputMint": { "type": "string", "example": "So11111111111111111111111111111111111111112" },
-          "outputMint": { "type": "string", "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG" },
-          "amount": { "type": "string", "example": "1000000000" },
+          "inputMint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
+          "amount": {
+            "type": "string",
+            "example": "1000000000"
+          },
           "swapMode": {
             "type": "string",
-            "enum": ["ExactIn", "ExactOut"],
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
             "example": "ExactIn"
           },
           "slippageBps": {
             "type": "integer",
             "default": 50,
             "example": 50
+          },
+          "quoteId": {
+            "type": "string",
+            "example": "q_b15372a8d82a93d1e328ae24e5d3669a",
+            "description": "Optional firm-quote ID from GET /quote (or a WebSocket quote push). Pair, amount, and swapMode must match the original quote. The exact quoted route is replayed and min-out anchors to the quoted price instead of a fresh re-quote."
+          },
+          "firm": {
+            "type": "boolean",
+            "example": false,
+            "description": "Firm (price-or-fail) redemption — requires quoteId and only works within the quote's firmForMs window. Slippage collapses to the server's firm margin (default 10 bps) around the quoted price; slippageBps is ignored. If the route drifted past the margin the request fails with 409 instead of executing at a worse price."
           }
         },
-        "required": ["userWallet", "inputMint", "outputMint", "amount", "swapMode"]
+        "required": [
+          "userWallet",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
       },
       "InstructionsResponse": {
         "type": "object",
         "description": "Raw swap instructions for custom transaction composition.",
         "properties": {
-          "amountIn": { "type": "string", "example": "1000000000" },
-          "amountOut": { "type": "string", "example": "145320000" },
+          "amountIn": {
+            "type": "string",
+            "example": "1000000000"
+          },
+          "amountOut": {
+            "type": "string",
+            "example": "145320000"
+          },
           "otherAmountThreshold": {
             "type": "string",
             "description": "Slippage-adjusted threshold. ExactIn: minimum output. ExactOut: maximum input.",
             "example": "144593400"
           },
-          "feeAmount": { "type": "string", "example": "100005" },
+          "feeAmount": {
+            "type": "string",
+            "example": "100005"
+          },
           "route": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Token path from input to output."
           },
-          "hopCount": { "type": "integer", "example": 1 },
+          "hopCount": {
+            "type": "integer",
+            "example": 1
+          },
           "pools": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Pool addresses used in the route."
           },
           "instructions": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/RawInstruction" },
+            "items": {
+              "$ref": "#/components/schemas/RawInstruction"
+            },
             "description": "Ordered list of instructions to include in the transaction."
           },
           "addressLookupTableAddresses": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Address Lookup Table addresses for building a v0 transaction."
           }
         },
-        "required": ["amountIn", "amountOut", "otherAmountThreshold", "feeAmount", "route", "hopCount", "pools", "instructions", "addressLookupTableAddresses"]
+        "required": [
+          "amountIn",
+          "amountOut",
+          "otherAmountThreshold",
+          "feeAmount",
+          "route",
+          "hopCount",
+          "pools",
+          "instructions",
+          "addressLookupTableAddresses"
+        ]
       },
       "CPIRouteAccountsRequest": {
         "type": "object",
@@ -872,7 +1278,10 @@
           },
           "swapMode": {
             "type": "string",
-            "enum": ["ExactIn", "ExactOut"],
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
             "example": "ExactIn"
           },
           "slippageBps": {
@@ -881,7 +1290,13 @@
             "example": 50
           }
         },
-        "required": ["authority", "inputMint", "outputMint", "amount", "swapMode"]
+        "required": [
+          "authority",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
       },
       "RouteCPIAccountsResponse": {
         "type": "object",
@@ -892,25 +1307,47 @@
             "description": "The calling program's PDA that owns the token accounts and signs the swap. Echoed back for clarity.",
             "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
           },
-          "amountIn": { "type": "string", "example": "1000000000" },
-          "amountOut": { "type": "string", "example": "145320000" },
+          "amountIn": {
+            "type": "string",
+            "example": "1000000000"
+          },
+          "amountOut": {
+            "type": "string",
+            "example": "145320000"
+          },
           "otherAmountThreshold": {
             "type": "string",
             "description": "Slippage-adjusted threshold. ExactIn: minimum output. ExactOut: maximum input.",
             "example": "144593400"
           },
-          "feeAmount": { "type": "string", "example": "100005" },
-          "platformFeeBps": { "type": "integer", "example": 0 },
-          "platformFeeAmount": { "type": "string", "example": "0" },
+          "feeAmount": {
+            "type": "string",
+            "example": "100005"
+          },
+          "platformFeeBps": {
+            "type": "integer",
+            "example": 0
+          },
+          "platformFeeAmount": {
+            "type": "string",
+            "example": "0"
+          },
           "route": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Token path from input to output."
           },
-          "hopCount": { "type": "integer", "example": 1 },
+          "hopCount": {
+            "type": "integer",
+            "example": 1
+          },
           "pools": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Pool addresses used in the route."
           },
           "routeInstruction": {
@@ -919,16 +1356,34 @@
           },
           "requiredTokenAccounts": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "ATAs owned by the authority PDA that must exist and hold the input funds before the CPI runs. Ordered [inputMint, ...intermediates, outputMint]."
           },
           "addressLookupTableAddresses": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Address Lookup Table addresses that compress accounts in routeInstruction."
           }
         },
-        "required": ["authority", "amountIn", "amountOut", "otherAmountThreshold", "feeAmount", "platformFeeBps", "platformFeeAmount", "route", "hopCount", "pools", "routeInstruction", "requiredTokenAccounts", "addressLookupTableAddresses"]
+        "required": [
+          "authority",
+          "amountIn",
+          "amountOut",
+          "otherAmountThreshold",
+          "feeAmount",
+          "platformFeeBps",
+          "platformFeeAmount",
+          "route",
+          "hopCount",
+          "pools",
+          "routeInstruction",
+          "requiredTokenAccounts",
+          "addressLookupTableAddresses"
+        ]
       }
     }
   }

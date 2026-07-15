@@ -1,7 +1,7 @@
 ---
 title: "Build Transaction"
 description: "Build an unsigned Fogo swap transaction with POST /api/v1/swap: request fields, the base64 transaction, simulation results, and cURL, TypeScript, and Python examples."
-llmDescription: "Detailed guide for POST /api/v1/swap on Fogo. Covers request body (userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation), complete response schema (SwapHandlerResponse with base64 transaction, lastValidBlockHeight, SimulationResult), simulation error handling, and cURL + TypeScript + Python examples."
+llmDescription: "Detailed guide for POST /api/v1/swap on Fogo. Covers request body (userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation, plus optional quoteId to replay the exact quoted route at the quoted price and firm for price-or-fail redemption inside the firm window), complete response schema (SwapHandlerResponse with base64 transaction, lastValidBlockHeight, SimulationResult), simulation error handling, and cURL + TypeScript + Python examples."
 ---
 
 # Build Transaction
@@ -36,6 +36,20 @@ llmDescription: "Detailed guide for POST /api/v1/swap on Fogo. Covers request bo
 
 <ParamField body="skipSimulation" type="boolean" default="false">
   Skip transaction simulation. Faster but no pre-flight validation. Only set `true` if you handle validation yourself.
+</ParamField>
+
+<ParamField body="quoteId" type="string">
+  Firm-quote ID from [`GET /quote`](/docs/swap/get-quote) or a
+  [stream push](/docs/swap/stream-quotes). Replays the exact quoted route with min-out anchored to
+  the quoted price. Pair, amount, and `swapMode` must match the quote. See
+  [Firm quotes](/docs/swap/firm-quotes).
+</ParamField>
+
+<ParamField body="firm" type="boolean" default="false">
+  Price-or-fail redemption — requires `quoteId`, only within the quote's `firmForMs` window.
+  Slippage collapses to the server's firm margin (default 10 bps); if the price drifted past it,
+  the request fails with `409` instead of executing worse. See
+  [Firm quotes](/docs/swap/firm-quotes).
 </ParamField>
 
 ## Example

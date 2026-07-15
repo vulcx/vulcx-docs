@@ -1,7 +1,7 @@
 ---
 title: "Get Quote"
 description: "How to request a swap quote and interpret routing, price impact, and slippage fields."
-llmDescription: "Detailed guide for GET /api/v1/quote on Fogo. Covers all parameters (inputMint, outputMint, amount, swapMode, slippageBps), complete response schema (QuoteResponse with RouteInfo array, price impact fields, otherAmountThreshold), cURL, TypeScript, and Python examples, and price impact severity guidance."
+llmDescription: "Detailed guide for GET /api/v1/quote on Fogo. Covers all parameters (inputMint, outputMint, amount, swapMode, slippageBps), complete response schema (QuoteResponse with RouteInfo array, price impact fields, otherAmountThreshold, firm-quote quoteId/validForMs/firmForMs), cURL, TypeScript, and Python examples, and price impact severity guidance."
 ---
 
 # Get Quote
@@ -122,7 +122,10 @@ print(f"Route: {data['hopCount']} hop(s) via {pool_types}")
       "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
     ],
     "hopCount": 1,
-    "otherAmountThreshold": "144593400"
+    "otherAmountThreshold": "144593400",
+    "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a",
+    "validForMs": 3000,
+    "firmForMs": 400
   }
 }
 ```
@@ -163,7 +166,7 @@ print(f"Route: {data['hopCount']} hop(s) via {pool_types}")
   Array of hops in the route.
   <Expandable title="RouteInfo fields">
     <ResponseField name="poolAddress" type="string">Pool address for this hop.</ResponseField>
-    <ResponseField name="poolType" type="string">Pool type. On Fogo: `Vortex`, `Fluxbeam`, `Fogo.fun`, `Moonit`.</ResponseField>
+    <ResponseField name="poolType" type="string">Pool type. On Fogo: `Vortex`, `Fluxbeam`, `Moonit`.</ResponseField>
     <ResponseField name="percent" type="integer">Percentage of amount routed through this pool (100 for single route).</ResponseField>
     <ResponseField name="inputMint" type="string">Input token for this hop.</ResponseField>
     <ResponseField name="outputMint" type="string">Output token for this hop.</ResponseField>
@@ -173,6 +176,15 @@ print(f"Route: {data['hopCount']} hop(s) via {pool_types}")
 <ResponseField name="routePath" type="string[]">Token path from input to output. Direct: `[inputMint, outputMint]`. Multi-hop: `[inputMint, ...intermediates, outputMint]`.</ResponseField>
 <ResponseField name="hopCount" type="integer">Number of hops. 1 = direct swap, 2+ = multi-hop.</ResponseField>
 <ResponseField name="otherAmountThreshold" type="string">Slippage-adjusted threshold. `ExactIn`: minimum output you'll receive. `ExactOut`: maximum input you'll spend.</ResponseField>
+
+<ResponseField name="quoteId" type="string">
+  Firm-quote commitment ID. Pass it to [`POST /swap`](/docs/swap/build-transaction) or
+  [`POST /instructions`](/docs/swap/get-instructions) to replay this exact route with min-out
+  anchored to this price. Omitted when the quote can't be pinned (e.g. split routes).
+  See [Firm quotes](/docs/swap/firm-quotes).
+</ResponseField>
+<ResponseField name="validForMs" type="integer">How long `quoteId` stays redeemable, in milliseconds.</ResponseField>
+<ResponseField name="firmForMs" type="integer">How long `quoteId` stays redeemable with `firm: true` (price-or-fail), in milliseconds.</ResponseField>
 
 ## Price impact guidance
 

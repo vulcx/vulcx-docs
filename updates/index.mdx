@@ -6,6 +6,20 @@ llmDescription: "Vulcx API changelog. Tracks API updates, new features, breaking
 
 API updates and changes in reverse chronological order.
 
+<Update label="v1.1.0" description="July 2026: Firm quotes — the price you see is the price you commit">
+## Firm quotes
+
+- **`quoteId` on every quote**: `GET /api/v1/quote` responses and WebSocket quote pushes now carry a `quoteId`, `validForMs` (~3s), and `firmForMs` (~400ms).
+- **Route pinning**: pass `quoteId` to `POST /api/v1/swap` or `POST /api/v1/instructions` to replay the exact quoted route with min-out anchored to the quoted price — no silent re-quote.
+- **Firm redemption**: add `"firm": true` within `firmForMs` and slippage collapses to the server's firm margin (10 bps) around the quoted price — price-or-fail; drift past the margin returns `409` before any transaction is built.
+- **New error contract**: `410` quote expired, `409` route gone / price drifted, `403` quoteId from another key, `400` request mismatch. See [Error Codes](/api-reference/errors).
+- **Stream invalidation**: the WebSocket stream pushes `{"type":"invalidate","quoteId"}` when a broadcast quote drifts past the firm margin.
+- **SDK 0.3.0 / Widget 0.3.0**: `@vulcx/sdk` surfaces `quoteId`/`firm` plus `QuoteExpiredError`/`QuoteStaleError`; the widget redeems quoteIds automatically and re-quotes on `409`/`410`.
+- **Slippage fix**: builders now send the raw quote and the on-chain program applies `slippageBps` exactly once — the enforced min-out equals the displayed `minAmountOut`. Previously the effective tolerance was ~2× the requested bps, so expect slippage failures to now trip at the advertised threshold.
+
+See the full guide: [Firm quotes](/docs/swap/firm-quotes).
+</Update>
+
 <Update label="v1.0.0" description="March 2026: Initial public release on Fogo">
 ## Initial release
 
@@ -14,7 +28,7 @@ API updates and changes in reverse chronological order.
 - **POST /api/v1/instructions**: Get raw instructions for custom transaction composition.
 - **GET /health**: Service health check.
 
-Supported DEXs on Fogo: Vortex (concentrated liquidity), Fluxbeam (AMM), Fogo.fun (bonding curves), Moonit (bonding curves).
+Supported DEXs on Fogo: Vortex (concentrated liquidity), Fluxbeam (AMM), Moonit (bonding curves).
 
 Features: multi-hop routing (up to 5 hops), ExactIn/ExactOut modes, slippage protection, price impact severity classification, Address Lookup Table (ALT) support.
 </Update>

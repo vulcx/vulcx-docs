@@ -1,7 +1,7 @@
 ---
 title: "Stream Quotes"
 description: "WS /api/v1/stream — Subscribe to live swap quotes over WebSocket and receive a push whenever the price changes."
-llmDescription: "Protocol reference for the Vulcx WebSocket quote stream at wss://api.vulcx.xyz/api/v1/stream on Fogo. Requires an API key as a ?key=vulcx_... query parameter (not a header — browsers can't set custom headers on a WS handshake); connecting without one fails the handshake. Raw JSON-over-WebSocket (not socket.io). Clients send subscribe/unsubscribe ops with a pairs array ({in, out, amount, exactIn}); the server replies with an immediate first quote, an ack ({type:subscribed|unsubscribed|error, count}), and thereafter pushes a quote message ({type:quote, in, out, amount, amountOut, priceImpactBps, hops, slot}) only when the quote materially changes. Limits: 256 subscriptions per connection, change-only pushes, ~50ms debounce."
+llmDescription: "Protocol reference for the Vulcx WebSocket quote stream at wss://api.vulcx.xyz/api/v1/stream on Fogo. Requires an API key as a ?key=vulcx_... query parameter (not a header — browsers can't set custom headers on a WS handshake); connecting without one fails the handshake. Raw JSON-over-WebSocket (not socket.io). Clients send subscribe/unsubscribe ops with a pairs array ({in, out, amount, exactIn}); the server replies with an immediate first quote, an ack ({type:subscribed|unsubscribed|error, count}), and thereafter pushes a quote message ({type:quote, in, out, amount, amountOut, priceImpactBps, hops, slot, quoteId, validForMs, firmForMs}) only when the quote materially changes. Each push carries a firm-quote quoteId redeemable on POST /swap or POST /instructions; a {type:invalidate, quoteId} push means the last quote drifted past the firm margin. Limits: 256 subscriptions per connection, change-only pushes, ~50ms debounce."
 asyncapi: "api-reference/asyncapi.json stream"
 ---
 
@@ -114,6 +114,26 @@ Sent for the immediate first quote and again **only when the quote materially ch
 <ResponseField name="priceImpactBps" type="integer">Price impact in basis points.</ResponseField>
 <ResponseField name="hops" type="integer">Number of hops in the route. 1 = direct, 2+ = multi-hop.</ResponseField>
 <ResponseField name="slot" type="integer">The Fogo slot the quote was computed at.</ResponseField>
+<ResponseField name="quoteId" type="string">
+  Firm-quote commitment ID for this exact quote. Pass it as `quoteId` to
+  [`POST /swap`](/api-reference/swap/index) or [`POST /instructions`](/api-reference/instructions/index)
+  to replay the quoted route at the quoted price. Omitted when the quote can't be pinned.
+  See [Firm quotes](/docs/swap/firm-quotes).
+</ResponseField>
+<ResponseField name="validForMs" type="integer">How long `quoteId` stays redeemable, in milliseconds.</ResponseField>
+<ResponseField name="firmForMs" type="integer">
+  How long `quoteId` stays redeemable with `firm: true` (price-or-fail), in milliseconds.
+</ResponseField>
+
+### Invalidate push
+
+Sent when the **last quote pushed for a pair drifts past the firm margin** before a fresh quote
+push replaces it — the firm window on that `quoteId` is effectively dead, so don't redeem it with
+`firm: true`. This is best-effort UX sugar: the redemption-time check on the server is the real
+gate, so you may still occasionally get a `409` without having seen an invalidate.
+
+<ResponseField name="type" type="string">Always `"invalidate"`.</ResponseField>
+<ResponseField name="quoteId" type="string">The commitment ID that drifted stale.</ResponseField>
 
 ### Acknowledgement
 
@@ -135,8 +155,15 @@ Sent in response to a `subscribe` / `unsubscribe`, or to report a problem with a
   "amountOut": "452",
   "priceImpactBps": 0,
   "hops": 1,
-  "slot": 587964937
+  "slot": 587964937,
+  "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a",
+  "validForMs": 3000,
+  "firmForMs": 400
 }
+```
+
+```json invalidate push
+{ "type": "invalidate", "quoteId": "q_b15372a8d82a93d1e328ae24e5d3669a" }
 ```
 
 ```json subscribed ack
