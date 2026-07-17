@@ -638,6 +638,60 @@
           }
         }
       }
+    },
+    "/.well-known/vulcx-quote-signer": {
+      "get": {
+        "tags": [
+          "quote"
+        ],
+        "summary": "Signed-quote verification key",
+        "description": "Public, unauthenticated. Returns the Ed25519 public key that signs firm-quote commitments. Pin this key and verify each quote's quoteSignature offline: the signature covers the UTF-8 bytes of the pipe-joined canonical message vulcx-quote-v1|quoteId|inputMint|outputMint|amountIn|amountOut|exactIn|expiresAtUnixMs (mints base58, amounts base10, exactIn 0/1, expiry unix ms). Returns 404 when quote signing is not enabled on this deployment.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Verification key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alg": {
+                      "type": "string",
+                      "example": "ed25519"
+                    },
+                    "publicKey": {
+                      "type": "string",
+                      "description": "Base58 Ed25519 public key.",
+                      "example": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+                    },
+                    "signatureEncoding": {
+                      "type": "string",
+                      "example": "base58"
+                    },
+                    "messageFormat": {
+                      "type": "string",
+                      "example": "vulcx-quote-v1|quoteId|inputMint|outputMint|amountIn|amountOut|exactIn|expiresAtUnixMs"
+                    },
+                    "notes": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quote signing not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -882,6 +936,17 @@
             "type": "integer",
             "example": 400,
             "description": "How long quoteId stays redeemable with firm: true, in milliseconds. Firm redemption collapses slippage to the server's firm margin around this exact price — price-or-fail."
+          },
+          "quoteSignature": {
+            "type": "string",
+            "description": "Base58 Ed25519 signature over the canonical vulcx-quote-v1 message (present when quote signing is enabled). Verify against the key at GET /.well-known/vulcx-quote-signer to prove what price was quoted.",
+            "example": "3xk1...sig"
+          },
+          "quoteExpiresAtMs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Absolute quote expiry (unix milliseconds) embedded in the signed message.",
+            "example": 1767000000000
           }
         },
         "required": [
@@ -953,6 +1018,11 @@
             "type": "boolean",
             "example": false,
             "description": "Firm (price-or-fail) redemption — requires quoteId and only works within the quote's firmForMs window. Slippage collapses to the server's firm margin (default 10 bps) around the quoted price; slippageBps is ignored. If the route drifted past the margin the request fails with 409 instead of executing at a worse price."
+          },
+          "referrer": {
+            "type": "string",
+            "description": "Optional referrer wallet (base58). Earns the protocol's on-chain referral share of the swap fee, paid in the output token. The referrer's output-mint ATA is created idempotently by wallet-signed flows.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
           }
         },
         "required": [
@@ -1178,6 +1248,16 @@
             "type": "boolean",
             "example": false,
             "description": "Firm (price-or-fail) redemption — requires quoteId and only works within the quote's firmForMs window. Slippage collapses to the server's firm margin (default 10 bps) around the quoted price; slippageBps is ignored. If the route drifted past the margin the request fails with 409 instead of executing at a worse price."
+          },
+          "referrer": {
+            "type": "string",
+            "description": "Optional referrer wallet (base58). Earns the protocol's on-chain referral share of the swap fee, paid in the output token. The referrer's output-mint ATA is created idempotently by wallet-signed flows.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "sessionAccount": {
+            "type": "string",
+            "description": "Optional Fogo session account (base58). When set, the response contains a single session-shaped route instruction: the session account is the signing authority (userWallet's ATAs still hold the funds), the aggregator's session-signer PDA rides along, and NO ATA-create or SOL-wrap instructions are emitted — see requiredTokenAccounts. Send via the Fogo Sessions SDK (session key signs, paymaster pays). Session routes are currently Vortex-V1-only.",
+            "example": "SesSj4KKBBWo9QCcVdXVLK6jYtwVv3xkQyEbLXjTd6c"
           }
         },
         "required": [
@@ -1240,6 +1320,13 @@
               "type": "string"
             },
             "description": "Address Lookup Table addresses for building a v0 transaction."
+          },
+          "requiredTokenAccounts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Session mode only: the user's ATAs the route touches, ordered [inputMint, ...intermediates, outputMint]. They must exist (and the input ATA hold amountIn) before the session transaction is sent."
           }
         },
         "required": [
@@ -1288,6 +1375,42 @@
             "type": "integer",
             "default": 50,
             "example": 50
+          },
+          "allowedIntermediateMints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "description": "Route corridor: multi-hop routes may only pass through these mints, closing the requiredTokenAccounts set over ATAs you pre-provisioned. Input and output mints are implicitly allowed. Empty/omitted = unrestricted.",
+            "example": [
+              "So11111111111111111111111111111111111111112"
+            ]
+          },
+          "maxHops": {
+            "type": "integer",
+            "description": "Cap on route length (1 = direct pools only). 0/omitted = server default.",
+            "example": 2
+          },
+          "excludeDexes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "vortex",
+                "fluxbeam",
+                "moonit"
+              ]
+            },
+            "description": "DEX types to exclude from routing. Excluding \"moonit\" also lifts the authority-writable requirement on the CPI.",
+            "example": [
+              "moonit"
+            ]
+          },
+          "referrer": {
+            "type": "string",
+            "description": "Optional referrer wallet (base58). Earns the protocol's on-chain referral share, paid in the output token. The response's referrerAta must EXIST before the CPI runs — create it once per output mint (this builder emits no ATA-create instructions).",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
           }
         },
         "required": [
@@ -1367,6 +1490,10 @@
               "type": "string"
             },
             "description": "Address Lookup Table addresses that compress accounts in routeInstruction."
+          },
+          "referrerAta": {
+            "type": "string",
+            "description": "The referrer's output-mint ATA appended to the account list when the request carried a referrer. Must exist before the CPI runs — the on-chain referral transfer fails otherwise."
           }
         },
         "required": [

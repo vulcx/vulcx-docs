@@ -1,7 +1,7 @@
 ---
 title: "Get Instructions"
 description: "Get raw swap instructions from POST /api/v1/instructions to compose Vulcx swaps with your own logic — memos, account creation, batching — into one Fogo transaction."
-llmDescription: "Detailed guide for POST /api/v1/instructions on Fogo. Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body (including optional quoteId and firm for firm-quote redemption), response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables."
+llmDescription: "Detailed guide for POST /api/v1/instructions on Fogo. Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body (including optional quoteId and firm for firm-quote redemption, referrer for the on-chain referral fee share, and sessionAccount for Fogo Sessions — session-shaped single route instruction, no ATA-create/wrap instructions, requiredTokenAccounts in the response, Vortex-V1-only), response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses, requiredTokenAccounts), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables."
 ---
 
 # Get Instructions
@@ -55,6 +55,19 @@ The request body is identical to `/swap` except there is no `skipSimulation` fie
 <ParamField body="firm" type="boolean" default="false">
   Price-or-fail redemption — requires `quoteId`, only within the quote's `firmForMs` window.
   See [Firm quotes](/docs/swap/firm-quotes).
+</ParamField>
+
+<ParamField body="referrer" type="string">
+  Optional referrer wallet (base58). Earns the protocol's on-chain referral share of the swap fee,
+  paid in the output token.
+</ParamField>
+
+<ParamField body="sessionAccount" type="string">
+  Optional Fogo session account (base58). Builds a **session-shaped** route: the session account is
+  the signing authority (`userWallet`'s ATAs still hold the funds), and no ATA-create or SOL-wrap
+  instructions are emitted — the response's `requiredTokenAccounts` lists what must already exist.
+  Send via the Fogo Sessions SDK (session key signs, paymaster pays). Session routes are currently
+  Vortex-V1-only. See [Widget → Fogo Sessions](/widget/wallet-integration#fogo-sessions--firm-mode-no-wallet-popup).
 </ParamField>
 
 ## Example
@@ -184,6 +197,13 @@ print(f"{len(data['instructions'])} instructions, {data['hopCount']} hop(s)")
 
 <ResponseField name="addressLookupTableAddresses" type="string[]">
   Address Lookup Table (ALT) addresses. Include these when building a **v0 transaction** to reduce transaction size.
+</ResponseField>
+
+<ResponseField name="requiredTokenAccounts" type="string[]">
+  Session mode only (`sessionAccount` set): the user's ATAs the route touches, ordered
+  `[inputMint, …intermediates, outputMint]`. They must exist — and the input ATA hold `amountIn` —
+  before the session transaction is sent, since session instructions include no ATA-create or
+  SOL-wrap steps.
 </ResponseField>
 
 ## Building a transaction from instructions

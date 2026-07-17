@@ -14,7 +14,7 @@ The `<vulcx-swap>` element dispatches custom events at key points in the swap li
 |-------|-----------|---------------|
 | `quote-update` | A new quote is fetched | `QuoteResponse` |
 | `swap-initiated` | User clicks "Swap" and the request starts | `{ inputMint: string, outputMint: string, amount: string }` |
-| `swap-complete` | Swap transaction is built successfully | `SwapResponse` |
+| `swap-complete` | Swap transaction is built successfully | `SwapResponse` — or, in [session mode](/widget/wallet-integration#fogo-sessions--firm-mode-no-wallet-popup), `{ signature, session: true, firm, amountIn, amountOut, route, pools }` (the widget already submitted the transaction) |
 | `swap-error` | Swap request fails | `{ error: string }` |
 | `connect-wallet` | User clicks the button without a wallet connected | `{}` |
 

@@ -6,6 +6,27 @@ llmDescription: "Vulcx API changelog. Tracks API updates, new features, breaking
 
 API updates and changes in reverse chronological order.
 
+<Update label="v1.2.0" description="July 2026: Signed quotes, the CPI toolkit, and Fogo Sessions firm mode">
+## Signed quotes
+
+- Every quote with a `quoteId` now also carries **`quoteSignature`** (base58 Ed25519 over the canonical `vulcx-quote-v1` message) and **`quoteExpiresAtMs`** — provable prices you can verify offline.
+- New public endpoint **`GET /.well-known/vulcx-quote-signer`** serves the verification key, message format, and encoding. See [Firm quotes → Signed quotes](/docs/swap/firm-quotes#signed-quotes).
+
+## CPI toolkit
+
+- **Route corridors** on `POST /api/v1/cpi/route-accounts`: `allowedIntermediateMints` (max 16), `maxHops`, and `excludeDexes` constrain routing so the account set stays inside what your program pre-provisioned. Constrained requests bypass caches and never split; excluding `moonit` lifts the authority-writable requirement.
+- **Per-request referrer fee share**: a `referrer` wallet on `/swap`, `/instructions`, and `/cpi/route-accounts` earns the protocol's on-chain referral share, paid in the output token. CPI responses include `referrerAta` (must pre-exist).
+- **`vulcx-cpi` Rust crate**: typed route-CPI builders (`RouteAccounts`, `RouteArgs`, per-hop structs, `invoke_route_signed`) with CI parity tests against the deployed program, plus an `api`-feature `from_api_response` bridge that parses `/cpi/route-accounts` JSON into typed builders and fails loudly on layout drift.
+- **WebSocket `subscribe_route`**: the stream now pushes CPI route templates (`{"type":"route","seq",…}`), only when the template — route plan, accounts, or LUTs — actually changes. Liquidation keepers fire with zero HTTP round-trips. Max 32 route subscriptions per connection.
+- **Structured `400` for multi-hop ExactOut** naming the ExactIn-with-buffer pattern, instead of an opaque on-chain failure.
+- See the updated [On-Chain Swaps (CPI) guide](/guides/onchain-cpi).
+
+## Fogo Sessions
+
+- **`sessionAccount` on `POST /api/v1/instructions`** builds session-shaped routes: the session account signs, the wallet's ATAs hold the funds, the aggregator's session-signer PDA rides along, and no ATA-create/SOL-wrap instructions are emitted (`requiredTokenAccounts` in the response lists what must exist). Session routes are currently Vortex-V1-only.
+- **Widget 0.4.0 firm mode**: `setSession(adapter)` runs swaps as firm (price-or-fail) session sends — no wallet popup, price locked to what the user saw. **SDK 0.4.0** adds `sessionAccount`, `referrer`, and the signed-quote fields.
+</Update>
+
 <Update label="v1.1.0" description="July 2026: Firm quotes — the price you see is the price you commit">
 ## Firm quotes
 

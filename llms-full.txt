@@ -236,7 +236,10 @@ await connection.confirmTransaction({ signature: sig, blockhash: tx.message.rece
 
 ## POST /api/v1/instructions
 
-Get raw instructions for custom transaction composition. Same request as /swap without skipSimulation (quoteId and firm supported, same error contract).
+Get raw instructions for custom transaction composition. Same request as /swap without skipSimulation (quoteId and firm supported, same error contract). Two extra optional request fields:
+
+- `referrer` (base58 wallet): earns the protocol's on-chain referral share of the swap fee, paid in the output token (also accepted by /swap and /cpi/route-accounts).
+- `sessionAccount` (base58): Fogo Sessions mode. The response then contains a SINGLE session-shaped route instruction — the session account is the signing authority, userWallet's ATAs still hold the funds, the aggregator's session-signer PDA rides along, and NO ATA-create or SOL-wrap instructions are emitted. The response gains `requiredTokenAccounts` ([inputMint, ...intermediates, outputMint] ATAs of userWallet) which must exist (input ATA funded) before sending. Send via the Fogo Sessions SDK (session key signs, paymaster pays). Session routes are currently Vortex-V1-only; pairs without such a route return 400. Combine with quoteId + firm:true for firm price-or-fail session swaps (what the widget's setSession mode does).
 
 ### Response: InstructionsResponse
 
@@ -283,6 +286,13 @@ Every /quote response and WebSocket quote push carries `quoteId` + `validForMs` 
 - **Errors**: 410 expired → re-quote; 409 stale/drifted → re-quote, retry (immediately for firm); 403 quoteId minted under another API key; 400 pair/amount/swapMode mismatch or firm without quoteId.
 - **Stream integration**: the WS stream pushes `{"type":"invalidate","quoteId":"q_..."}` when the last broadcast quote for a pair drifts past the firm margin (best-effort; the redemption-time check is the real gate). Quote pushes carry the same quoteId fields.
 - Firm is **price-or-fail, not a fill guarantee**. The sub-second firm window targets machine flows (session-key signing, bots); human popup flows should use plain route pinning.
+- **Signed quotes**: quotes with a quoteId also carry `quoteSignature` (base58 Ed25519) and `quoteExpiresAtMs`. The signature covers the UTF-8 bytes of `vulcx-quote-v1|<quoteId>|<inputMint>|<outputMint>|<amountIn>|<amountOut>|<exactIn 0/1>|<expiresAtUnixMs>`. Verification key served unauthenticated at GET /.well-known/vulcx-quote-signer ({alg:"ed25519", publicKey, signatureEncoding:"base58", messageFormat}). Pin the key; verify offline to prove what price was committed.
+
+---
+
+## POST /api/v1/cpi/route-accounts and CPI tooling (summary)
+
+For on-chain programs CPI-ing the Vulcx `route` instruction with their own PDA as authority. Request: authority (PDA), inputMint, outputMint, amount, swapMode, slippageBps, plus optional route constraints — allowedIntermediateMints (corridor, max 16), maxHops (1 = direct only), excludeDexes (["vortex"|"fluxbeam"|"moonit"]; excluding moonit lifts the authority-writable requirement) — and optional referrer. Response: routeInstruction (programId/data/accounts to forward verbatim into the CPI), requiredTokenAccounts (PDA's ATAs, must pre-exist and be funded; no ATA-create/wrap instructions are emitted), referrerAta (must pre-exist), addressLookupTableAddresses (attach to the OUTER v0 tx). Constrained requests bypass caches and never split; no route inside constraints → 404. Multi-hop ExactOut → 400 (use ExactIn-with-buffer: quote ExactOut to size input, execute ExactIn at input x (1+buffer), sweep surplus). Rust crate `vulcx-cpi`: typed builders (RouteAccounts, RouteArgs, VortexHop/FluxbeamHop/MoonitHop, invoke_route_signed), CI parity tests against the deployed program, and an `api`-feature ParsedRoute::from_api_response that parses the endpoint JSON into typed builders and errors on layout drift. The WebSocket stream op `subscribe_route` (max 32/connection) pushes `{"type":"route","seq","slot","route":{...same payload...}}` only when the template (route plan/accounts/LUTs) changes — hold the latest template in memory and fire with zero HTTP round-trips. Full guide: https://docs.vulcx.xyz/guides/onchain-cpi
 
 ---
 

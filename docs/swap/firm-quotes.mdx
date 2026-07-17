@@ -1,7 +1,7 @@
 ---
 title: "Firm Quotes"
 description: "Pin the exact quoted route and price with quoteId, and redeem it firm — the price you saw is the price you commit, or the swap cleanly fails."
-llmDescription: "Guide to Vulcx firm quotes on Fogo. Every GET /api/v1/quote response and WebSocket quote push carries a quoteId (with validForMs and firmForMs). Passing quoteId to POST /swap or POST /instructions replays the exact quoted route with min-out anchored to the quoted price (route pinning, Tier 1, default ~3s window). Adding firm: true within firmForMs (~400ms) collapses slippage to the server's firm margin (default 10 bps) around the quoted price — price-or-fail: if the price drifted past the margin the API returns 409 before any transaction is built. Error contract: 410 quote expired, 409 route gone or drifted, 403 quoteId from another key, 400 request mismatch. The WebSocket stream pushes {type:invalidate, quoteId} when a quote drifts past the firm margin. Includes cURL/TypeScript examples and retry guidance."
+llmDescription: "Guide to Vulcx firm quotes on Fogo. Every GET /api/v1/quote response and WebSocket quote push carries a quoteId (with validForMs and firmForMs). Passing quoteId to POST /swap or POST /instructions replays the exact quoted route with min-out anchored to the quoted price (route pinning, Tier 1, default ~3s window). Adding firm: true within firmForMs (~400ms) collapses slippage to the server's firm margin (default 10 bps) around the quoted price — price-or-fail: if the price drifted past the margin the API returns 409 before any transaction is built. Quotes are also Ed25519-signed (quoteSignature, quoteExpiresAtMs) over the canonical message vulcx-quote-v1|quoteId|inputMint|outputMint|amountIn|amountOut|exactIn|expiresAtUnixMs; the verification key is served unauthenticated at GET /.well-known/vulcx-quote-signer, so partners can prove offline what price was committed. Error contract: 410 quote expired, 409 route gone or drifted, 403 quoteId from another key, 400 request mismatch. The WebSocket stream pushes {type:invalidate, quoteId} when a quote drifts past the firm margin. Includes cURL/TypeScript examples and retry guidance."
 ---
 
 # Firm Quotes
@@ -144,6 +144,56 @@ Both `POST /api/v1/swap` and [`POST /api/v1/instructions`](/docs/swap/get-instru
 The SDK surfaces these as `QuoteExpiredError` (410) and `QuoteStaleError` (409) — both
 non-retryable as-is; catch them, re-quote, and retry with the new `quoteId`. The
 [widget](/widget/quickstart) does this automatically.
+
+## Signed quotes
+
+Every quote that carries a `quoteId` also carries an **Ed25519 signature** over its price (when the
+deployment has signing enabled — production does):
+
+<ResponseField name="quoteSignature" type="string">
+  Base58 Ed25519 signature over the canonical quote message.
+</ResponseField>
+<ResponseField name="quoteExpiresAtMs" type="integer">
+  The absolute expiry (unix milliseconds) embedded in the signed message.
+</ResponseField>
+
+The signature covers the UTF-8 bytes of the pipe-joined canonical message:
+
+```
+vulcx-quote-v1|<quoteId>|<inputMint>|<outputMint>|<amountIn>|<amountOut>|<exactIn>|<expiresAtUnixMs>
+```
+
+with mints in base58, amounts in base10, `exactIn` as `0`/`1`, and expiry in unix milliseconds.
+The verification key is public and unauthenticated:
+
+```bash
+curl -s https://api.vulcx.xyz/.well-known/vulcx-quote-signer
+```
+
+```json
+{
+  "alg": "ed25519",
+  "publicKey": "…base58…",
+  "signatureEncoding": "base58",
+  "messageFormat": "vulcx-quote-v1|quoteId|inputMint|outputMint|amountIn|amountOut|exactIn|expiresAtUnixMs"
+}
+```
+
+Pin the key and verify offline — a signed quote is **provable**: a partner, auditor, or dispute
+process can check exactly what price was committed and until when, without trusting the transport
+or the SDK. Verification in TypeScript:
+
+```typescript
+import nacl from "tweetnacl";
+import bs58 from "bs58";
+
+const msg = `vulcx-quote-v1|${q.quoteId}|${q.inputMint}|${q.outputMint}|${q.amountIn}|${q.amountOut}|1|${q.quoteExpiresAtMs}`;
+const ok = nacl.sign.detached.verify(
+  new TextEncoder().encode(msg),
+  bs58.decode(q.quoteSignature),
+  bs58.decode(signerPublicKey),
+);
+```
 
 ## Live invalidation on the stream
 

@@ -2,7 +2,7 @@
 title: "Composing Swaps On-Chain (CPI)"
 sidebarTitle: "On-Chain Swaps (CPI)"
 description: "Call the Vulcx route instruction from your own Fogo program via CPI, signed by your PDA — make a best-price swap one atomic step inside your protocol's logic."
-llmDescription: "Guide to composing Vulcx swaps on-chain via Cross-Program Invocation (CPI) on Fogo. Another Solana program calls the Vulcx aggregator's `route` instruction with invoke_signed, using its own PDA as the swap authority instead of a user wallet — so a best-price multi-hop swap becomes an atomic step inside a lending liquidation, vault rebalance, pay-with-any-token flow, perps collateral conversion, DAO treasury swap, or zap. Covers: when to use CPI vs POST /swap vs POST /instructions; the off-chain step POST /api/v1/cpi/route-accounts (cURL/TypeScript/Python) which returns routeInstruction + requiredTokenAccounts + addressLookupTableAddresses; the on-chain step in Rust/Anchor using vulcx_aggregator::route_cpi (RouteAccounts, Hop, VortexHop, invoke_route_signed) with a full worked minimal integrator instruction and #[derive(Accounts)] context; the exact route account layout (6 fixed accounts + per-hop account groups for Vortex 7, Vortex V2 10, Fluxbeam 14, Moonit 14, with writable/signer flags); and gotchas (ATAs must be pre-created and funded, no wrap/unwrap emitted, simulate:false for real execution, Moonit hops make the authority writable, split routes unsupported). Beta feature."
+llmDescription: "Guide to composing Vulcx swaps on-chain via Cross-Program Invocation (CPI) on Fogo. Another Solana program calls the Vulcx aggregator's `route` instruction with invoke_signed, using its own PDA as the swap authority instead of a user wallet — so a best-price multi-hop swap becomes an atomic step inside a lending liquidation, vault rebalance, pay-with-any-token flow, perps collateral conversion, DAO treasury swap, or zap. Covers: when to use CPI vs POST /swap vs POST /instructions; the off-chain step POST /api/v1/cpi/route-accounts (cURL/TypeScript/Python) which returns routeInstruction + requiredTokenAccounts + referrerAta + addressLookupTableAddresses; route corridors (allowedIntermediateMints max 16, maxHops, excludeDexes vortex/fluxbeam/moonit — constrained requests bypass caches, never split, 404 if no route inside constraints; excluding moonit lifts the authority-writable requirement); per-request referrer fee share (referrer wallet earns the on-chain referral share, referrerAta must pre-exist); the on-chain step in Rust/Anchor using the vulcx-cpi crate (RouteAccounts, RouteArgs, Hop, VortexHop, invoke_route_signed; `api` feature adds ParsedRoute::from_api_response which parses the endpoint JSON into typed builders and fails on layout drift; crate major version tracks the deployed program's instruction layout) with a full worked minimal integrator instruction and #[derive(Accounts)] context; the exact route account layout (6 fixed accounts + per-hop account groups for Vortex 7, Vortex V2 10, Fluxbeam 14, Moonit 14, with writable/signer flags); WebSocket subscribe_route streaming route templates (op subscribe_route, {type:route, seq, slot, route} pushed only when the template — route plan/accounts/LUTs — changes, max 32 per connection, for zero-HTTP-round-trip liquidation keepers); and gotchas (ATAs must be pre-created and funded, no wrap/unwrap emitted, simulate:false for real execution — simulate:true skips the min-out check, Moonit hops make the authority writable, split routes unsupported, multi-hop ExactOut returns 400 — use the ExactIn-with-buffer pattern). Includes the liquidation kit worked example (Anchor liquidate ix + TypeScript keeper). Beta feature."
 ---
 
 <Note>
@@ -146,19 +146,64 @@ responsible for creating and funding them before the CPI runs.
 
 See the full schema in the [CPI Route Accounts](/api-reference/cpi-route-accounts/index) API reference.
 
+### Route corridors — constrain what the router may touch
+
+Open routing gives the best price; a CPI integrator often wants **determinism** instead — the route
+must stay inside the ATAs and DEX flows you pre-provisioned and pre-audited. Three optional request
+fields constrain routing per request:
+
+```jsonc
+{
+  "authority": "YOUR_PROGRAM_PDA",
+  // ... pair, amount, swapMode ...
+  "allowedIntermediateMints": ["So11111111111111111111111111111111111111112"], // corridor (max 16)
+  "maxHops": 2,               // 1 = direct pools only
+  "excludeDexes": ["moonit"]  // "vortex" | "fluxbeam" | "moonit"
+}
+```
+
+- `allowedIntermediateMints` closes the `requiredTokenAccounts` set: multi-hop routes may only pass
+  through these mints (input and output are implicitly allowed). Your PDA's ATA set becomes static.
+- `excludeDexes: ["moonit"]` also lifts the authority-writable requirement — one less thing for your
+  auditors.
+- Constrained requests bypass the route caches and never split. If no route exists inside the
+  constraints, the endpoint returns `404` with a message telling you to widen them.
+
+The tradeoff is honest: corridors trade price for determinism. Liquidation bots take that trade.
+
+### Referrer fee share
+
+Add `"referrer": "<wallet>"` to earn the protocol's on-chain referral share of the swap fee, paid in
+the output token directly by the aggregator program. The response then includes `referrerAta` — the
+referrer's output-mint ATA appended to the account list. It must **exist** before the CPI runs
+(create it once per output mint); the referral transfer fails otherwise.
+
 ## Step 2 — Call route from your program (on-chain)
 
 Add the Vulcx aggregator as a library dependency and use its `route_cpi` helper to assemble the
 account list and invoke `route`, signing with your PDA seeds.
 
 <Note>
-The on-chain helpers ship in the `vulcx-aggregator` crate. Pull it in with the `cpi` feature so it
-builds as a library (no duplicate entrypoint):
+The on-chain helpers ship as the standalone **`vulcx-cpi`** crate — typed per-hop builders, arg
+encoding pinned byte-for-byte to the deployed program by CI parity tests, and (behind the `api`
+feature, off-chain only) a `from_api_response` bridge that parses the Step 1 JSON straight into
+typed `RouteAccounts` + `RouteArgs` and fails loudly on any layout drift:
 
 ```toml Cargo.toml
 [dependencies]
-vulcx-aggregator = { version = "0.1", features = ["cpi"] }
+vulcx-cpi = "0.1"
+
+# keeper/bot side (std): also parse /cpi/route-accounts responses
+# vulcx-cpi = { version = "0.1", features = ["api"] }
 ```
+
+```rust keeper.rs (off-chain, api feature)
+let parsed = vulcx_cpi::api::ParsedRoute::from_api_response(&json_body)?;
+// parsed.instruction, parsed.accounts, parsed.args,
+// parsed.required_token_accounts, parsed.referrer_ata, parsed.address_lookup_tables
+```
+
+The crate's **major version tracks the deployed program's instruction layout**.
 </Note>
 
 The instruction below swaps the vault's source token → destination token through a single Vortex hop,
@@ -167,9 +212,7 @@ is `num_steps = 1` plus a populated `token_accounts`/`hops`.
 
 ```rust lib.rs
 use anchor_lang::prelude::*;
-use vulcx_aggregator::instruction::Route as RouteIxArgs;
-use vulcx_aggregator::route_cpi::{invoke_route_signed, Hop, RouteAccounts, VortexHop};
-use vulcx_aggregator::{RoutePlanStep, MAX_HOPS};
+use vulcx_cpi::{invoke_route_signed, Hop, RouteAccounts, RouteArgs, RoutePlanStep, VortexHop, MAX_HOPS};
 
 pub const VAULT_AUTHORITY_SEED: &[u8] = b"vault_authority";
 
@@ -186,21 +229,21 @@ pub fn swap_treasury(
 
     // 1. instruction args: one Vortex step, source(idx0) -> dest(idx1)
     let mut route_plan = [RoutePlanStep::default(); MAX_HOPS];
-    route_plan[0] = RoutePlanStep::new_vortex(
-        /* a_to_b        */ true,
-        /* exact_out     */ false,
-        /* percent       */ 100,
-        /* input_index   */ 0, // -> token_accounts[0]
-        /* output_index  */ 1, // -> token_accounts[1]
-    );
-    let args = RouteIxArgs {
+    route_plan[0] = RoutePlanStep {
+        swap_type: RoutePlanStep::SWAP_TYPE_VORTEX,
+        flags: RoutePlanStep::FLAG_A_TO_B, // a_to_b, not exact_out
+        percent: 100,
+        input_index: 0,  // -> token_accounts[0]
+        output_index: 1, // -> token_accounts[1]
+    };
+    let args = RouteArgs {
         num_token_accounts: 2,
         num_steps: 1,
         route_plan,
         in_amount,
         quoted_out_amount,
         slippage_bps,
-        simulate: false, // real execution — `true` makes route bail early
+        simulate: false, // real execution — `true` skips the final min-out check
     };
 
     // 2. account list. token_accounts + the 7 Vortex accounts arrive in
@@ -248,7 +291,7 @@ pub fn swap_treasury(
     invoke_route_signed(
         &ctx.accounts.vulcx_program,
         &accounts,
-        args,
+        &args,
         &infos,
         &[&[VAULT_AUTHORITY_SEED, &[bump]]],
     )
@@ -376,6 +419,32 @@ A Moonit hop makes the top-level `authority` a **writable** signer (it is the Mo
 </Tab>
 </Tabs>
 
+## Streaming route templates (zero round-trips at fire time)
+
+Polling `POST /cpi/route-accounts` before every action costs a round-trip you may not have — on
+Fogo's ~40 ms blocks, a liquidation won or lost in one block. The
+[WebSocket stream](/api-reference/stream/index) can push the **route template** to you instead:
+
+```json
+{ "op": "subscribe_route", "routes": [{
+    "authority": "YOUR_PROGRAM_PDA",
+    "inputMint": "So11111111111111111111111111111111111111112",
+    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+    "amount": "1000000000",
+    "allowedIntermediateMints": [], "maxHops": 1, "excludeDexes": ["moonit"]
+}]}
+```
+
+The server pushes `{"type":"route", "seq":…, "slot":…, "route":{…}}` — the same payload as
+`POST /cpi/route-accounts` — **only when the template actually changes** (route plan, account list,
+or LUTs; price ticks alone never push). For a corridor-constrained pair that's rare, so your keeper
+holds the latest template in memory and fires with **zero** HTTP round-trips when its trigger hits.
+
+- `seq` increments by 1 per change; a gap means you missed a push — resubscribe.
+- Amounts inside the template are as-of the last change, not tick-fresh; re-quote (or redeem a
+  [firm quote](/docs/swap/firm-quotes)) if you need the current price.
+- Max 32 route subscriptions per connection.
+
 ## Gotchas
 
 <Warning>
@@ -389,14 +458,19 @@ instructions. Create and fund the accounts listed in `requiredTokenAccounts` bef
   a *writable* signer. `RouteAccounts` detects this and sets the flag; make sure your PDA account is
   marked `mut` in the context (harmless for non-Moonit routes).
 - **Split routes aren't supported yet.** A split route returns `400` from `POST /api/v1/cpi/route-accounts`.
-  Retry with a pair that routes through a single path.
+  Retry with a pair that routes through a single path (any corridor constraint also disables splits).
+- **Multi-hop ExactOut is rejected with a `400`.** An exact-output swap can only bound its input on a
+  single hop. For exact-out across hops use the **ExactIn-with-buffer** pattern: quote ExactOut to
+  size the input, execute ExactIn at `input × (1 + buffer)`, then sweep the surplus output.
 - **Keep the layout in sync.** If you hand-assemble accounts instead of forwarding what the endpoint
   returns, a single wrong writable/signer flag surfaces as an opaque privilege-escalation or
   not-writable failure deep inside the CPI. Prefer forwarding `routeInstruction.accounts` verbatim.
 
-## Reference program
+## The liquidation kit
 
-<Card title="vulcx-cpi-consumer" icon="rust" href="https://t.me/vulcxsupport">
-The worked, end-to-end example program that CPIs into `route` with its own PDA — the tested template
-this guide is built from. Ask on Telegram for access.
+<Card title="Liquidation kit — worked example" icon="rust" href="https://t.me/vulcxsupport">
+A complete reference integration: a minimal Anchor `liquidate` instruction that CPIs `route` via
+`vulcx-cpi` (PDA signing, simulate-refusal, balance-delta min-out), plus a TypeScript keeper bot
+that consumes `subscribe_route` templates and fires liquidations with zero HTTP round-trips. Every
+gotcha on this page appears in it as code, not prose. Ask on Telegram for access.
 </Card>

@@ -1,7 +1,7 @@
 ---
 name: vulcx-swap
 description: Integrate Vulcx swap API on Fogo. Use for getting quotes, building swap transactions, getting raw instructions, redeeming firm quotes (quoteId, price-or-fail), and handling errors across Vortex, Fluxbeam, and Moonit bonding curves.
-version: "1.3.0"
+version: "1.4.0"
 tags:
   - vulcx
   - fogo
@@ -123,13 +123,24 @@ Use when ANOTHER on-chain program must swap atomically, signed by its PDA
 (not a user wallet). See guide: /guides/onchain-cpi
 
 1. POST /api/v1/cpi/route-accounts
-   body: { authority (your program PDA), inputMint, outputMint, amount, swapMode, slippageBps }
+   body: { authority (your program PDA), inputMint, outputMint, amount, swapMode, slippageBps,
+           allowedIntermediateMints? (corridor, max 16), maxHops? (1 = direct only),
+           excludeDexes? (["vortex"|"fluxbeam"|"moonit"]; excluding moonit lifts the
+           authority-writable requirement), referrer? }
    → data.routeInstruction (forward its accounts into your `route` CPI)
    → data.requiredTokenAccounts (ATAs your PDA must own + fund first; no wrap/unwrap emitted)
+   → data.referrerAta (when referrer set — must pre-exist)
    → data.addressLookupTableAddresses
+   Constrained requests bypass caches, never split; no route inside constraints → 404.
+   Multi-hop ExactOut → 400 (use ExactIn-with-buffer).
 
-2. On-chain: invoke_signed into `route` with your PDA seeds (vulcx_aggregator::route_cpi).
+2. On-chain: invoke_signed into `route` with your PDA seeds via the `vulcx-cpi` crate
+   (RouteAccounts, RouteArgs, invoke_route_signed; `api` feature parses the endpoint JSON).
    Split routes are not supported (400).
+
+3. Optional: stream templates instead of polling — WS op
+   {"op":"subscribe_route","routes":[{authority,inputMint,outputMint,amount,...constraints}]}
+   pushes {"type":"route","seq","slot","route":{...}} only when the template changes (max 32/conn).
 ```
 
 ### "I want to buy exactly X amount of a token"
@@ -187,7 +198,12 @@ Firm is price-or-fail, NOT a fill guarantee. The firm window is sub-second — m
 
 ### POST /api/v1/instructions
 
-Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included).
+Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included), plus:
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| referrer | string | no | -- | Referrer wallet — earns the on-chain referral fee share (also on /swap) |
+| sessionAccount | string | no | -- | Fogo session account: returns ONE session-shaped route ix, no ATA-create/wrap ixs; response gains requiredTokenAccounts; Vortex-V1-only |
 
 ## Response Schemas
 
@@ -210,7 +226,9 @@ Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included).
   "otherAmountThreshold": "string",
   "quoteId": "q_hex (omitted when unpinnable, e.g. split routes)",
   "validForMs": 3000,
-  "firmForMs": 400
+  "firmForMs": 400,
+  "quoteSignature": "base58 Ed25519 over vulcx-quote-v1|quoteId|inputMint|outputMint|amountIn|amountOut|exactIn|expiresAtUnixMs (when signing enabled; key at GET /.well-known/vulcx-quote-signer)",
+  "quoteExpiresAtMs": 0
 }
 ```
 
@@ -247,7 +265,8 @@ Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included).
   "hopCount": 0,
   "pools": ["string"],
   "instructions": [{ "programId": "base58", "data": "base64", "accounts": [{ "publicKey": "base58", "isSigner": false, "isWritable": false }] }],
-  "addressLookupTableAddresses": ["string"]
+  "addressLookupTableAddresses": ["string"],
+  "requiredTokenAccounts": ["session mode only: userWallet ATAs that must pre-exist, [input, ...intermediates, output]"]
 }
 ```
 

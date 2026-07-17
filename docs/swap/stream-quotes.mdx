@@ -154,10 +154,31 @@ ws.send(JSON.stringify({
 
 Closing the socket cancels all of a connection's subscriptions.
 
+## Route templates for CPI integrators
+
+The same socket also streams **CPI route templates** — the full `POST /cpi/route-accounts` payload
+(route instruction, accounts, LUTs), pushed only when the template actually changes. Liquidation
+keepers hold the latest template in memory and fire with zero HTTP round-trips:
+
+```json
+{ "op": "subscribe_route", "routes": [{
+    "authority": "YOUR_PROGRAM_PDA",
+    "inputMint": "So11111111111111111111111111111111111111112",
+    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+    "amount": "1000000000",
+    "excludeDexes": ["moonit"]
+}]}
+```
+
+See [On-Chain Swaps (CPI) → Streaming route templates](/guides/onchain-cpi#streaming-route-templates-zero-round-trips-at-fire-time)
+for semantics (`seq`, change-only pushes, corridor constraints). `unsubscribe_route` mirrors
+`unsubscribe`. Max 32 route subscriptions per connection.
+
 ## Reconnection & limits
 
 - **Reconnect on close.** Subscriptions live with the connection. After an unexpected close, reopen
   the socket and re-send your `subscribe` messages.
 - **Read promptly.** A connection whose outbound queue overflows (a slow reader) is dropped rather
   than buffered. If this happens, reconnect and resubscribe.
-- **Up to 256 subscriptions per connection.** Spread more across multiple connections.
+- **Up to 256 subscriptions per connection** (32 for `subscribe_route`). Spread more across multiple
+  connections.

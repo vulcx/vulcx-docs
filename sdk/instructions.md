@@ -22,6 +22,24 @@ const ixs = await sdk.instructions(params: InstructionsRequest): Promise<Instruc
 | `amount` | `string` | yes | -- | Amount in smallest token units |
 | `swapMode` | `"ExactIn" \| "ExactOut"` | yes | -- | Swap direction |
 | `slippageBps` | `number` | no | `50` | Slippage tolerance in basis points |
+| `quoteId` | `string` | no | -- | [Firm-quote](/docs/swap/firm-quotes) ID from `quote()` — replays the exact quoted route, min-out anchored to the quoted price |
+| `firm` | `boolean` | no | `false` | Firm (price-or-fail) redemption of `quoteId` within its `firmForMs` window |
+| `referrer` | `string` | no | -- | Referrer wallet (base58) — earns the protocol's on-chain referral share, paid in the output token |
+| `sessionAccount` | `string` | no | -- | Fogo session account (base58) — returns a session-shaped route; see below |
+
+### Fogo Sessions mode
+
+Pass `sessionAccount` to build instructions for a [Fogo session](https://docs.fogo.io) instead of a
+wallet signature: the session account becomes the route's signing authority (the `userWallet`'s
+ATAs still hold the funds), and the response contains a **single route instruction** — no
+ATA-create or SOL-wrap instructions, because the wallet never signs. Check the response's
+`requiredTokenAccounts`: those ATAs must exist (and the input ATA hold `amountIn`) before the
+session transaction is sent. Send it via the Fogo Sessions SDK — the session key signs, the
+paymaster pays. Session routes are currently **Vortex-V1-only**; pairs without such a route return
+a 400.
+
+Combine with `quoteId` + `firm: true` for the strongest flow: firm price-or-fail redemption with no
+wallet popup — this is exactly what the [widget's session mode](/widget/wallet-integration) does.
 
 ---
 
@@ -64,6 +82,7 @@ const ixs = await sdk.instructions(params: InstructionsRequest): Promise<Instruc
 |-------|------|-------------|
 | `instructions` | `RawInstruction[]` | Ordered list of instructions |
 | `addressLookupTableAddresses` | `string[]` | ALT addresses to include in the v0 transaction |
+| `requiredTokenAccounts` | `string[]?` | Session mode only: the user's ATAs the route touches (`[inputMint, …intermediates, outputMint]`) — must exist before sending |
 | `amountIn` | `string` | Input amount |
 | `amountOut` | `string` | Estimated output amount |
 | `otherAmountThreshold` | `string` | Slippage-adjusted threshold |
