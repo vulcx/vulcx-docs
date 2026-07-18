@@ -54,7 +54,7 @@ wallet popup — this is exactly what the [widget's session mode](/widget/wallet
       "data": "AgAAANCWAwA="
     },
     {
-      "programId": "ArgyFuvk4S2vjC5XWuCWbcozjKwNrRzopLBJjCcTTWTH",
+      "programId": "Vu1cUxynmbPUsFqVz51FJJ2y69vX2yrkTS13ajomd9D",
       "accounts": [
         { "publicKey": "...", "isSigner": true, "isWritable": true },
         { "publicKey": "...", "isSigner": false, "isWritable": false }
