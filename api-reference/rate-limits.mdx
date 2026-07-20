@@ -24,6 +24,25 @@ During the beta, all issued keys are on the **free** plan. Contact the team for 
 Rate limiting is applied per API key. `GET /health` and `GET /api/v1/tokens` don't require a key
 and aren't subject to these per-key limits.
 
+### Per-IP ceiling (before authentication)
+
+A second limiter runs **before** authentication and buckets by client IP, not by key. It exists to
+protect the auth path from unauthenticated floods, so it applies to every `/api/v1/*` request —
+including ones with a missing or invalid key — and to the WebSocket upgrade.
+
+| | Sustained | Burst |
+|---|---|---|
+| Per client IP, pre-auth | 1,000 requests/second | 2,000 requests |
+
+It is deliberately set above the most generous plan so it never binds on legitimate traffic: it
+should only ever trip on abuse. If you are proxying many customers through one egress IP, they share
+this ceiling even though their per-key limits are separate.
+
+<Note>
+  The WebSocket handshake is covered by this per-IP limiter **only** — the per-plan key limits above
+  are not applied to the upgrade. Once connected, the stream is not rate limited per message.
+</Note>
+
 ## Rate limit response
 
 When rate limited, the API returns HTTP `429`:
@@ -79,6 +98,12 @@ def fetch_with_retry(url, max_retries=3, **kwargs):
 
 ## Best practices
 
-- **Cache quotes.** Quotes are valid for roughly 60 seconds (until `lastValidBlockHeight` expires). Don't re-fetch if you already have a recent quote.
+- **Don't cache quotes.** A quote's firm commitment lives for `validForMs` (~3 s) and its
+  price-or-fail window for `firmForMs` (~400 ms) — see [Firm quotes](/docs/swap/firm-quotes). Re-fetch
+  before you build. (`lastValidBlockHeight` bounds how long the *transaction* can land, ~60 s; that
+  is a different clock from how long the *price* is honoured.)
+- **Stream instead of polling.** If you need continuously fresh prices, subscribe on
+  [`GET /api/v1/stream`](/api-reference/stream/index) — the connection is not per-message rate
+  limited, so it is strictly cheaper than polling `/quote` against your plan's budget.
 - **Batch wisely.** If you need quotes for multiple pairs, space requests to stay within the rate limit.
 - **Use instructions endpoint.** If you're building custom transactions, one `POST /api/v1/instructions` call replaces a `GET /api/v1/quote` + `POST /api/v1/swap` pair.

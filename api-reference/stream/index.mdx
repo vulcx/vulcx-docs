@@ -28,17 +28,19 @@ For one-off quotes, [`GET /api/v1/quote`](/api-reference/quote/index) is simpler
 This endpoint requires an API key like every other endpoint (see
 [Authentication](/get-started/authentication)) — but since browsers can't set custom headers on a
 WebSocket handshake, the key must be passed as a `?key=` query parameter, not an `Authorization`
-header. A handshake without a valid key is rejected before the upgrade completes. The same
-per-plan rate limits as the REST endpoints apply to the upgrade request (see
-[Rate Limits](/api-reference/rate-limits)); once upgraded, the connection is long-lived and is not
-subject to the per-request rate limiter.
+header. A handshake without a valid key is rejected before the upgrade completes. The upgrade is guarded by
+the **pre-auth per-IP** limiter only — the per-plan key limits that apply to REST endpoints are
+**not** applied to the handshake (see [Rate Limits](/api-reference/rate-limits)). Once upgraded, the
+connection is long-lived and is not subject to any per-request rate limiter.
 
 ## Client messages
 
 Send a JSON text frame with an `op` and a `pairs` array.
 
 <ParamField body="op" type="string" required>
-  Operation to perform: `subscribe` or `unsubscribe`.
+  Operation to perform: `subscribe` or `unsubscribe` for quote streaming, or
+  `subscribe_route` / `unsubscribe_route` for CPI route templates (see
+  [Route templates](#route-templates) below).
 </ParamField>
 
 <ParamField body="pairs" type="object[]" required>
@@ -99,6 +101,41 @@ just before the ack.
 }
 ```
 
+### Route templates
+
+`subscribe_route` streams a ready-to-use CPI **route template** instead of a price. It is aimed at
+on-chain integrators (liquidation keepers, vault rebalancers) that want to fire without an HTTP
+round-trip: hold the latest template in memory and submit when your trigger fires.
+
+Send a `routes` array whose entries use the **same request shape** as
+[`POST /api/v1/cpi/route-accounts`](/api-reference/cpi-route-accounts/index):
+
+```json
+{
+  "op": "subscribe_route",
+  "routes": [
+    {
+      "authority": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP",
+      "inputMint": "So11111111111111111111111111111111111111112",
+      "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+      "amount": "1000000000",
+      "swapMode": "ExactIn",
+      "slippageBps": 50,
+      "maxHops": 2,
+      "excludeDexes": ["moonit"]
+    }
+  ]
+}
+```
+
+`swapMode` defaults to `ExactIn`. `slippageBps`, `allowedIntermediateMints`, `maxHops`,
+`excludeDexes` and `referrer` are optional and behave exactly as on the REST endpoint.
+
+<Note>
+  Route subscriptions are capped **separately** from quote subscriptions: **32 per connection**
+  (quotes allow 256). Each template is materially more expensive to maintain than a quote.
+</Note>
+
 ## Server messages
 
 ### Quote push
@@ -124,6 +161,48 @@ Sent for the immediate first quote and again **only when the quote materially ch
 <ResponseField name="firmForMs" type="integer">
   How long `quoteId` stays redeemable with `firm: true` (price-or-fail), in milliseconds.
 </ResponseField>
+<ResponseField name="quoteSignature" type="string">
+  Base58 Ed25519 signature over the canonical `vulcx-quote-v1` message, present when the server has
+  a signing key. Verify offline against the key at `/.well-known/vulcx-quote-signer`.
+</ResponseField>
+<ResponseField name="quoteExpiresAtMs" type="integer">
+  Absolute expiry (unix milliseconds) embedded in the signed message.
+</ResponseField>
+
+<Warning>
+  **ExactOut subscriptions can't tell you the input.** The quote push has no input-amount field at
+  all — `amount` echoes what you subscribed with, and there is nothing carrying the computed input
+  side. Since the input is the whole point of an exact-output quote, use
+  [`GET /quote`](/api-reference/quote/index) with `swapMode=ExactOut` for that, and treat
+  `exactIn: false` subscriptions as change notifications rather than a price feed.
+</Warning>
+
+### Route push
+
+Sent for the first template on `subscribe_route`, then **only when the template materially changes**
+— the route plan, account list, or LUTs. Amount movements alone do not trigger a push.
+
+<ResponseField name="type" type="string">Always `"route"`.</ResponseField>
+<ResponseField name="authority" type="string">The authority the template was built for.</ResponseField>
+<ResponseField name="inputMint" type="string">Input token mint.</ResponseField>
+<ResponseField name="outputMint" type="string">Output token mint.</ResponseField>
+<ResponseField name="amount" type="string">The subscribed amount, in smallest units.</ResponseField>
+<ResponseField name="swapMode" type="string">`ExactIn` or `ExactOut`.</ResponseField>
+<ResponseField name="seq" type="integer">
+  Increases by 1 per template change for this subscription. **A gap means you missed a push** —
+  resubscribe to resynchronise.
+</ResponseField>
+<ResponseField name="slot" type="integer">The Fogo slot the template was built at.</ResponseField>
+<ResponseField name="route" type="object">
+  The same payload [`POST /cpi/route-accounts`](/api-reference/cpi-route-accounts/index) returns:
+  the ready `routeInstruction`, `requiredTokenAccounts`, `referrerAta`, and
+  `addressLookupTableAddresses`.
+</ResponseField>
+
+<Warning>
+  Amounts inside `route` are as-of the last template change, **not tick-fresh**. Re-quote (or redeem
+  a firm `quoteId`) if you need the current price at execution time.
+</Warning>
 
 ### Invalidate push
 
@@ -179,7 +258,8 @@ Sent in response to a `subscribe` / `unsubscribe`, or to report a problem with a
 
 | Behavior | Value |
 |----------|-------|
-| Max subscriptions per connection | 256 |
+| Max quote subscriptions per connection | 256 |
+| Max route-template subscriptions per connection | 32 |
 | Push policy | Only when the quote materially changes (`amountOut` / `priceImpactBps` / `hops`) |
 | Update coalescing | Bursts of pool changes are debounced into a single recompute (~50 ms) |
 | First quote | Sent immediately on subscribe |
