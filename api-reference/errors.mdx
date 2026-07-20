@@ -20,14 +20,15 @@ All error responses use the same format:
 | Code | Meaning | When |
 |------|---------|------|
 | `200` | Success | Request processed successfully |
-| `400` | Bad Request | Invalid parameters, missing required fields, insufficient liquidity |
+| `400` | Bad Request | Invalid parameters, missing required fields, or a route the on-chain program cannot execute (multi-hop ExactOut, ExactOut on a non-Vortex pool) |
 | `401` | Unauthorized | No API key was provided |
 | `403` | Forbidden | The key is invalid, disabled, or revoked — blocked by the key's origin allowlist — or a `quoteId` issued to a different key |
-| `404` | Not Found | No route or pool found for the given parameters |
+| `404` | Not Found | No route or pool found for the given parameters, or pools exist without enough liquidity |
 | `409` | Conflict | Firm-quote redemption failed: the pinned route is gone, or the price drifted past the firm margin |
 | `410` | Gone | The `quoteId` expired (or is unknown) — request a fresh quote |
+| `422` | Unprocessable Entity | The route was found but cannot be executed as one transaction — too many accounts, or a split route on the CPI endpoint |
 | `429` | Too Many Requests | Rate limit exceeded |
-| `500` | Internal Server Error | Transaction build failed, simulation error, or unexpected server issue |
+| `500` | Internal Server Error | Unexpected server issue. A **failed simulation is not a 500** — it returns inside a `200` as `simulation.success: false` |
 
 ## API errors
 
@@ -50,26 +51,44 @@ All error responses use the same format:
 | `invalid amount` | 400 | Amount is not a valid positive number |
 | `invalid swapMode` | 400 | `swapMode` must be `ExactIn` or `ExactOut` |
 | `no route found` | 404 | No viable swap path exists |
-| `no pool found` | 404 | No liquidity pool exists for one of the required hops |
-| `insufficient liquidity` | 400 | Pools exist but don't have enough liquidity for the requested amount |
+| `no pool found for token pair` | 404 | No liquidity pool exists for one of the required hops |
+| `no route found: insufficient liquidity` | 404 | Pools exist but don't have enough liquidity. Match the **full** string — the wire value is prefixed with `no route found: ` |
 
 ### Swap errors (`POST /api/v1/swap`)
 
 | Error message | HTTP | Cause |
 |---------------|------|-------|
-| `invalid user wallet` | 400 | `userWallet` is not a valid base58 public key |
+| `invalid userWallet address` | 400 | `userWallet` is not a valid base58 public key |
 | All quote errors above | 400/404 | Same causes as quote endpoint |
-| `simulation failed: ...` | 500 | Transaction simulation failed (details in message) |
+| `multi-hop ExactOut is not supported on-chain; ...` | 400 | ExactOut works on a single hop only — use the ExactIn-with-buffer pattern the message describes |
+| `ExactOut is only supported on Vortex pools; ...` | 400 | The route crosses Fluxbeam or Moonit, whose CPIs have no exact-out mode. Re-quote as ExactIn or set `excludeDexes` |
+| `the best route needs more accounts than fit in one transaction; ...` | 422 | Constrain routing (`maxHops`, `excludeDexes`) or split the trade |
 | `failed to build transaction` | 500 | Internal error building the transaction |
+
+<Warning>
+  A **failed simulation is not an error status**. The request returns `200` with
+  `simulation.success: false` and the failure detail in the body — check that
+  field rather than the HTTP status.
+</Warning>
+
+<Note>
+  `GET /quote` will return an ExactOut quote over a Fluxbeam or Moonit route,
+  because the DEX restriction is enforced when the transaction is built, not
+  when the route is priced. Handle the `400` at `/swap` or `/instructions`
+  rather than assuming a successful quote implies an executable ExactOut swap.
+</Note>
 
 ### Instructions errors (`POST /api/v1/instructions`)
 
 | Error message | HTTP | Cause |
 |---------------|------|-------|
-| `invalid user wallet` | 400 | `userWallet` is not a valid base58 public key |
+| `invalid userWallet address` | 400 | `userWallet` is not a valid base58 public key |
 | All quote errors above | 400/404 | Same causes as quote endpoint |
+| `multi-hop ExactOut is not supported on-chain; ...` | 400 | Single-hop ExactOut only |
+| `ExactOut is only supported on Vortex pools; ...` | 400 | Route crosses a DEX with no exact-out CPI |
+| `the best route needs more accounts than fit in one transaction; ...` | 422 | Too many accounts for one transaction |
+| `pool data unavailable` | 404 | Pool account data unavailable (temporary) |
 | `failed to build instructions` | 500 | Internal error building the instructions |
-| `missing pool data` | 500 | Pool account data unavailable (temporary) |
 
 ### Firm-quote errors (`POST /api/v1/swap`, `POST /api/v1/instructions` with `quoteId`)
 

@@ -26,9 +26,17 @@ All errors follow the same envelope:
 | `400` | `invalid swapMode` | Must be `ExactIn` or `ExactOut` | Check the `swapMode` parameter |
 | `404` | `no route found` | No liquidity path exists for this pair/amount | Try a smaller amount, different slippage, or check if the token is supported |
 | `404` | `no pool found` | No pool exists for one of the hops | The token may not have any listed pools |
-| `400` | `insufficient liquidity` | Pools exist but don't have enough liquidity for this amount | Reduce the swap amount |
-| `500` | `simulation failed` | Transaction simulation failed on-chain | Check simulation logs, ensure wallet has sufficient balance |
+| `404` | `no route found: insufficient liquidity` | Pools exist but don't have enough liquidity for this amount | Reduce the swap amount |
+| `400` | `multi-hop ExactOut is not supported on-chain; ...` | ExactOut works on a single hop only | Use the ExactIn-with-buffer pattern in the message |
+| `400` | `ExactOut is only supported on Vortex pools; ...` | Route crosses Fluxbeam or Moonit, which have no exact-out CPI | Re-quote as ExactIn, or `excludeDexes` |
+| `422` | `the best route needs more accounts than fit ...` | Route found but too large for one transaction | Constrain with `maxHops` / `excludeDexes`, or split the trade |
 | `429` | `rate limit exceeded` | Too many requests | Back off and retry with exponential delay |
+
+<Warning>
+  A failed **simulation** is not an error status. `POST /swap` returns `200` with
+  `simulation.success: false` and the failure detail in the body — check that
+  field, not the HTTP status.
+</Warning>
 
 ## Handling errors in code
 
@@ -59,19 +67,23 @@ const response = await fetch(
 const result = await response.json();
 
 if (!result.success) {
-  switch (result.error) {
-    case "missing api key":
-    case "invalid api key":
-      console.log("Check your Authorization header / API key.");
-      break;
-    case "no route found":
-      console.log("No swap route available. Try a smaller amount.");
-      break;
-    case "insufficient liquidity":
-      console.log("Not enough liquidity. Reduce the amount.");
-      break;
-    default:
-      console.error(`API error: ${result.error}`);
+  const err = result.error ?? "";
+
+  // Match by PREFIX, not equality. Most messages carry detail after the stem —
+  // "insufficient liquidity" arrives as "no route found: insufficient liquidity",
+  // so an === comparison silently never matches.
+  if (err === "missing api key" || err === "invalid api key") {
+    console.log("Check your Authorization header / API key.");
+  } else if (err.startsWith("no route found: insufficient liquidity")) {
+    console.log("Not enough liquidity. Reduce the amount.");
+  } else if (err.startsWith("no route found")) {
+    console.log("No swap route available. Try a smaller amount.");
+  } else if (err.startsWith("multi-hop ExactOut")) {
+    console.log("ExactOut is single-hop only — use ExactIn with a buffer.");
+  } else if (err.startsWith("ExactOut is only supported on Vortex")) {
+    console.log("Re-quote as ExactIn, or excludeDexes to force a Vortex route.");
+  } else {
+    console.error(`API error: ${err}`);
   }
 }
 ```
