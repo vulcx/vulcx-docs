@@ -1,7 +1,7 @@
 ---
 title: "Error Codes"
 description: "Every Vulcx API error in one place: HTTP status codes, per-endpoint messages, simulation failures, and on-chain errors — each with its recovery action."
-llmDescription: "Complete Vulcx error reference. Covers HTTP status codes, per-endpoint error messages (quote: invalid inputMint, no route found, insufficient liquidity; swap: invalid user wallet, simulation failed; instructions: missing pool data), SimulationResult fields (insufficientFunds, slippageExceeded), and on-chain errors (SlippageExceeded, BlockhashExpired, InvalidAccountData) with recovery actions."
+llmDescription: "Complete Vulcx error reference. Covers HTTP status codes, per-endpoint error messages (quote: invalid inputMint, no route found, insufficient liquidity; swap: invalid user wallet, simulation failed; instructions: missing pool data), SimulationResult fields (insufficientFunds, slippageExceeded), Vulcx aggregator program errors by Anchor code (6006 SlippageExceeded, 6007 InvalidPoolDiscriminator, 6009 MintMismatch, 6008 ExactOutMultiHopNotSupported, 6022 ExactOutUnsupportedSwapType, session errors 6019-6021), and generic Solana runtime / SPL Token errors (expired blockhash, insufficient funds) with recovery actions."
 ---
 
 # Error Codes
@@ -117,11 +117,40 @@ When `skipSimulation` is `false`, the swap response includes a `simulation` obje
 
 ## On-chain errors
 
-These errors occur after submitting a signed transaction to the network:
+These surface *after* a signed transaction is submitted — in the transaction's
+error and program logs, not in an HTTP response. They come from two sources: the
+Vulcx aggregator program itself, and the Solana runtime / SPL Token program
+underneath it.
+
+### Vulcx aggregator program errors
+
+Anchor custom errors from program `Vu1cUxynmbPUsFqVz51FJJ2y69vX2yrkTS13ajomd9D`.
+In a failed transaction they appear as `Custom(<code>)` on the aggregator
+instruction and by name in the program logs.
+
+| Code | Error | Cause | Recovery |
+|------|-------|-------|----------|
+| `6006` | `SlippageExceeded` | Output fell below the transaction's `min_out` between build and execution | Get a new quote and rebuild — or use [firm quotes](/docs/swap/firm-quotes) to pin the price |
+| `6007` | `InvalidPoolDiscriminator` | A routed pool account isn't a genuine pool (migrated or spoofed) | Re-quote; the pool set may have changed |
+| `6009` | `MintMismatch` | A token mint doesn't match the pool it was routed through | Re-quote |
+| `6010` | `TokenOwnerMismatch` | A token account's owner doesn't match the expected authority | Verify `userWallet` and the token accounts you signed |
+| `6003` | `MathOverflow` | Arithmetic overflowed — typically an extreme amount | Reduce the trade size |
+| `6002` / `6005` | `InvalidOwner` / `InvalidTokenAccount` | An account passed to the program has the wrong owner or malformed data | Rebuild from a fresh quote rather than hand-editing accounts |
+| `6011` | `PercentOverflow` | Split allocations for an input token exceed 100% | Engine-built transactions never do this — rebuild from a quote |
+| `6016` / `6017` / `6001` | `TooManyHops` / `TooManyAccounts` / `InsufficientAccounts` | Hop or account counts outside program limits | The engine normally prevents this (`422` at build). Constrain with `maxHops` / `excludeDexes` |
+| `6008` | `ExactOutMultiHopNotSupported` | ExactOut over more than one hop | The engine pre-rejects this as `400` — single-hop ExactOut only |
+| `6022` | `ExactOutUnsupportedSwapType` | ExactOut routed over Fluxbeam/Moonit, which have no exact-out CPI | The engine pre-rejects this as `400` — ExactOut is Vortex-only |
+| `6019`–`6021` | `InvalidSessionAccount` / `MissingSessionProgramSigner` / `SessionRouteUnsupportedHop` | Session-signed swaps only: bad or expired session, missing session-signer PDA, or a non-Vortex hop in a session route | Applies to session flows; standard signed swaps never hit these |
+
+Administration and validation errors (`6000` `InvalidAmount`, `6004` `InvalidIndex`, `6012`–`6015` `InvalidFeeRecipient` / `FeeTooHigh` / `InvalidAdmin` / `ProtocolNotInitialized`, `6018` `InvalidStepCount`) occur only on protocol-admin instructions or malformed hand-built transactions — not on engine-built swaps.
+
+### Solana runtime & SPL Token errors
+
+These are **not** Vulcx program errors — they come from the network or the token
+program, so they carry no `6xxx` code.
 
 | Error | Cause | Recovery |
 |-------|-------|----------|
-| `SlippageExceeded` | Price changed between build and execution | Get a new quote and rebuild |
-| `InsufficientFunds` | Balance changed after simulation | Verify balance, then retry |
-| `BlockhashExpired` | Transaction wasn't confirmed in time | Rebuild with fresh blockhash |
-| `InvalidAccountData` | Pool state changed | Get a new quote (pool may have been migrated) |
+| Blockhash not found / expired | The transaction wasn't confirmed before its blockhash expired (~60s) | Rebuild with a fresh blockhash and resubmit |
+| `insufficient funds` (SPL Token `0x1`) | The wallet's balance dropped below the input amount after simulation | Verify balance, then retry |
+| Account not found / account data too small | A required account (pool, associated token account) doesn't exist or changed | Ensure token accounts exist; re-quote if a pool migrated |
