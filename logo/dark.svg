@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="24" viewBox="0 0 150 24" fill="none" role="img" aria-label="Vulcx">
+  <defs>
+    <linearGradient id="vx" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C3FBA5"/>
+      <stop offset="1" stop-color="#FF3D01"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#vx)" d="M2.4 3.8 12 21.1 21.6 3.8h-4.8L12 12.5 7.2 3.8Z"/>
+  <text x="34" y="18.4" textLength="112" lengthAdjust="spacingAndGlyphs"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="19" font-weight="700" letter-spacing="1.2"
+        fill="#EAF6E4">VULCX</text>
+</svg>

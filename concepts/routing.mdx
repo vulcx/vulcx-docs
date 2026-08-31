@@ -1,0 +1,54 @@
+---
+title: "Swap routing — multi-hop best-price paths on SVM"
+sidebarTitle: "Routing"
+description: "How Vulcx routing works: direct, multi-hop (up to 5 hops), and split routes across every supported DEX, with slippage protection. Live on Fogo, Solana in progress."
+llmDescription: "How Vulcx routing works at a high level on SVM chains (live on Fogo). Covers direct swaps, multi-hop routing through intermediate tokens (up to 5 hops), supported liquidity sources (Valiant, Fluxbeam, Moonit bonding curves), price impact severity levels, and slippage protection mechanics."
+---
+
+# Routing
+
+Vulcx evaluates multiple paths to find the best execution for every swap.
+
+<Frame caption="A quote request goes into the routing engine, which compares direct, multi-hop, and split routes across every pool and returns the best-price quote.">
+  ![Vulcx routing: a quote request (tokenIn, tokenOut, amount, mode) enters the Vulcx routing engine, which searches every pool on Valiant, Fluxbeam, and Moonit for the best price. It picks the best of a direct swap, a multi-hop route (up to 5 hops), or a split route across several pools, then returns a quote response (amountOut, price impact, route) that POST /swap turns into an unsigned transaction.](/images/routing.png)
+</Frame>
+
+## Direct swaps
+
+For common pairs with deep liquidity (e.g., FOGO/USDC), a single pool often provides the best price. Vulcx compares rates across all supported pools and picks the one with the lowest price impact.
+
+## Multi-hop routing
+
+When a direct swap isn't optimal, Vulcx routes through intermediate tokens. For example, swapping Token A → Token B might execute as:
+
+```text
+Token A → FOGO → USDC → Token B
+```
+
+Each hop uses the best available pool. The routing engine evaluates all viable paths and selects the one that maximizes output (ExactIn) or minimizes input (ExactOut).
+
+The routing engine supports up to **5 hops** on Fogo.
+
+## Supported liquidity sources
+
+| Source | Type |
+| --- | --- |
+| Valiant | Concentrated liquidity |
+| Fluxbeam | AMM |
+| Moonit | Bonding curves |
+
+## Price impact
+
+Every quote includes price impact data:
+
+| Severity | Range | Meaning |
+| --- | --- | --- |
+| `none` | \< 0.1% | Negligible |
+| `low` | 0.1% – 1% | Normal for most trades |
+| `moderate` | 1% – 3% | Consider splitting into smaller trades |
+| `high` | 3% – 5% | Significant. Review before proceeding. |
+| `extreme` | \> 5% | Very large trade relative to available liquidity |
+
+## Slippage protection
+
+The `slippageBps` parameter sets the maximum acceptable price deviation. If the on-chain execution price is worse than the threshold, the transaction reverts atomically. No partial fills.

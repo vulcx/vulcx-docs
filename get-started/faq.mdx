@@ -1,0 +1,82 @@
+---
+title: "Vulcx FAQ — SVM swaps, chains, fees & limits"
+sidebarTitle: "FAQ"
+description: "Answers to common Vulcx questions: which chains are supported, tokens, quote freshness, fees, rate limits, transaction size, ExactIn vs ExactOut, and multi-hop behavior."
+llmDescription: "Frequently asked questions about Vulcx. Covers supported chains (live on Fogo, Solana support in progress), supported tokens on Fogo (Valiant, Fluxbeam, Moonit), quote freshness, devnet support, transaction size limits, ExactIn vs ExactOut, fee structure, rate limits, multi-hop behavior, and how to monitor API status."
+---
+
+## General
+
+<AccordionGroup>
+  <Accordion title="What chains are supported?">
+    Fogo. See [Supported Chains](/concepts/chains) for capabilities and supported DEXs.
+  </Accordion>
+
+  <Accordion title="What tokens are supported?">
+    Any SPL token with liquidity on a supported DEX on Fogo: Valiant, Fluxbeam, or Moonit. If a direct pool doesn't exist, the routing engine tries multi-hop paths through intermediate tokens like FOGO or USDC.
+
+    If `GET /api/v1/quote` returns `no route found`, the token either has no listed pools or insufficient liquidity for the requested amount.
+  </Accordion>
+</AccordionGroup>
+
+## Quotes and pricing
+
+<AccordionGroup>
+  <Accordion title="How fresh are quotes?">
+    Quotes reflect real-time pool state at the moment of the request. Prices can change between getting a quote and submitting the transaction. The `otherAmountThreshold` field enforces a minimum output (`ExactIn`) or maximum input (`ExactOut`) on-chain.
+
+    Quotes don't have an explicit TTL, but the transaction built from `POST /api/v1/swap` expires at `lastValidBlockHeight` (roughly 60 seconds).
+  </Accordion>
+
+  <Accordion title="What's the difference between ExactIn and ExactOut?">
+    - **ExactIn**: You specify the exact input amount. The API estimates the output. Use when selling a specific amount ("sell exactly 1 FOGO").
+    - **ExactOut**: You specify the exact output amount. The API estimates the input needed. Use when buying a specific amount ("buy exactly 100 USDC").
+
+    Both modes enforce slippage protection on-chain.
+  </Accordion>
+
+  <Accordion title="How are fees calculated?">
+    Up to three, each reported separately:
+
+    1. **Pool fees** set by the DEX operators. Shown as `feeBps` in the quote response and `feeAmount` in the swap/instructions response.
+    2. **Vulcx's protocol fee** — `platformFeeBps`, taken from the output amount and reported as `platformFeeAmount`.
+    3. **Your integrator fee** — `integratorFeeBps`, set per request and kept by you in full, paid on-chain to your `referrer` wallet.
+
+    Rates 2 and 3 are independent and **add**; yours is not a share of ours. Their sum is capped at 100 bps. See [Fees](/concepts/fees).
+
+    The `amountIn` and `amountOut` values already account for all fees. No hidden charges.
+  </Accordion>
+</AccordionGroup>
+
+## Technical
+
+<AccordionGroup>
+  <Accordion title="Is devnet supported?">
+    Not currently. The API operates on Fogo mainnet only. Devnet support may be added in the future.
+  </Accordion>
+
+  <Accordion title="What's the maximum transaction size?">
+    Transactions have a 1232-byte limit. For multi-hop routes with many accounts, the API uses Address Lookup Tables (ALTs) to compress the transaction. If you use `POST /api/v1/instructions`, include the `addressLookupTableAddresses` when building a v0 transaction.
+  </Accordion>
+
+  <Accordion title="What are the rate limits?">
+    One budget for every key regardless of plan: 100 cost units/second, burst 200. Requests are debited by weight — a quote costs 1, a transaction build costs 5 — so that is 100 quotes/second or 20 builds/second. Without a key you get 1 unit/second, burst 5. If you hit a `429`, use exponential backoff (1s, 2s, 4s). See [Rate limits](/api-reference/rate-limits).
+  </Accordion>
+
+  <Accordion title="When should I use /swap vs /instructions?">
+    - Use **`POST /api/v1/swap`** for the simplest integration. You get a ready-to-sign transaction.
+    - Use **`POST /api/v1/instructions`** when you need to compose the swap with other instructions in a single transaction (e.g., creating token accounts, adding memos, closing accounts).
+
+    Both use the same routing engine and produce the same on-chain result.
+  </Accordion>
+
+  <Accordion title="What happens if a multi-hop swap partially fails?">
+    Nothing. All swap instructions execute atomically on-chain. If any hop fails (insufficient liquidity, slippage exceeded, etc.), the entire transaction reverts. No partial fills, no stuck funds.
+  </Accordion>
+
+  <Accordion title="How do I monitor API status?">
+    Call `GET https://api.vulcx.xyz/health`. It returns `{"status": "ok"}` when the service is running. For production integrations, poll this endpoint periodically and alert if it returns a non-200 status.
+
+    For a human-readable view — API health plus a live quote, and a log of past incidents — see [vulcx.xyz/status](https://vulcx.xyz/status/). Those checks run in your browser, so treat `/health` as the source of truth for automation.
+  </Accordion>
+</AccordionGroup>

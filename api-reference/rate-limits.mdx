@@ -1,0 +1,140 @@
+---
+title: "Rate Limits"
+description: "Vulcx API rate limits: one flat budget of 100 cost units/second (burst 200) for every key regardless of plan, debited by request weight — a quote costs 1, a transaction build costs 5. Covers anonymous access, the pre-auth per-IP ceiling, the 429 shape, and retry strategy."
+llmDescription: "Vulcx API rate limits on SVM chains (live on Fogo). One published budget applies to every API key regardless of plan: 100 cost units per second sustained, burst 200. Buckets are debited by request cost, not request count — GET /api/v1/quote and GET /api/v1/price cost 1 unit, GET /api/v1/pools and POST /api/v1/cpi/route-accounts cost 3, POST /api/v1/swap and POST /api/v1/instructions cost 5. That is 100 quotes/second, or 20 transaction builds/second, or any mix. Rate limits deliberately do NOT vary by plan; plans differ only in how many keys they allow. Anonymous requests with no Authorization header get 1 unit/second, burst 5. A separate pre-auth per-IP ceiling of 200 units/second, burst 400, runs before authentication and covers the WebSocket upgrade. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (do not cache quotes, stream instead of polling, use the instructions endpoint)."
+---
+
+The Vulcx API rate limits by **cost**, not by request count, against a single published budget
+that is the same for every caller who sends a key.
+
+## One budget, weighted by what you ask for
+
+A quote is a read against in-memory pool state. A swap runs that same routing and then builds a
+transaction, resolves its lookup tables, and simulates it. Charging both "one request" makes the
+budget meaningless for whichever of the two you sized it against, so each request debits your
+bucket by its weight:
+
+| Endpoint | Cost |
+|---|---|
+| `GET /api/v1/quote` | 1 |
+| `GET /api/v1/price`, `GET /api/v1/price/:mint` | 1 |
+| `GET /api/v1/pools/*` | 3 |
+| `POST /api/v1/cpi/route-accounts` | 3 |
+| `POST /api/v1/swap` | 5 |
+| `POST /api/v1/instructions` | 5 |
+
+| With an API key | Sustained | Burst |
+|---|---|---|
+| Every plan | 100 units/second | 200 units |
+
+Through the table above that is **100 quotes/second, or 20 transaction builds/second, or any mix
+of the two**.
+
+<Note>
+**Rate limits do not vary by plan.** Free, Pro, Scale and Enterprise keys are all rated at the
+same 100 units/second. Plans differ in how many keys you may hold, not in throughput.
+
+This is deliberate. A ceiling derived from trailing volume cannot be capacity-planned against,
+and it throttles a new integration hardest on day one — exactly when its quote-to-swap ratio is
+at its worst and it needs headroom most.
+</Note>
+
+## Anonymous access (no API key)
+
+`GET /api/v1/quote`, `POST /api/v1/swap`, `POST /api/v1/instructions`, and `GET /api/v1/price`
+all work with no `Authorization` header — useful for trying the API before you get a key.
+Anonymous callers share a small per-IP bucket, debited by the same cost table:
+
+| | Sustained | Burst |
+|---|---|---|
+| Anonymous (no key) | 1 unit/second | 5 units |
+
+A burst of 5 is exactly one `POST /api/v1/swap`. Anonymous access is for evaluation; for anything
+else [get a key](/get-started/authentication) — same mechanics, 100× the budget, scoped to your
+account rather than shared with every anonymous caller on your IP.
+
+`GET /health` requires no key and is not subject to any of these limits.
+
+### Per-IP ceiling (before authentication)
+
+A second limiter runs **before** authentication and buckets by client IP rather than by key. It
+protects the auth path from unauthenticated floods, so it applies to every `/api/v1/*` request —
+including ones with a missing or invalid key — and to the WebSocket upgrade.
+
+| | Sustained | Burst |
+|---|---|---|
+| Per client IP, pre-auth | 200 units/second | 400 units |
+
+It sits at twice the published per-key budget so it never binds on legitimate traffic from a
+single customer; it should only trip on abuse. If you proxy many customers through one egress IP,
+they share this ceiling even though their per-key budgets are separate.
+
+<Note>
+  The WebSocket handshake is covered by this per-IP limiter **only** — the per-key budget above is
+  not applied to the upgrade. Once connected, the stream is not rate limited per message.
+</Note>
+
+## Rate limit response
+
+When rate limited, the API returns HTTP `429`:
+
+```json
+{
+  "success": false,
+  "error": "rate limit exceeded"
+}
+```
+
+## Retry strategy
+
+Use exponential backoff when you receive a `429`:
+
+<CodeGroup>
+```bash cURL
+for i in 1 2 3; do
+  response=$(curl -s -w "\n%{http_code}" "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn")
+  http_code=$(echo "$response" | tail -1)
+  [ "$http_code" != "429" ] && echo "$response" && break
+  sleep $((2 ** i))
+done
+```
+
+```typescript TypeScript
+async function fetchWithRetry(url: string, options?: RequestInit, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status !== 429) return response;
+
+    const delay = Math.pow(2, attempt) * 1000;
+    await new Promise((r) => setTimeout(r, delay));
+  }
+  throw new Error("Rate limit exceeded after retries");
+}
+```
+
+```python Python
+import time
+import requests
+
+def fetch_with_retry(url, max_retries=3, **kwargs):
+    for attempt in range(max_retries + 1):
+        resp = requests.request(**kwargs, url=url)
+        if resp.status_code != 429:
+            return resp
+        time.sleep(2 ** attempt)
+    raise Exception("Rate limit exceeded after retries")
+```
+</CodeGroup>
+
+## Best practices
+
+- **Don't cache quotes.** A quote's firm commitment lives for `validForMs` (~3 s) and its
+  price-or-fail window for `firmForMs` (~400 ms) — see [Firm quotes](/docs/swap/firm-quotes). Re-fetch
+  before you build. (`lastValidBlockHeight` bounds how long the *transaction* can land, ~60 s; that
+  is a different clock from how long the *price* is honoured.)
+- **Stream instead of polling.** If you need continuously fresh prices, subscribe on
+  [`GET /api/v1/stream`](/api-reference/stream/index) — the connection is not per-message rate
+  limited, so it is strictly cheaper than spending 1 unit per `/quote`.
+- **Prefer `/instructions` over `/quote` + `/swap`.** One `POST /api/v1/instructions` costs 5 units;
+  a `GET /api/v1/quote` followed by `POST /api/v1/swap` costs 6 and makes the engine route twice.

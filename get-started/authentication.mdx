@@ -1,0 +1,120 @@
+---
+title: "Authentication — API keys & the Authorization header"
+sidebarTitle: "Authentication"
+description: "Authenticate Vulcx API requests with an API key using the Authorization: Bearer header — optional on REST endpoints, required on the WebSocket stream. How to get a key, use it from the SDK, and keep it secure."
+llmDescription: "How to authenticate with the Vulcx API. REST endpoints on https://api.vulcx.xyz (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /api/v1/price) accept an OPTIONAL API key (format vulcx_...) sent in the Authorization: Bearer header — calls with no key are allowed but capped at a small anonymous per-IP budget (1 cost unit/second, burst 5); a key raises that to the single published budget of 100 cost units/second, burst 200, which is identical for every plan — plans differ only in how many keys you may hold. GET /health never requires a key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is REQUIRED, passed as ?key=vulcx_... since browsers can't set custom headers on a WS handshake. Covers getting a key (free during beta via Telegram), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey), 401/403 errors for invalid keys, key security best practices, and a link to rate limits. SVM chains: live on Fogo today, Solana in progress."
+icon: "key"
+---
+
+An API key is **optional** on REST calls to the Vulcx API (`https://api.vulcx.xyz`) — `/quote`,
+`/swap`, `/instructions`, and `/price` all work with no key. Without one, you're on a small shared
+anonymous budget of 1 cost unit/second; send a key and you get your own 100 cost units/second. Keys
+look like `vulcx_` followed by a long hex string, and you send them in the standard `Authorization:
+Bearer` header (or as a `?key=` query parameter).
+
+<Note>
+The **WebSocket stream is the exception**: `GET /api/v1/stream` always requires a key, passed as
+`?key=` since a browser WS handshake can't carry custom headers. See
+[WebSocket streaming](#websocket-streaming) below.
+</Note>
+
+<Note>
+Vulcx is **free during beta** — there are no paid tiers yet. Getting a key is still worthwhile:
+anonymous access is capped at 1 cost unit per second against the 100 a key gets (see
+[Rate limits](/api-reference/rate-limits)), and a key is what gives you your own budget rather
+than a bucket shared with every anonymous caller on your IP.
+</Note>
+
+## Get an API key
+
+<Steps>
+  <Step title="Request a key">
+    During beta, keys are issued through our Telegram. Reach out and ask —
+    keys are granted at no cost.
+
+    <Card title="Get an API key on Telegram" icon="telegram" href="https://t.me/vulcxsupport" horizontal>
+      Message the Vulcx team on Telegram and request a key.
+    </Card>
+  </Step>
+  <Step title="Store it as an environment variable">
+    Never hard-code a key in source. Keep it in an environment variable:
+
+    ```bash
+    export VULCX_KEY="vulcx_your_key_here"
+    ```
+  </Step>
+</Steps>
+
+## Authenticate a request
+
+Send your key in the `Authorization` header on every request:
+
+<CodeGroup>
+```bash cURL
+curl "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn" \
+  -H "Authorization: Bearer $VULCX_KEY"
+```
+
+```typescript TypeScript
+const res = await fetch(
+  "https://api.vulcx.xyz/api/v1/quote?inputMint=So11...&outputMint=uSd2...&amount=1000000000&swapMode=ExactIn",
+  { headers: { Authorization: `Bearer ${process.env.VULCX_KEY}` } },
+);
+```
+
+```python Python
+import os, requests
+
+res = requests.get(
+    "https://api.vulcx.xyz/api/v1/quote",
+    params={
+        "inputMint": "So11111111111111111111111111111111111111112",
+        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        "amount": "1000000000",
+        "swapMode": "ExactIn",
+    },
+    headers={"Authorization": f"Bearer {os.environ['VULCX_KEY']}"},
+)
+```
+</CodeGroup>
+
+## SDK
+
+The [SDK](/sdk/configuration) takes the key directly — you don't set headers yourself.
+
+```typescript SDK
+import { VulcxSDK } from "@vulcx/sdk";
+
+const sdk = new VulcxSDK({ apiKey: process.env.VULCX_KEY });
+```
+
+## WebSocket streaming
+
+Browsers can't set custom headers on a WebSocket connection, so the streaming endpoint accepts the
+key as a `key` query parameter instead:
+
+```text
+wss://api.vulcx.xyz/api/v1/stream?key=vulcx_your_key_here
+```
+
+## Keep your key secret
+
+<Warning>
+A key grants access under your account's rate limits. Treat it like a password.
+</Warning>
+
+- **Server-side keys stay on the server.** Don't commit keys to git or ship them in a public repo.
+- **Browser usage exposes the key** in client code. For client-side embeds, use a key you've
+  provisioned for that purpose and rotate it if it leaks.
+- **Rotate compromised keys** by requesting a new one and retiring the old.
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `401 Unauthorized` | No API key was provided, on an endpoint that requires one — only the WebSocket stream (`/api/v1/stream`) requires a key; REST calls with no key succeed anonymously instead. |
+| `403 Forbidden` | The key is invalid, disabled, or revoked. |
+
+The SDK surfaces these as `AuthError` — see [SDK error handling](/sdk/error-handling). For
+throughput limits — including the tighter anonymous-tier limit — and the `429` response, see
+[Rate limits](/api-reference/rate-limits).

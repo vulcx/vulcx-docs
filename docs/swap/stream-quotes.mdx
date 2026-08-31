@@ -1,0 +1,184 @@
+---
+title: "Stream Quotes"
+description: "Subscribe to live swap quotes over WebSocket and update prices in real time without polling."
+llmDescription: "Guide to the Vulcx WebSocket quote stream (wss://api.vulcx.xyz/api/v1/stream) on SVM chains (live on Fogo). Requires an API key as a ?key=vulcx_... query parameter — the stream is the one endpoint where a key is mandatory; REST endpoints (quote/swap/instructions/price) accept an optional key instead. Explains when to stream vs poll GET /api/v1/quote, how to connect, the subscribe/unsubscribe protocol with a pairs array ({in, out, amount, exactIn}), how to handle quote, invalidate (firm-quote drift), and ack messages, that every quote push carries a firm-quote quoteId/validForMs/firmForMs redeemable on POST /swap, reconnection, and limits (256 subscriptions/connection, change-only pushes, ~50ms debounce). Includes runnable Browser and Node.js (ws) examples with the key in the connection URL."
+---
+
+# Stream Quotes
+
+The Vulcx quote stream pushes a fresh quote whenever the price of a token pair changes, so your UI
+can show a live rate without polling. It's a WebSocket endpoint that speaks plain JSON.
+
+```
+wss://api.vulcx.xyz/api/v1/stream?key=vulcx_your_key_here
+```
+
+<Info>
+**Stream vs. poll.** Use streaming for a continuously updating price (a swap form, a price ticker).
+For a single quote — for example, right before building a transaction — use
+[`GET /api/v1/quote`](/docs/swap/get-quote). The streamed `amountOut` matches what `/quote` returns
+for the same pair and amount. For the full message schema, see the
+[Stream Quotes API reference](/api-reference/stream/index).
+</Info>
+
+<Note>
+Unlike the REST endpoints (`/quote`, `/swap`, `/instructions`, `/price`), which accept an optional
+key, the stream always requires one. Browsers can't set custom headers on a WebSocket handshake,
+so the key goes in the URL as `?key=` — see [Authentication](/get-started/authentication).
+</Note>
+
+## How it works
+
+1. Open a WebSocket connection.
+2. Send a `subscribe` message listing the pairs you care about.
+3. Receive an **immediate first quote** for each pair, then a `subscribed` ack.
+4. Receive a new `quote` message whenever that pair's price **materially changes**.
+5. Send `unsubscribe` to stop a stream, or close the socket to end them all.
+
+## Subscribe
+
+Each pair is `{ in, out, amount, exactIn }`:
+
+<ParamField body="in" type="string" required>
+  Input token mint address (base58-encoded public key).
+</ParamField>
+
+<ParamField body="out" type="string" required>
+  Output token mint address (base58-encoded public key).
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  Amount in smallest token units, as a string. For FOGO (9 decimals): `1000000000` = 1 FOGO.
+</ParamField>
+
+<ParamField body="exactIn" type="boolean" required>
+  `true` quotes `amount` as the exact input (ExactIn); `false` treats it as the exact desired output (ExactOut).
+</ParamField>
+
+## Handle messages
+
+Three server message types arrive on the socket:
+
+- **`quote`** — a live quote: `{ type, in, out, amount, amountOut, priceImpactBps, hops, slot, quoteId, validForMs, firmForMs }`.
+  The `quoteId` is a [firm-quote](/docs/swap/firm-quotes) commitment: pass it to
+  [`POST /swap`](/docs/swap/build-transaction) to execute at exactly the streamed price.
+- **`invalidate`** — `{ type, quoteId }`: the last quote pushed for a pair drifted past the firm
+  margin, so stop offering that `quoteId` as a firm price (a fresh `quote` follows).
+- **`subscribed` / `unsubscribed` / `error`** — acks. Errors include a `message`; subscribe/unsubscribe acks include a `count` of accepted pairs.
+
+A `quote` is only re-sent when `amountOut`, `priceImpactBps`, or `hops` changes — so every message
+you receive is a genuine price update.
+
+## Examples
+
+<CodeGroup>
+```javascript Browser
+const ws = new WebSocket(`wss://api.vulcx.xyz/api/v1/stream?key=${VULCX_KEY}`);
+
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    op: "subscribe",
+    pairs: [
+      {
+        in: "So11111111111111111111111111111111111111112",
+        out: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        amount: "50000000",
+        exactIn: true,
+      },
+    ],
+  }));
+};
+
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.type === "quote") {
+    console.log(`${msg.amount} in → ${msg.amountOut} out`
+      + ` (${msg.hops} hop(s), impact ${msg.priceImpactBps} bps, slot ${msg.slot})`);
+  } else {
+    console.log("ack:", msg);
+  }
+};
+
+ws.onclose = () => {
+  // Reconnect and resubscribe on unexpected close.
+};
+```
+
+```javascript Node.js
+import WebSocket from "ws";
+
+const ws = new WebSocket(`wss://api.vulcx.xyz/api/v1/stream?key=${process.env.VULCX_KEY}`);
+
+ws.on("open", () => {
+  ws.send(JSON.stringify({
+    op: "subscribe",
+    pairs: [
+      {
+        in: "So11111111111111111111111111111111111111112",
+        out: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+        amount: "50000000",
+        exactIn: true,
+      },
+    ],
+  }));
+});
+
+ws.on("message", (data) => {
+  const msg = JSON.parse(data.toString());
+  if (msg.type === "quote") {
+    console.log(`out=${msg.amountOut} hops=${msg.hops} slot=${msg.slot}`);
+  } else {
+    console.log("ack:", msg);
+  }
+});
+```
+</CodeGroup>
+
+## Unsubscribe
+
+Send the same pair with `op: "unsubscribe"` to stop receiving updates for it:
+
+```javascript
+ws.send(JSON.stringify({
+  op: "unsubscribe",
+  pairs: [
+    {
+      in: "So11111111111111111111111111111111111111112",
+      out: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+      amount: "50000000",
+      exactIn: true,
+    },
+  ],
+}));
+```
+
+Closing the socket cancels all of a connection's subscriptions.
+
+## Route templates for CPI integrators
+
+The same socket also streams **CPI route templates** — the full `POST /cpi/route-accounts` payload
+(route instruction, accounts, LUTs), pushed only when the template actually changes. Liquidation
+keepers hold the latest template in memory and fire with zero HTTP round-trips:
+
+```json
+{ "op": "subscribe_route", "routes": [{
+    "authority": "YOUR_PROGRAM_PDA",
+    "inputMint": "So11111111111111111111111111111111111111112",
+    "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+    "amount": "1000000000",
+    "excludeDexes": ["moonit"]
+}]}
+```
+
+See [On-Chain Swaps (CPI) → Streaming route templates](/guides/onchain-cpi#streaming-route-templates-zero-round-trips-at-fire-time)
+for semantics (`seq`, change-only pushes, corridor constraints). `unsubscribe_route` mirrors
+`unsubscribe`. Max 32 route subscriptions per connection.
+
+## Reconnection & limits
+
+- **Reconnect on close.** Subscriptions live with the connection. After an unexpected close, reopen
+  the socket and re-send your `subscribe` messages.
+- **Read promptly.** A connection whose outbound queue overflows (a slow reader) is dropped rather
+  than buffered. If this happens, reconnect and resubscribe.
+- **Up to 256 subscriptions per connection** (32 for `subscribe_route`). Spread more across multiple
+  connections.

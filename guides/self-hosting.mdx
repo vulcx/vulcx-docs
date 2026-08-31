@@ -1,0 +1,159 @@
+---
+title: "Self-hosting Vulcx"
+sidebarTitle: "Self-Hosting"
+description: "Deploy the Vulcan binary with Docker or a raw binary, then harden it with nginx, SSL, and systemd."
+llmDescription: "Step-by-step deployment guide for the Vulcan (self-hosted) binary on SVM chains (Fogo today). Prerequisites: FluxRPC key (fluxrpc.com?ref=VULCX) and community license key (license.vulcx.xyz). Deployment options: Docker Compose (curl docker-compose.yml, fill .env, docker compose up -d) or raw binary (download linux-amd64/arm64 from GitHub releases). Full env var reference: COMMUNITY_MODE=true, CHAIN=fogo (default), RPC_URL (FluxRPC endpoint+key), YELLOWSTONE_URL, YELLOWSTONE_TOKEN (same FluxRPC key), COMMUNITY_LICENSE_KEY, COMMUNITY_LICENSE_API=https://license.vulcx.xyz, LICENSE_CHECK_INTERVAL (default 6h), REFERRER_WALLET (optional — dApp builders only, not bot operators), ALLOWED_IPS (optional comma-separated CIDRs), HTTP_PORT=8080, HTTP_HOST=0.0.0.0, LUT_AUTHORITY_KEY_FOGO (optional, holds private key + FOGO — treat as secret). Nginx setup: apt install nginx certbot, copy examples/nginx.conf, set server_name, certbot --nginx. Referral fees: set REFERRER_WALLET for dApp/UI builders to earn on-chain protocol fee split; leave unset for bot/internal use. Systemd unit for auto-restart. Warning: LUT_AUTHORITY_KEY_FOGO holds a private key — chmod 600, never commit. SVM chains: live on Fogo today, Solana in progress."
+noindex: true
+---
+
+# Self-hosting Vulcx
+
+This guide walks through a production deployment of the Vulcan binary — from first credential to an instance running behind nginx with SSL and auto-restart on reboot.
+
+<Info>
+New to self-hosting? Start with the [self-hosted overview](/get-started/self-hosted) to understand requirements and the quickest path to a running instance.
+</Info>
+
+<Steps>
+  <Step title="Get a FluxRPC key">
+    Sign up at [fluxrpc.com](https://fluxrpc.com?ref=VULCX) and copy your API key. You'll use the same key for both `RPC_URL` and `YELLOWSTONE_TOKEN`. The binary makes a live RPC call at startup to validate the key — it won't start with an invalid or missing one.
+  </Step>
+
+  <Step title="Get a community license key">
+    Register at [license.vulcx.xyz](https://license.vulcx.xyz). After signup your license key (`vulcxcom_...`) appears on the dashboard. The binary fetches your plan's rate limits from the license server at startup and enforces them on every request.
+  </Step>
+
+  <Step title="Deploy">
+    <Tabs>
+      <Tab title="Docker Compose">
+        ```bash
+        # Download the env template and compose file
+        curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/.env.example
+        curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/docker-compose.yml
+        cp .env.example .env
+
+        # Fill in your credentials
+        nano .env
+
+        # Start
+        docker compose up -d
+        docker compose logs -f
+        ```
+
+        Verify the service is up:
+        ```bash
+        curl http://localhost:8080/health
+        # → {"status":"ok"}
+        ```
+      </Tab>
+      <Tab title="Binary">
+        ```bash
+        # Download for your platform (use linux-arm64 on ARM servers)
+        curl -L https://github.com/vulcx/vulcan/releases/latest/download/vulcan-linux-amd64 \
+          -o vulcan && chmod +x vulcan
+
+        # Download and fill the env template
+        curl -O https://raw.githubusercontent.com/vulcx/vulcan/main/.env.example
+        cp .env.example .env && nano .env
+
+        # Run
+        set -a; source .env; set +a
+        ./vulcan
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Configure">
+    All configuration is via environment variables in `.env`. The full reference:
+
+    | Variable | Required | Default | Description |
+    |---|---|---|---|
+    | `COMMUNITY_MODE` | yes | — | Must be `true` |
+    | `CHAIN` | no | `fogo` | Chain selection (`fogo` only for now) |
+    | `RPC_URL` | yes | — | FluxRPC Fogo endpoint with your API key |
+    | `YELLOWSTONE_URL` | yes | — | Yellowstone gRPC endpoint |
+    | `YELLOWSTONE_TOKEN` | yes | — | Your FluxRPC API key |
+    | `COMMUNITY_LICENSE_KEY` | yes | — | License key from license.vulcx.xyz |
+    | `COMMUNITY_LICENSE_API` | yes | — | `https://license.vulcx.xyz` |
+    | `LICENSE_CHECK_INTERVAL` | no | `6h` | How often to re-validate the license |
+    | `REFERRER_WALLET` | no | — | Wallet address for referral fees (dApp builders only) |
+    | `ALLOWED_IPS` | no | — | Comma-separated CIDRs to allowlist; empty = unrestricted |
+    | `HTTP_PORT` | no | `8080` | HTTP listen port |
+    | `HTTP_HOST` | no | `0.0.0.0` | HTTP listen host |
+    | `LUT_AUTHORITY_KEY_FOGO` | no | — | Private key for Address Lookup Table provisioning |
+
+    <Warning>
+    `LUT_AUTHORITY_KEY_FOGO` holds a private key that must carry FOGO for LUT rent. Treat it as a secret: `chmod 600` its file, never commit it, and never expose it in logs or process listings.
+    </Warning>
+  </Step>
+
+  <Step title="Set up nginx and SSL">
+    To expose the API publicly over HTTPS, proxy it behind nginx with a Let's Encrypt certificate. A ready-to-use config is in the [vulcan repo](https://github.com/vulcx/vulcan/blob/main/examples/nginx.conf).
+
+    ```bash
+    apt install -y nginx certbot python3-certbot-nginx
+
+    # Download the reference nginx config
+    curl -o /etc/nginx/sites-available/vulcx.conf \
+      https://raw.githubusercontent.com/vulcx/vulcan/main/examples/nginx.conf
+
+    # Edit server_name to your domain
+    nano /etc/nginx/sites-available/vulcx.conf
+
+    ln -s /etc/nginx/sites-available/vulcx.conf /etc/nginx/sites-enabled/
+    nginx -t && systemctl reload nginx
+
+    # Issue certificate
+    certbot --nginx -d your-domain.com
+    ```
+
+    After this, the engine is reachable at `https://your-domain.com/api/v1/...`.
+  </Step>
+
+  <Step title="Referral fees (dApp builders only)">
+    If you are building a dApp or UI that routes swaps for end users, set `REFERRER_WALLET` to your wallet address. The engine appends your ATA to every swap transaction; the on-chain program automatically splits a portion of the protocol fee to you.
+
+    ```env
+    REFERRER_WALLET=YourBase58WalletAddress
+    ```
+
+    Leave `REFERRER_WALLET` unset if you are running the engine for your own bot or internal trades. There is no "referrer" in that case — setting it when you are both the router and the swapper has no effect.
+  </Step>
+
+  <Step title="Run as a systemd service">
+    To start the engine automatically on boot and restart it on failure:
+
+    ```bash
+    # Create a dedicated user (optional but recommended)
+    useradd -r -s /bin/false vulcx
+
+    # Install the binary and env file
+    cp vulcan /opt/vulcx/
+    cp .env /opt/vulcx/.env
+    chmod 600 /opt/vulcx/.env
+    chown -R vulcx:vulcx /opt/vulcx
+
+    # Create the unit file
+    cat > /etc/systemd/system/vulcx.service << 'EOF'
+    [Unit]
+    Description=Vulcan
+    After=network.target
+
+    [Service]
+    EnvironmentFile=/opt/vulcx/.env
+    ExecStart=/opt/vulcx/vulcan
+    Restart=always
+    RestartSec=5
+    User=vulcx
+
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+
+    systemctl daemon-reload
+    systemctl enable --now vulcx
+    journalctl -u vulcx -f
+    ```
+  </Step>
+</Steps>

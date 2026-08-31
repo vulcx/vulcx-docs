@@ -1,0 +1,1625 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Vulcx API",
+    "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Valiant, Fluxbeam, and Moonit.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Vulcx",
+      "url": "https://vulcx.xyz"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.vulcx.xyz",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyHeader": []
+    },
+    {
+      "ApiKeyQuery": []
+    },
+    {}
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "Health check",
+        "description": "Returns service health status. Does not require an API key — safe for uptime monitors.",
+        "tags": [
+          "Health"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quote": {
+      "get": {
+        "operationId": "getQuote",
+        "summary": "Get swap quote",
+        "description": "Calculate the best swap route and estimated output for a token pair. Supports ExactIn (specify input, estimate output) and ExactOut (specify output, estimate input) modes. Returns routing details including multi-hop paths, price impact, and fee breakdown.",
+        "tags": [
+          "Quote"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "description": "Optional API key: `Bearer vulcx_...`. Anonymous calls are allowed but capped at a small per-IP rate limit — see [Rate limits](/api-reference/rate-limits).",
+            "schema": {
+              "type": "string",
+              "example": "Bearer vulcx_..."
+            }
+          },
+          {
+            "name": "inputMint",
+            "in": "query",
+            "required": true,
+            "description": "Input token mint address (base58-encoded public key).",
+            "schema": {
+              "type": "string",
+              "example": "So11111111111111111111111111111111111111112"
+            }
+          },
+          {
+            "name": "outputMint",
+            "in": "query",
+            "required": true,
+            "description": "Output token mint address (base58-encoded public key).",
+            "schema": {
+              "type": "string",
+              "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+            }
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "required": true,
+            "description": "Amount in smallest token units (lamports for FOGO, base units for SPL tokens). For FOGO with 9 decimals: 1000000000 = 1 FOGO.",
+            "schema": {
+              "type": "string",
+              "example": "1000000000"
+            }
+          },
+          {
+            "name": "swapMode",
+            "in": "query",
+            "required": true,
+            "description": "How the amount is interpreted. `ExactIn`: amount is exact input, output is estimated. `ExactOut`: amount is exact desired output, input is estimated.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ExactIn",
+                "ExactOut"
+              ],
+              "example": "ExactIn"
+            }
+          },
+          {
+            "name": "slippageBps",
+            "in": "query",
+            "required": false,
+            "description": "Slippage tolerance in basis points (1 bps = 0.01%). Defaults to 50 (0.5%). Common values: 10 (0.1%), 50 (0.5%), 100 (1%), 300 (3%).",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "example": 50
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "200": {
+            "description": "Quote calculated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QuoteResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No route found for the given token pair and amount.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/swap": {
+      "post": {
+        "operationId": "buildSwap",
+        "summary": "Build swap transaction",
+        "description": "Build an unsigned transaction for a token swap. The returned base64-encoded transaction must be signed by the user's wallet and submitted to the network. Optionally runs a simulation to validate the transaction before returning it.",
+        "tags": [
+          "Swap"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "description": "Optional API key: `Bearer vulcx_...`. Anonymous calls are allowed but capped at a small per-IP rate limit — see [Rate limits](/api-reference/rate-limits).",
+            "schema": {
+              "type": "string",
+              "example": "Bearer vulcx_..."
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "Forbidden — origin not allowed, or quoteId was minted under a different API key."
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "200": {
+            "description": "Swap transaction built successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SwapResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters or insufficient liquidity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No route found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The best route needs more accounts than fit in one transaction. Constrain routing (`maxHops`, `excludeDexes`) or split the trade.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Transaction build failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Quote stale — the pinned route no longer exists, or (with firm: true) the price drifted past the firm margin. Fetch a fresh quote and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Quote expired — quoteId past its validForMs (or firmForMs when firm: true), evicted, or unknown. Fetch a fresh quote.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/price/{mint}": {
+      "get": {
+        "operationId": "getPrice",
+        "summary": "Get token price",
+        "description": "Returns the current spot USD price for a token derived from live on-chain pool state. Stablecoins are anchored at $1; FOGO is priced from the deepest native↔stablecoin pool; all other tokens from their deepest anchor-paired pool. Returns `price: 0` when no price is known (no anchor-paired pool observed, or decimals pending).",
+        "tags": [
+          "Price"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "description": "Optional API key: `Bearer vulcx_...`. Anonymous calls are allowed but capped at a small per-IP rate limit — see [Rate limits](/api-reference/rate-limits).",
+            "schema": {
+              "type": "string",
+              "example": "Bearer vulcx_..."
+            }
+          },
+          {
+            "name": "mint",
+            "in": "path",
+            "required": true,
+            "description": "Token mint address (base58-encoded public key).",
+            "schema": {
+              "type": "string",
+              "example": "So11111111111111111111111111111111111111112"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Invalid request — malformed `mint` (not a valid base58 public key).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "200": {
+            "description": "Price retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PriceResult"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/price": {
+      "get": {
+        "operationId": "getBatchPrices",
+        "summary": "Batch token prices",
+        "description": "Fetch up to 100 spot USD prices in one call. Pass a comma-separated list of mint addresses as the `mints` query parameter. Unknown tokens return `price: 0`.",
+        "tags": [
+          "Price"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "description": "Optional API key: `Bearer vulcx_...`. Anonymous calls are allowed but capped at a small per-IP rate limit — see [Rate limits](/api-reference/rate-limits).",
+            "schema": {
+              "type": "string",
+              "example": "Bearer vulcx_..."
+            }
+          },
+          {
+            "name": "mints",
+            "in": "query",
+            "required": true,
+            "description": "Comma-separated token mint addresses (base58), max 100.",
+            "schema": {
+              "type": "string",
+              "example": "So11111111111111111111111111111111111111112,uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "200": {
+            "description": "Prices retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "prices": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PriceResult"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request — missing or malformed `mints` parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instructions": {
+      "post": {
+        "operationId": "buildInstructions",
+        "summary": "Get raw swap instructions",
+        "description": "Returns raw instructions for a swap without wrapping them in a transaction. Use this when you need to compose swap instructions with other instructions in a custom transaction. The caller is responsible for fetching a recent blockhash, building the transaction, signing, and submitting.",
+        "tags": [
+          "Instructions"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "description": "Optional API key: `Bearer vulcx_...`. Anonymous calls are allowed but capped at a small per-IP rate limit — see [Rate limits](/api-reference/rate-limits).",
+            "schema": {
+              "type": "string",
+              "example": "Bearer vulcx_..."
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "Forbidden — origin not allowed, or quoteId was minted under a different API key."
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "200": {
+            "description": "Instructions generated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/InstructionsResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No route found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The best route needs more accounts than fit in one transaction. Constrain routing (`maxHops`, `excludeDexes`) or split the trade.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Instruction build failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Quote stale — the pinned route no longer exists, or (with firm: true) the price drifted past the firm margin. Fetch a fresh quote and retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Quote expired — quoteId past its validForMs (or firmForMs when firm: true), evicted, or unknown. Fetch a fresh quote.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cpi/route-accounts": {
+      "post": {
+        "operationId": "buildRouteCpiAccounts",
+        "summary": "Get CPI account list for calling route from another program",
+        "description": "Builds the Vulcx `route` instruction shaped for a Cross-Program Invocation (CPI): the supplied program PDA is wired in as the swap authority (signer, and writable when a Moonit hop is involved). Forward `routeInstruction.accounts` into your program's `route` CPI and sign with your PDA seeds (`invoke_signed`). No ATA-create or SOL wrap/unwrap instructions are emitted — the returned `requiredTokenAccounts` are ATAs your PDA must own and fund before the CPI runs. Split routes are not yet supported and return 400. See the on-chain CPI guide for the full flow.",
+        "tags": [
+          "CPI"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "description": "Optional API key: `Bearer vulcx_...`. Anonymous calls are allowed but capped at a small per-IP rate limit — see [Rate limits](/api-reference/rate-limits).",
+            "schema": {
+              "type": "string",
+              "example": "Bearer vulcx_..."
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CPIRouteAccountsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "200": {
+            "description": "Route CPI account list built successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RouteCPIAccountsResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters, or a split route that CPI does not yet support.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No route found between the tokens.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Route shape not supported for CPI: either a split route (not yet supported for CPI) or too many accounts for one transaction.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to build the account list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/vulcx-quote-signer": {
+      "get": {
+        "tags": [
+          "quote"
+        ],
+        "summary": "Signed-quote verification key",
+        "description": "Public, unauthenticated. Returns the Ed25519 public key that signs firm-quote commitments. Pin this key and verify each quote's quoteSignature offline: the signature covers the UTF-8 bytes of the pipe-joined canonical message vulcx-quote-v1|quoteId|inputMint|outputMint|amountIn|amountOut|exactIn|expiresAtUnixMs (mints base58, amounts base10, exactIn 0/1, expiry unix ms). Returns 404 when quote signing is not enabled on this deployment.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Verification key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alg": {
+                      "type": "string",
+                      "example": "ed25519"
+                    },
+                    "publicKey": {
+                      "type": "string",
+                      "description": "Base58 Ed25519 public key.",
+                      "example": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+                    },
+                    "signatureEncoding": {
+                      "type": "string",
+                      "example": "base58"
+                    },
+                    "messageFormat": {
+                      "type": "string",
+                      "example": "vulcx-quote-v1|quoteId|inputMint|outputMint|amountIn|amountOut|exactIn|expiresAtUnixMs"
+                    },
+                    "notes": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quote signing not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "No API key was provided.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "missing api key"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The API key is invalid, disabled, revoked, or blocked by its origin allowlist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "invalid api key"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded for this API key's plan.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": "rate limit exceeded"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key sent as `Authorization: Bearer vulcx_...`. Optional on REST endpoints (anonymous calls are rate-limited more tightly); required on the WebSocket stream (`GET /api/v1/stream`)."
+      },
+      "ApiKeyQuery": {
+        "type": "apiKey",
+        "in": "query",
+        "name": "key",
+        "description": "API key as a `?key=vulcx_...` query parameter — required for the WebSocket stream (`GET /api/v1/stream`), since browsers can't set custom headers on a WS handshake. Also accepted (optionally) on REST endpoints as a fallback to the `Authorization` header."
+      }
+    },
+    "schemas": {
+      "PriceResult": {
+        "type": "object",
+        "description": "Spot USD price for a single token.",
+        "properties": {
+          "mint": {
+            "type": "string",
+            "description": "Token mint address.",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "price": {
+            "type": "number",
+            "description": "Spot USD price. `0` when no price is known (no anchor-paired pool or decimals pending).",
+            "example": 0.00909763
+          },
+          "slot": {
+            "type": "integer",
+            "description": "Fogo slot the price was derived at. `0` for stablecoin constants or unknown tokens.",
+            "example": 588079915
+          },
+          "updatedAt": {
+            "type": "integer",
+            "description": "Unix seconds when the price was last updated. `0` for constants/unknowns — use to detect staleness.",
+            "example": 1782798694
+          }
+        },
+        "required": [
+          "mint",
+          "price",
+          "slot",
+          "updatedAt"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "no route found"
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ]
+      },
+      "RouteInfo": {
+        "type": "object",
+        "description": "A single hop in the swap route.",
+        "properties": {
+          "poolAddress": {
+            "type": "string",
+            "description": "Pool address used for this hop.",
+            "example": "HJPjoWUrhoZzkNfRpHuieeFk9WcZWjwy6PBjZ81ngndJ"
+          },
+          "poolType": {
+            "type": "string",
+            "description": "Liquidity pool type (Vortex, Fluxbeam, Moonit, etc.).",
+            "example": "Vortex"
+          },
+          "percent": {
+            "type": "integer",
+            "description": "Percentage of swap amount routed through this pool. 100 for single route.",
+            "example": 100
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "Input token mint for this hop.",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "Output token mint for this hop.",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          }
+        },
+        "required": [
+          "poolAddress",
+          "poolType",
+          "percent",
+          "inputMint",
+          "outputMint"
+        ]
+      },
+      "QuoteResponse": {
+        "type": "object",
+        "description": "Swap quote with routing and price impact details.",
+        "properties": {
+          "inputMint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
+          "amountIn": {
+            "type": "string",
+            "description": "Input amount in smallest token units.",
+            "example": "1000000000"
+          },
+          "amountOut": {
+            "type": "string",
+            "description": "Output amount in smallest token units.",
+            "example": "145320000"
+          },
+          "priceImpactBps": {
+            "type": "integer",
+            "description": "Price impact in basis points.",
+            "example": 25
+          },
+          "priceImpactPercent": {
+            "type": "string",
+            "description": "Human-readable price impact percentage.",
+            "example": "0.25%"
+          },
+          "priceImpactSeverity": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "moderate",
+              "high",
+              "extreme"
+            ],
+            "description": "Price impact severity: none (<0.1%), low (0.1-1%), moderate (1-3%), high (3-5%), extreme (>5%).",
+            "example": "low"
+          },
+          "priceImpactWarning": {
+            "type": "string",
+            "description": "Warning message about price impact. Empty if negligible.",
+            "example": "Price impact is low"
+          },
+          "feeBps": {
+            "type": "integer",
+            "description": "Total fee in basis points across all hops.",
+            "example": 25
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RouteInfo"
+            },
+            "description": "Detailed information about each hop in the route."
+          },
+          "routePath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Token path from input to output. Direct: [inputMint, outputMint]. Multi-hop: [inputMint, ...intermediates, outputMint].",
+            "example": [
+              "So11111111111111111111111111111111111111112",
+              "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+            ]
+          },
+          "hopCount": {
+            "type": "integer",
+            "description": "Number of swap hops. 1 = direct, 2+ = multi-hop.",
+            "example": 1
+          },
+          "otherAmountThreshold": {
+            "type": "string",
+            "description": "Slippage-adjusted threshold. ExactIn: minimum output. ExactOut: maximum input.",
+            "example": "144593400"
+          },
+          "quoteId": {
+            "type": "string",
+            "example": "q_b15372a8d82a93d1e328ae24e5d3669a",
+            "description": "Firm-quote commitment ID. Pass it as quoteId to POST /swap or POST /instructions within validForMs to replay this exact route with min-out anchored to this quote's price. Omitted when the quote cannot be pinned (e.g. split routes)."
+          },
+          "validForMs": {
+            "type": "integer",
+            "example": 3000,
+            "description": "How long quoteId stays redeemable, in milliseconds."
+          },
+          "firmForMs": {
+            "type": "integer",
+            "example": 400,
+            "description": "How long quoteId stays redeemable with firm: true, in milliseconds. Firm redemption collapses slippage to the server's firm margin around this exact price — price-or-fail."
+          },
+          "quoteSignature": {
+            "type": "string",
+            "description": "Base58 Ed25519 signature over the canonical vulcx-quote-v1 message (present when quote signing is enabled). Verify against the key at GET /.well-known/vulcx-quote-signer to prove what price was quoted.",
+            "example": "3xk1...sig"
+          },
+          "quoteExpiresAtMs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Absolute quote expiry (unix milliseconds) embedded in the signed message.",
+            "example": 1767000000000
+          }
+        },
+        "required": [
+          "inputMint",
+          "outputMint",
+          "amountIn",
+          "amountOut",
+          "priceImpactBps",
+          "priceImpactPercent",
+          "priceImpactSeverity",
+          "feeBps",
+          "routes",
+          "routePath",
+          "hopCount",
+          "otherAmountThreshold"
+        ]
+      },
+      "SwapRequest": {
+        "type": "object",
+        "description": "Parameters for building a swap transaction.",
+        "properties": {
+          "userWallet": {
+            "type": "string",
+            "description": "User's wallet address that will sign and execute the transaction.",
+            "example": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "Input token mint address.",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "Output token mint address.",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Amount in smallest token units.",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "description": "ExactIn: amount is exact input. ExactOut: amount is exact desired output.",
+            "example": "ExactIn"
+          },
+          "slippageBps": {
+            "type": "integer",
+            "description": "Slippage tolerance in basis points. Default: 50 (0.5%).",
+            "default": 50,
+            "example": 50
+          },
+          "skipSimulation": {
+            "type": "boolean",
+            "description": "Skip transaction simulation. Faster but no pre-flight validation. Default: false.",
+            "default": false,
+            "example": false
+          },
+          "quoteId": {
+            "type": "string",
+            "example": "q_b15372a8d82a93d1e328ae24e5d3669a",
+            "description": "Optional firm-quote ID from GET /quote (or a WebSocket quote push). Pair, amount, and swapMode must match the original quote. The exact quoted route is replayed and min-out anchors to the quoted price instead of a fresh re-quote."
+          },
+          "firm": {
+            "type": "boolean",
+            "example": false,
+            "description": "Firm (price-or-fail) redemption — requires quoteId and only works within the quote's firmForMs window. Slippage collapses to the server's firm margin (default 10 bps) around the quoted price; slippageBps is ignored. If the route drifted past the margin the request fails with 409 instead of executing at a worse price."
+          },
+          "referrer": {
+            "type": "string",
+            "description": "Optional referrer wallet (base58). Receives `integratorFeeBps` in full, paid on-chain in the output token in the same transaction as the swap. Required whenever integratorFeeBps is set.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "integratorFeeBps": {
+            "type": "integer",
+            "description": "Your own fee rate in basis points of the output, kept by you in full. Requires `referrer` — a rate with no wallet to pay it to returns 400. Added to platformFeeBps, not carved out of it; the sum may not exceed 100 bps.",
+            "example": 20,
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "userWallet",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
+      },
+      "SimulationResult": {
+        "type": "object",
+        "description": "Transaction simulation result.",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "logs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Simulation log messages."
+          },
+          "computeUnitsConsumed": {
+            "type": "integer",
+            "description": "Compute units consumed during simulation.",
+            "example": 85000
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if simulation failed."
+          },
+          "insufficientFunds": {
+            "type": "boolean",
+            "description": "True if the wallet has insufficient funds for the swap."
+          },
+          "slippageExceeded": {
+            "type": "boolean",
+            "description": "True if the price moved beyond slippage tolerance."
+          }
+        },
+        "required": [
+          "success",
+          "logs",
+          "computeUnitsConsumed",
+          "insufficientFunds",
+          "slippageExceeded"
+        ]
+      },
+      "SwapResponse": {
+        "type": "object",
+        "description": "Unsigned swap transaction and execution details.",
+        "properties": {
+          "transaction": {
+            "type": "string",
+            "description": "Base64-encoded unsigned transaction. Sign with user's wallet before submitting."
+          },
+          "lastValidBlockHeight": {
+            "type": "integer",
+            "description": "Transaction expires after this block height (~60 seconds).",
+            "example": 245832190
+          },
+          "amountIn": {
+            "type": "string",
+            "example": "1000000000"
+          },
+          "amountOut": {
+            "type": "string",
+            "example": "145320000"
+          },
+          "minAmountOut": {
+            "type": "string",
+            "description": "Minimum output after slippage (ExactIn only). Transaction fails if actual output is less."
+          },
+          "maxAmountIn": {
+            "type": "string",
+            "description": "Maximum input after slippage (ExactOut only). Transaction fails if actual input exceeds this."
+          },
+          "feeAmount": {
+            "type": "string",
+            "description": "DEX pool trading fee across every hop, in the pool's fee token — the LP fee the pools take, not Vulcx's. Vulcx's own cut is platformFeeAmount.",
+            "example": "0"
+          },
+          "simulation": {
+            "$ref": "#/components/schemas/SimulationResult"
+          },
+          "computeUnitsEstimate": {
+            "type": "integer",
+            "description": "Estimated compute units for execution.",
+            "example": 85000
+          },
+          "route": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Token path from input to output."
+          },
+          "hopCount": {
+            "type": "integer",
+            "example": 1
+          },
+          "pools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Pool addresses used in the route."
+          },
+          "isSplitRoute": {
+            "type": "boolean",
+            "description": "Whether liquidity is split across multiple pools.",
+            "example": false
+          },
+          "splitPercents": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Percentage split across pools (only if isSplitRoute is true)."
+          },
+          "platformFeeBps": {
+            "type": "integer",
+            "description": "Vulcx's fee rate in basis points of the output amount: the global on-chain protocol rate, or this integrator's PartnerConfig override. 0 when the protocol fee is disabled or waived.",
+            "example": 20
+          },
+          "platformFeeAmount": {
+            "type": "string",
+            "description": "platformFeeBps applied to amountOut, in the output token's smallest units.",
+            "example": "29064"
+          },
+          "integratorFeeBps": {
+            "type": "integer",
+            "description": "The caller's own fee rate, kept by them IN FULL. Independent of platformFeeBps — the two ADD and are not a split. Their sum is capped at 100 bps.",
+            "example": 20
+          },
+          "integratorFeeAmount": {
+            "type": "string",
+            "description": "integratorFeeBps applied to amountOut, in the output token's smallest units, paid on-chain to the referrer wallet.",
+            "example": "29064"
+          }
+        },
+        "required": [
+          "transaction",
+          "lastValidBlockHeight",
+          "amountIn",
+          "amountOut",
+          "feeAmount",
+          "route",
+          "hopCount",
+          "pools",
+          "computeUnitsEstimate",
+          "isSplitRoute"
+        ]
+      },
+      "RawAccountMeta": {
+        "type": "object",
+        "properties": {
+          "publicKey": {
+            "type": "string",
+            "description": "Base58-encoded account public key."
+          },
+          "isSigner": {
+            "type": "boolean"
+          },
+          "isWritable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "publicKey",
+          "isSigner",
+          "isWritable"
+        ]
+      },
+      "RawInstruction": {
+        "type": "object",
+        "description": "A single instruction.",
+        "properties": {
+          "programId": {
+            "type": "string",
+            "description": "Base58-encoded program ID."
+          },
+          "data": {
+            "type": "string",
+            "description": "Base64-encoded instruction data."
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RawAccountMeta"
+            }
+          }
+        },
+        "required": [
+          "programId",
+          "data",
+          "accounts"
+        ]
+      },
+      "InstructionsRequest": {
+        "type": "object",
+        "description": "Parameters for getting raw swap instructions. Same as SwapRequest without skipSimulation.",
+        "properties": {
+          "userWallet": {
+            "type": "string",
+            "description": "User's wallet address (signer).",
+            "example": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+          },
+          "inputMint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
+          "amount": {
+            "type": "string",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          },
+          "slippageBps": {
+            "type": "integer",
+            "default": 50,
+            "example": 50
+          },
+          "quoteId": {
+            "type": "string",
+            "example": "q_b15372a8d82a93d1e328ae24e5d3669a",
+            "description": "Optional firm-quote ID from GET /quote (or a WebSocket quote push). Pair, amount, and swapMode must match the original quote. The exact quoted route is replayed and min-out anchors to the quoted price instead of a fresh re-quote."
+          },
+          "firm": {
+            "type": "boolean",
+            "example": false,
+            "description": "Firm (price-or-fail) redemption — requires quoteId and only works within the quote's firmForMs window. Slippage collapses to the server's firm margin (default 10 bps) around the quoted price; slippageBps is ignored. If the route drifted past the margin the request fails with 409 instead of executing at a worse price."
+          },
+          "referrer": {
+            "type": "string",
+            "description": "Optional referrer wallet (base58). Receives `integratorFeeBps` in full, paid on-chain in the output token in the same transaction as the swap. Required whenever integratorFeeBps is set.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "sessionAccount": {
+            "type": "string",
+            "description": "Optional Fogo session account (base58). When set, the response contains a single session-shaped route instruction: the session account is the signing authority (userWallet's ATAs still hold the funds), the aggregator's session-signer PDA rides along, and NO ATA-create or SOL-wrap instructions are emitted — see requiredTokenAccounts. Send via the Fogo Sessions SDK (session key signs, paymaster pays). Session routes are currently Valiant-V1-only.",
+            "example": "SesSj4KKBBWo9QCcVdXVLK6jYtwVv3xkQyEbLXjTd6c"
+          },
+          "integratorFeeBps": {
+            "type": "integer",
+            "description": "Your own fee rate in basis points of the output, kept by you in full. Requires `referrer` — a rate with no wallet to pay it to returns 400. Added to platformFeeBps, not carved out of it; the sum may not exceed 100 bps.",
+            "example": 20,
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "userWallet",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
+      },
+      "InstructionsResponse": {
+        "type": "object",
+        "description": "Raw swap instructions for custom transaction composition.",
+        "properties": {
+          "amountIn": {
+            "type": "string",
+            "example": "1000000000"
+          },
+          "amountOut": {
+            "type": "string",
+            "example": "145320000"
+          },
+          "otherAmountThreshold": {
+            "type": "string",
+            "description": "Slippage-adjusted threshold. ExactIn: minimum output. ExactOut: maximum input.",
+            "example": "144593400"
+          },
+          "feeAmount": {
+            "type": "string",
+            "example": "100005",
+            "description": "DEX pool trading fee across every hop, in the pool's fee token — the LP fee the pools take, not Vulcx's. Vulcx's own cut is platformFeeAmount."
+          },
+          "route": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Token path from input to output."
+          },
+          "hopCount": {
+            "type": "integer",
+            "example": 1
+          },
+          "pools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Pool addresses used in the route."
+          },
+          "instructions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RawInstruction"
+            },
+            "description": "Ordered list of instructions to include in the transaction."
+          },
+          "addressLookupTableAddresses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Address Lookup Table addresses for building a v0 transaction."
+          },
+          "requiredTokenAccounts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Session mode only: the user's ATAs the route touches, ordered [inputMint, ...intermediates, outputMint]. They must exist (and the input ATA hold amountIn) before the session transaction is sent."
+          },
+          "platformFeeBps": {
+            "type": "integer",
+            "description": "Vulcx's fee rate in basis points of the output amount: the global on-chain protocol rate, or this integrator's PartnerConfig override. 0 when the protocol fee is disabled or waived.",
+            "example": 20
+          },
+          "platformFeeAmount": {
+            "type": "string",
+            "description": "platformFeeBps applied to amountOut, in the output token's smallest units.",
+            "example": "29064"
+          },
+          "integratorFeeBps": {
+            "type": "integer",
+            "description": "The caller's own fee rate, kept by them IN FULL. Independent of platformFeeBps — the two ADD and are not a split. Their sum is capped at 100 bps.",
+            "example": 20
+          },
+          "integratorFeeAmount": {
+            "type": "string",
+            "description": "integratorFeeBps applied to amountOut, in the output token's smallest units, paid on-chain to the referrer wallet.",
+            "example": "29064"
+          }
+        },
+        "required": [
+          "amountIn",
+          "amountOut",
+          "otherAmountThreshold",
+          "feeAmount",
+          "route",
+          "hopCount",
+          "pools",
+          "instructions",
+          "addressLookupTableAddresses"
+        ]
+      },
+      "CPIRouteAccountsRequest": {
+        "type": "object",
+        "description": "Parameters for building the `route` instruction as a CPI target. Like InstructionsRequest, but the signer is a calling program's PDA (the on-chain authority that will `invoke_signed` into `route`) rather than a wallet.",
+        "properties": {
+          "authority": {
+            "type": "string",
+            "description": "The calling program's PDA authority — owns the token accounts and signs the swap via invoke_signed inside the integrating program.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "inputMint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Amount in the smallest token units.",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          },
+          "slippageBps": {
+            "type": "integer",
+            "default": 50,
+            "example": 50
+          },
+          "allowedIntermediateMints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "description": "Route corridor: multi-hop routes may only pass through these mints, closing the requiredTokenAccounts set over ATAs you pre-provisioned. Input and output mints are implicitly allowed. Empty/omitted = unrestricted.",
+            "example": [
+              "So11111111111111111111111111111111111111112"
+            ]
+          },
+          "maxHops": {
+            "type": "integer",
+            "description": "Cap on route length (1 = direct pools only). 0/omitted = server default.",
+            "example": 2
+          },
+          "excludeDexes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "vortex",
+                "fluxbeam",
+                "moonit"
+              ]
+            },
+            "description": "DEX types to exclude from routing. Excluding \"moonit\" also lifts the authority-writable requirement on the CPI.",
+            "example": [
+              "moonit"
+            ]
+          },
+          "referrer": {
+            "type": "string",
+            "description": "Optional referrer wallet (base58). Receives `integratorFeeBps` in full, paid on-chain in the output token in the same transaction as the swap. Required whenever integratorFeeBps is set.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "integratorFeeBps": {
+            "type": "integer",
+            "description": "Your own fee rate in basis points of the output, kept by you in full. Requires `referrer` — a rate with no wallet to pay it to returns 400. Added to platformFeeBps, not carved out of it; the sum may not exceed 100 bps.",
+            "example": 20,
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "authority",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
+      },
+      "RouteCPIAccountsResponse": {
+        "type": "object",
+        "description": "The `route` instruction shaped for a CPI caller. Forward `routeInstruction.accounts` into your program's `route` CPI and sign with the PDA seeds. `requiredTokenAccounts` are the ATAs the authority PDA must own and fund before the CPI runs — this builder emits no ATA-create or wrap/unwrap instructions.",
+        "properties": {
+          "authority": {
+            "type": "string",
+            "description": "The calling program's PDA that owns the token accounts and signs the swap. Echoed back for clarity.",
+            "example": "EJxE7RDaP5pmoVzzHRb4fufCNq3wsCgdUbJ8PCXHZNUP"
+          },
+          "amountIn": {
+            "type": "string",
+            "example": "1000000000"
+          },
+          "amountOut": {
+            "type": "string",
+            "example": "145320000"
+          },
+          "otherAmountThreshold": {
+            "type": "string",
+            "description": "Slippage-adjusted threshold. ExactIn: minimum output. ExactOut: maximum input.",
+            "example": "144593400"
+          },
+          "feeAmount": {
+            "type": "string",
+            "example": "100005",
+            "description": "DEX pool trading fee across every hop, in the pool's fee token — the LP fee the pools take, not Vulcx's. Vulcx's own cut is platformFeeAmount."
+          },
+          "platformFeeBps": {
+            "type": "integer",
+            "example": 0,
+            "description": "Vulcx's fee rate in basis points of the output amount: the global on-chain protocol rate, or this integrator's PartnerConfig override. 0 when the protocol fee is disabled or waived."
+          },
+          "platformFeeAmount": {
+            "type": "string",
+            "example": "0",
+            "description": "platformFeeBps applied to amountOut, in the output token's smallest units."
+          },
+          "route": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Token path from input to output."
+          },
+          "hopCount": {
+            "type": "integer",
+            "example": 1
+          },
+          "pools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Pool addresses used in the route."
+          },
+          "routeInstruction": {
+            "$ref": "#/components/schemas/RawInstruction",
+            "description": "The Vulcx `route` instruction to CPI into. Its account list is the ordered set the calling program must forward (authority is marked signer, and writable when any hop is Moonit)."
+          },
+          "requiredTokenAccounts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "ATAs owned by the authority PDA that must exist and hold the input funds before the CPI runs. Ordered [inputMint, ...intermediates, outputMint]."
+          },
+          "addressLookupTableAddresses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Address Lookup Table addresses that compress accounts in routeInstruction."
+          },
+          "referrerAta": {
+            "type": "string",
+            "description": "The referrer's output-mint ATA appended to the account list when the request carried a referrer. Must exist before the CPI runs — the on-chain referral transfer fails otherwise."
+          },
+          "integratorFeeBps": {
+            "type": "integer",
+            "description": "The caller's own fee rate, kept by them IN FULL. Independent of platformFeeBps — the two ADD and are not a split. Their sum is capped at 100 bps.",
+            "example": 20
+          },
+          "integratorFeeAmount": {
+            "type": "string",
+            "description": "integratorFeeBps applied to amountOut, in the output token's smallest units, paid on-chain to the referrer wallet.",
+            "example": "29064"
+          }
+        },
+        "required": [
+          "authority",
+          "amountIn",
+          "amountOut",
+          "otherAmountThreshold",
+          "feeAmount",
+          "platformFeeBps",
+          "platformFeeAmount",
+          "route",
+          "hopCount",
+          "pools",
+          "routeInstruction",
+          "requiredTokenAccounts",
+          "addressLookupTableAddresses"
+        ]
+      }
+    }
+  }
+}

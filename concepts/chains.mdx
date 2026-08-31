@@ -1,0 +1,39 @@
+---
+title: "Supported chains — SVM (Fogo live, Solana in progress)"
+sidebarTitle: "Supported chains"
+description: "Vulcx aggregates swaps across SVM chains. Live on Fogo with Valiant, Fluxbeam, and Moonit; Solana support in progress. Same endpoints, SPL tokens, 5-hop routing."
+llmDescription: "Vulcx is a swap aggregator for SVM chains — live on Fogo, Solana in progress. Covers Fogo capabilities: max hops per route (5), supported DEXs (Valiant, Fluxbeam, Moonit), token standard (SPL Token), and a quote example."
+---
+
+# Supported Chains
+
+Vulcx is a swap aggregator for **SVM chains** — networks running the Solana Virtual Machine. The API surface is chain-independent: the same three endpoints (`/quote`, `/swap`, `/instructions`), the same SPL token standard, the same `@solana/web3.js` signing flow, and the same on-chain `route` instruction for CPI, on every chain Vulcx supports.
+
+| Chain | Status | Supported DEXs | Max hops |
+| --- | --- | --- | --- |
+| Fogo | **Live** | Valiant, Fluxbeam, Moonit | 5 |
+| Solana | In progress | — | — |
+
+## Fogo
+
+Fogo is live in production today.
+
+| Capability | Value |
+| --- | --- |
+| Max hops per route | 5 |
+| Compute cost | Standard |
+| Supported DEXs | Valiant, Fluxbeam, Moonit |
+| Token standard | SPL Token |
+
+```bash
+curl "https://api.vulcx.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn" \
+  -H "Authorization: Bearer $VULCX_KEY"
+```
+
+## Solana
+
+Solana support is in progress and not yet available on the public API. Because both chains are SVM, an integration written against Vulcx today carries over without changes to the request or response shape — you point at the same endpoints and pass Solana mints.
+
+<Note>
+  Building now and want to be told when Solana goes live? Reach out on [Telegram](https://t.me/vulcxsupport).
+</Note>

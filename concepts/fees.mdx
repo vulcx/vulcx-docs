@@ -1,0 +1,85 @@
+---
+title: "Swap fees — pool, protocol & integrator fees"
+sidebarTitle: "Fees"
+description: "How Vulcx swap fees work on SVM chains (live on Fogo): the DEX pool fee, Vulcx's protocol fee, and your own integrator fee. The last two are independent rates that add — you keep 100% of yours."
+llmDescription: "Vulcx fee structure on SVM chains (live on Fogo). Three separate costs: (1) DEX pool fees set by pool operators (Valiant, Fluxbeam, Moonit), reported as feeBps in the quote response and feeAmount in swap/instructions responses; (2) Vulcx's protocol fee, reported as platformFeeBps and platformFeeAmount, taken from the output amount, set by the global on-chain protocol config or lowered by a per-integrator PartnerConfig override; (3) the integrator's own fee, set per request as integratorFeeBps and kept 100% by the integrator, paid on-chain to the referrer wallet and reported as integratorFeeAmount. platformFeeBps and integratorFeeBps are INDEPENDENT and ADD — integratorFeeBps is not a share of the protocol fee. Their sum is capped at 100 bps (1%); exceeding it returns HTTP 400. Setting integratorFeeBps requires a referrer wallet to pay it to. Both rates stand down together when the protocol fee is disabled on-chain. amountIn and amountOut already account for every cost."
+---
+
+A swap on Vulcx has up to three separate costs. They are reported as distinct fields, never
+rolled into one number.
+
+## 1. Pool fees
+
+Each liquidity pool charges its own fee per hop, set by the pool operator (Valiant, Fluxbeam,
+Moonit) and deducted automatically as the swap executes.
+
+- `feeBps` on `GET /api/v1/quote` — the total pool fee across all hops, in basis points.
+- `feeAmount` on `POST /api/v1/swap` and `POST /api/v1/instructions` — the same fee as an amount.
+
+This is the DEX's fee, not Vulcx's. Vulcx never sets or receives it.
+
+## 2. Vulcx's protocol fee
+
+Vulcx takes `platformFeeBps` of the **output** amount, reported alongside it as
+`platformFeeAmount` in the output token's smallest units.
+
+The rate comes from the protocol config on-chain. An integrator holding a `PartnerConfig`
+override — a negotiated discount or waiver — is priced at their override instead. It is `0` when
+the protocol fee is disabled on-chain or waived for you.
+
+## 3. Your integrator fee
+
+Set `integratorFeeBps` on the request to charge your own fee on top. **You keep 100% of it.**
+
+```json
+{
+  "inputMint": "So11111111111111111111111111111111111111112",
+  "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+  "amount": "1000000000",
+  "swapMode": "ExactIn",
+  "userWallet": "<your user's wallet>",
+  "referrer": "<the wallet that collects your fee>",
+  "integratorFeeBps": 20
+}
+```
+
+It is paid on-chain, in the output token, to the `referrer` wallet in the same transaction as the
+swap — so there is nothing to invoice, reconcile or settle later. The response reports it back as
+`integratorFeeBps` and `integratorFeeAmount`.
+
+<Warning>
+`integratorFeeBps` requires a `referrer` wallet to pay it to. Sending a rate with no referrer
+returns HTTP `400` — the program refuses a fee with no destination, and the API rejects it one
+layer earlier so you get an error instead of a failed transaction.
+</Warning>
+
+## The two rates add — they are not a split
+
+`platformFeeBps` and `integratorFeeBps` are **independent**. Yours is not a share of Vulcx's, and
+neither rate moves the other. Your user pays the sum:
+
+| | Rate | Who receives it |
+|---|---|---|
+| `platformFeeBps` | set by Vulcx (or your `PartnerConfig` override) | Vulcx |
+| `integratorFeeBps` | set by you, per request | you, in full |
+| **total off the output** | **their sum** | — |
+
+Because your rate is yours alone, it comes straight off the request without authentication — it
+cannot be used to take anything from Vulcx's side.
+
+<Note>
+**The sum is capped at 100 bps (1%).** A request whose `platformFeeBps + integratorFeeBps`
+exceeds the cap returns HTTP `400`. The cap is enforced on-chain too; the API checks it first so
+an over-cap request fails as a validation error rather than as a reverted transaction.
+
+Capping each rate separately would let a user be charged twice the ceiling, which is why the
+check is on the total.
+</Note>
+
+Both rates stand down together when the protocol fee is disabled on-chain — the kill switch
+cannot leave one side charging.
+
+## No hidden fees
+
+`amountIn` and `amountOut` already account for every cost above. What the quote shows is what
+settles on-chain, subject to your slippage tolerance.

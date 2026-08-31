@@ -1,0 +1,187 @@
+---
+title: "sdk.instructions()"
+description: "Get raw swap instructions to compose custom transactions — add tips, memos, or batch multiple swaps."
+llmDescription: "Reference for sdk.instructions() in the Vulcx TypeScript SDK. Returns InstructionsResponse (RawInstruction array, RawAccountMeta, addressLookupTableAddresses) for composing custom transactions when you need memos/tips, account creation, or batched swaps. Includes a full example building a v0 VersionedTransaction with Address Lookup Tables, plus guidance on instructions() vs swap()."
+---
+
+Get raw swap instructions for composing custom transactions. Use this when you need to add custom instructions (tips, memos, etc.) or batch multiple swaps.
+
+```typescript
+const ixs = await sdk.instructions(params: InstructionsRequest): Promise<InstructionsResponse>
+```
+
+---
+
+## Parameters (`InstructionsRequest`)
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `userWallet` | `string` | yes | -- | User's wallet address (base58) |
+| `inputMint` | `string` | yes | -- | Input token mint address |
+| `outputMint` | `string` | yes | -- | Output token mint address |
+| `amount` | `string` | yes | -- | Amount in smallest token units |
+| `swapMode` | `"ExactIn" \| "ExactOut"` | yes | -- | Swap direction |
+| `slippageBps` | `number` | no | `50` | Slippage tolerance in basis points |
+| `quoteId` | `string` | no | -- | [Firm-quote](/docs/swap/firm-quotes) ID from `quote()` — replays the exact quoted route, min-out anchored to the quoted price |
+| `firm` | `boolean` | no | `false` | Firm (price-or-fail) redemption of `quoteId` within its `firmForMs` window |
+| `referrer` | `string` | no | -- | Referrer wallet (base58) — receives `integratorFeeBps` in full, paid on-chain in the output token |
+| `integratorFeeBps` | `number` | no | `0` | Your own fee rate in bps of the output, kept 100% by you. Added to Vulcx's rate, not carved out of it; sum capped at 100 bps. Requires `referrer`. See [Fees](/concepts/fees) |
+| `sessionAccount` | `string` | no | -- | Fogo session account (base58) — returns a session-shaped route; see below |
+
+### Fogo Sessions mode
+
+Pass `sessionAccount` to build instructions for a [Fogo session](https://docs.fogo.io) instead of a
+wallet signature: the session account becomes the route's signing authority (the `userWallet`'s
+ATAs still hold the funds), and the response contains a **single route instruction** — no
+ATA-create or SOL-wrap instructions, because the wallet never signs. Check the response's
+`requiredTokenAccounts`: those ATAs must exist (and the input ATA hold `amountIn`) before the
+session transaction is sent. Send it via the Fogo Sessions SDK — the session key signs, the
+paymaster pays. Session routes are currently **Valiant-V1-only**; pairs without such a route return
+a 400.
+
+Combine with `quoteId` + `firm: true` for the strongest flow: firm price-or-fail redemption with no
+wallet popup.
+
+---
+
+## Response (`InstructionsResponse`)
+
+```json
+{
+  "instructions": [
+    {
+      "programId": "ComputeBudget111111111111111111111111111111",
+      "accounts": [],
+      "data": "AgAAANCWAwA="
+    },
+    {
+      "programId": "Vu1cUxynmbPUsFqVz51FJJ2y69vX2yrkTS13ajomd9D",
+      "accounts": [
+        { "publicKey": "...", "isSigner": true, "isWritable": true },
+        { "publicKey": "...", "isSigner": false, "isWritable": false }
+      ],
+      "data": "base64-encoded-instruction-data"
+    }
+  ],
+  "addressLookupTableAddresses": ["ALTaddress1...", "ALTaddress2..."],
+  "amountIn": "1000000000",
+  "amountOut": "145320000",
+  "otherAmountThreshold": "144593400",
+  "feeAmount": "100005",
+  "hopCount": 1,
+  "route": [
+    "So11111111111111111111111111111111111111112",
+    "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+  ],
+  "pools": ["HJPjoWUrhoZzkNfRpHuieeFk9WcZWjwy6PBjZ81ngndJ"]
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `instructions` | `RawInstruction[]` | Ordered list of instructions |
+| `addressLookupTableAddresses` | `string[]` | ALT addresses to include in the v0 transaction |
+| `requiredTokenAccounts` | `string[]?` | Session mode only: the user's ATAs the route touches (`[inputMint, …intermediates, outputMint]`) — must exist before sending |
+| `amountIn` | `string` | Input amount |
+| `amountOut` | `string` | Estimated output amount |
+| `otherAmountThreshold` | `string` | Slippage-adjusted threshold |
+| `feeAmount` | `string` | DEX pool trading fee across every hop — the LP fee the pools take, not Vulcx's |
+| `platformFeeBps` | `number` | Vulcx's fee rate in bps of the output; `0` when disabled or waived |
+| `platformFeeAmount` | `string` | `platformFeeBps` applied to `amountOut`, in output token units |
+| `integratorFeeBps` | `number` | Your own rate, echoed back — independent of `platformFeeBps`; the two add |
+| `integratorFeeAmount` | `string` | `integratorFeeBps` applied to `amountOut`, paid to your `referrer` |
+| `hopCount` | `number` | Number of swap hops |
+| `route` | `string[]` | Token mint path |
+| `pools` | `string[]` | Pool addresses used |
+
+### `RawInstruction`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `programId` | `string` | Program ID (base58) |
+| `accounts` | `RawAccountMeta[]` | Account metas |
+| `data` | `string` | Base64-encoded instruction data |
+
+### `RawAccountMeta`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `publicKey` | `string` | Account public key (base58) |
+| `isSigner` | `boolean` | Whether the account must sign |
+| `isWritable` | `boolean` | Whether the account is writable |
+
+---
+
+## Building a Transaction
+
+After receiving the instructions, you build the transaction yourself:
+
+```typescript
+import {
+  Connection,
+  PublicKey,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
+
+const connection = new Connection("https://mainnet.fogo.io");
+
+const ixs = await sdk.instructions({
+  userWallet: wallet.publicKey.toBase58(),
+  inputMint: "So11111111111111111111111111111111111111112",
+  outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+  amount: "1000000000",
+  swapMode: "ExactIn",
+});
+
+// Fetch blockhash
+const { blockhash, lastValidBlockHeight } =
+  await connection.getLatestBlockhash();
+
+// Resolve Address Lookup Tables
+const altAccounts = await Promise.all(
+  ixs.addressLookupTableAddresses.map((addr) =>
+    connection.getAddressLookupTable(new PublicKey(addr))
+  )
+);
+const lookupTables = altAccounts
+  .map((a) => a.value)
+  .filter((v) => v !== null);
+
+// Convert to web3.js instruction format
+const instructions = ixs.instructions.map((ix) => ({
+  programId: new PublicKey(ix.programId),
+  keys: ix.accounts.map((acc) => ({
+    pubkey: new PublicKey(acc.publicKey),
+    isSigner: acc.isSigner,
+    isWritable: acc.isWritable,
+  })),
+  data: Buffer.from(ix.data, "base64"),
+}));
+
+// Build v0 transaction
+const messageV0 = new TransactionMessage({
+  payerKey: wallet.publicKey,
+  recentBlockhash: blockhash,
+  instructions,
+}).compileToV0Message(lookupTables);
+
+const tx = new VersionedTransaction(messageV0);
+tx.sign([wallet]);
+
+const sig = await connection.sendTransaction(tx);
+```
+
+---
+
+## When to Use `instructions()` vs `swap()`
+
+| Use case | Endpoint |
+|----------|----------|
+| Simple swap, let the API handle everything | `sdk.swap()` |
+| Add custom instructions (tip, memo, etc.) | `sdk.instructions()` |
+| Batch multiple swaps in one transaction | `sdk.instructions()` |
+| Inspect accounts and data before signing | `sdk.instructions()` |
+| Need lower latency (no blockhash fetch server-side) | `sdk.instructions()` |
