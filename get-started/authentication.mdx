@@ -2,7 +2,7 @@
 title: "Authentication — API keys & the Authorization header"
 sidebarTitle: "Authentication"
 description: "Authenticate Vulcx API requests with an API key using the Authorization: Bearer header — optional on REST endpoints, required on the WebSocket stream. How to get a key, use it from the SDK, and keep it secure."
-llmDescription: "How to authenticate with the Vulcx API. REST endpoints on https://api.vulcx.xyz (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /api/v1/price) accept an OPTIONAL API key (format vulcx_...) sent in the Authorization: Bearer header — calls with no key are allowed but capped at a small anonymous per-IP budget (1 cost unit/second, burst 5); a key raises that to the single published budget of 100 cost units/second, burst 200, which is identical for every plan — plans differ only in how many keys you may hold. GET /health never requires a key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is REQUIRED, passed as ?key=vulcx_... since browsers can't set custom headers on a WS handshake. Covers getting a key (free during beta via Telegram), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey), 401/403 errors for invalid keys, key security best practices, and a link to rate limits. SVM chains: live on Fogo today, Solana in progress."
+llmDescription: "How to authenticate with the Vulcx API. REST endpoints on https://api.vulcx.xyz (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /api/v1/price) accept an OPTIONAL API key (format vulcx_...) sent in the Authorization: Bearer header — calls with no key are allowed but capped at a small anonymous per-IP budget (1 cost unit/second, burst 5); a key raises that to the single published budget of 100 cost units/second, burst 200, which is identical for every plan — plans differ only in how many keys you may hold. GET /health never requires a key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is REQUIRED, passed as ?key=vulcx_... since browsers can't set custom headers on a WS handshake. Covers getting a key (free during beta, requested at https://vulcx.xyz/api-key/), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey), 401/403 errors for invalid keys, key security best practices, and a link to rate limits. SVM chains: live on Fogo today, Solana in progress."
 icon: "key"
 ---
 
@@ -29,12 +29,14 @@ than a bucket shared with every anonymous caller on your IP.
 
 <Steps>
   <Step title="Request a key">
-    During beta, keys are issued through our Telegram. Reach out and ask —
-    keys are granted at no cost.
+    Keys are free during beta and issued by hand, so the form asks what you are
+    building. You will hear back within a day.
 
-    <Card title="Get an API key on Telegram" icon="telegram" href="https://t.me/vulcxsupport" horizontal>
-      Message the Vulcx team on Telegram and request a key.
+    <Card title="Request an API key" icon="key" href="https://vulcx.xyz/api-key/" horizontal>
+      Takes a minute. Email, product, and what you are building.
     </Card>
+
+    Prefer to just ask? [Telegram](https://t.me/vulcxsupport) still works.
   </Step>
   <Step title="Store it as an environment variable">
     Never hard-code a key in source. Keep it in an environment variable:
