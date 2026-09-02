@@ -1,6 +1,27 @@
 ---
 title: "Health Check"
-description: "GET /health returns the Vulcx API status with no API key required — poll it to monitor uptime and alert on non-200 responses in production."
-llmDescription: "OpenAPI reference for GET /health on the Vulcx API. Lightweight service health check returning service status. No authentication required. Use for uptime monitoring."
+description: "GET /health reports whether the engine can actually route: 200 once the pool graph is loaded, 503 while it is not. No API key required — poll it and alert on non-200."
+llmDescription: "OpenAPI reference for GET /health on the Vulcx API. A readiness check, not a liveness check: it returns 200 with status ok plus readyPools and totalPools once the routing graph holds quotable pools, and 503 with status degraded, readyPools 0 and a reason while it does not — because a process that is up but holds no pools can route nothing, and a liveness-only check reports healthy straight through a total routing outage. Pool loading retries in the background, so 503 means not ready yet rather than gave up. No authentication required. Intended for uptime monitoring; alert on non-200."
 openapi: "GET /health"
 ---
+
+## What 503 means
+
+`/health` reports **readiness**, not liveness. It answers `200` only when the routing
+graph holds pools the engine can quote against.
+
+A `503` means the process is running and answering, but has nothing to route with —
+almost always because it is still loading the pool set, or because the upstream RPC
+was unavailable when it tried. Loading retries in the background, so this clears on
+its own; it is "not ready yet", not "gave up".
+
+<Note>
+  This is deliberately stricter than a liveness check. An engine whose entire value
+  is the state it holds can be up, responsive, and useless at the same time — and a
+  check that only proves the process is alive reports healthy through exactly that
+  outage.
+</Note>
+
+Both responses carry `readyPools` and `totalPools`, which are the useful diagnostic:
+`totalPools` above zero with `readyPools` at zero means pools loaded but none passed
+their readiness checks, which is a different problem from having loaded nothing.

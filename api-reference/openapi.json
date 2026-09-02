@@ -29,14 +29,14 @@
       "get": {
         "operationId": "healthCheck",
         "summary": "Health check",
-        "description": "Returns service health status. Does not require an API key — safe for uptime monitors.",
+        "description": "Readiness check. Returns 200 once the routing graph holds pools the engine can quote against, and 503 while it does not — a process that is up but holds no pools can route nothing, so a plain liveness check would report healthy through a total routing outage. Pool loading retries in the background, so 503 means \"not ready yet\", not \"gave up\". No API key required; safe for uptime monitors, and alerting on non-200 is the intended use.",
         "tags": [
           "Health"
         ],
         "security": [],
         "responses": {
           "200": {
-            "description": "Service is healthy",
+            "description": "Service is ready — the engine can route",
             "content": {
               "application/json": {
                 "schema": {
@@ -45,10 +45,52 @@
                     "status": {
                       "type": "string",
                       "example": "ok"
+                    },
+                    "readyPools": {
+                      "type": "integer",
+                      "description": "Pools passing readiness checks. Always > 0 on a 200.",
+                      "example": 308
+                    },
+                    "totalPools": {
+                      "type": "integer",
+                      "example": 343
                     }
                   },
                   "required": [
                     "status"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is up but cannot route — the pool graph is empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "degraded"
+                    },
+                    "readyPools": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "totalPools": {
+                      "type": "integer",
+                      "description": "Non-zero here means pools loaded but none passed readiness.",
+                      "example": 0
+                    },
+                    "reason": {
+                      "type": "string",
+                      "example": "no pools loaded — the engine cannot route; loading is retrying in the background"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "readyPools"
                   ]
                 }
               }
