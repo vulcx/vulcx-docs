@@ -20,15 +20,15 @@ All error responses use the same format:
 | Code | Meaning | When |
 | --- | --- | --- |
 | `200` | Success | Request processed successfully |
-| `400` | Bad Request | Invalid parameters, missing required fields, or a route the on-chain program cannot execute (multi-hop ExactOut, ExactOut on a non-Valiant pool) |
+| `400` | Bad Request | Invalid parameters, missing required fields, a route the on-chain program cannot execute (multi-hop ExactOut, ExactOut on a non-Valiant pool), or a `/swap` build whose simulation failed for insufficient funds |
 | `401` | Unauthorized | No API key was provided |
 | `403` | Forbidden | The key is invalid, disabled, or revoked — blocked by the key's origin allowlist — or a `quoteId` issued to a different key |
 | `404` | Not Found | No route or pool found for the given parameters, or pools exist without enough liquidity |
-| `409` | Conflict | Firm-quote redemption failed: the pinned route is gone, or the price drifted past the firm margin |
+| `409` | Conflict | Firm-quote redemption failed: the pinned route is gone, or the price drifted past the firm margin. Also a `/swap` build whose simulation failed on slippage — the price moved after quoting, so re-quote and retry |
 | `410` | Gone | The `quoteId` expired (or is unknown) — request a fresh quote |
-| `422` | Unprocessable Entity | The route was found but cannot be executed as one transaction — too many accounts, or a split route on the CPI endpoint |
+| `422` | Unprocessable Entity | The route was found but cannot be executed as one transaction — too many accounts, a split route on the CPI endpoint, or a `/swap` build whose simulation failed for any other reason |
 | `429` | Too Many Requests | Rate limit exceeded |
-| `500` | Internal Server Error | Unexpected server issue. A **failed simulation is not a 500** — it returns inside a `200` as `simulation.success: false` |
+| `500` | Internal Server Error | Unexpected server issue. A **failed simulation is not a 500** — it is a `400`, `409` or `422`, depending on why |
 
 ## API errors
 
@@ -65,8 +65,16 @@ All error responses use the same format:
 | `the best route needs more accounts than fit in one transaction; ...` | 422 | Constrain routing (`maxHops`, `excludeDexes`) or split the trade |
 | `failed to build transaction` | 500 | Internal error building the transaction |
 
+| `simulation failed: insufficient funds` | 400 | The wallet cannot fund this trade. Retrying will not change that |
+| `simulation failed: slippage tolerance exceeded — re-quote and retry` | 409 | The price moved between the quote and the build |
+| `simulation failed: ...` | 422 | The transaction would revert for some other reason; read `data.simulation.logs` |
+
 <Warning>
-  A **failed simulation is not an error status**. The request returns `200` with `simulation.success: false` and the failure detail in the body — check that field rather than the HTTP status.
+  **A failed simulation is an error status.** If `POST /swap` simulates the transaction and the simulation says it would fail, the response is a `400`, `409` or `422` — never a `200` — and **no transaction is returned**, so there is nothing to accidentally sign.
+
+  The simulation itself stays at `data.simulation` on the rejection, exactly where a successful response puts it, so code that already reads that field keeps working; it just has to stop treating `200` as the signal.
+
+  Pass `skipSimulation: true` if you want the transaction regardless. Nothing simulates then, so nothing gates.
 </Warning>
 
 <Note>

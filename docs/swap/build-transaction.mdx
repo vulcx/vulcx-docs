@@ -1,7 +1,7 @@
 ---
 title: "Build Transaction"
 description: "Build an unsigned swap transaction with POST /api/v1/swap: request fields, the base64 transaction, simulation results, and cURL, TypeScript, and Python examples."
-llmDescription: "Detailed guide for POST /api/v1/swap on SVM chains (live on Fogo). Covers request body (userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation, plus optional quoteId to replay the exact quoted route at the quoted price and firm for price-or-fail redemption inside the firm window), complete response schema (SwapHandlerResponse with base64 transaction, lastValidBlockHeight, SimulationResult), simulation error handling, and cURL + TypeScript + Python examples."
+llmDescription: "Detailed guide for POST /api/v1/swap on SVM chains (live on Fogo). Covers request body (userWallet, inputMint, outputMint, amount, swapMode, slippageBps, skipSimulation, plus optional quoteId to replay the exact quoted route at the quoted price and firm for price-or-fail redemption inside the firm window), complete response schema (SwapHandlerResponse with base64 transaction, lastValidBlockHeight, SimulationResult), simulation gating (a failed simulation is REJECTED, not returned: 400 insufficient funds, 409 slippage exceeded, 422 otherwise, with the simulation at data.simulation and no transaction in the body; skipSimulation:true disables it), and cURL + TypeScript + Python examples."
 ---
 
 # Build Transaction
@@ -195,15 +195,19 @@ print(f"Transaction built. Expires at block {data['lastValidBlockHeight']}")
 
 ## Simulation
 
-By default, the API simulates the transaction before returning it. This catches common issues early:
+By default, the API simulates the transaction before returning it — and **if the simulation says the transaction would fail, the request is rejected** rather than handing you a transaction that can only revert. No transaction comes back, so there is nothing to accidentally sign.
 
-| `simulation` field | Meaning | What to do |
-|--------------------|---------|------------|
-| `insufficientFunds: true` | Wallet doesn't have enough tokens or FOGO for fees | Show balance error to user |
-| `slippageExceeded: true` | Price changed between quote and transaction build | Retry with a fresh quote |
-| `success: false` + `error` | Other simulation failure | Check `logs` for details |
+The status tells you what you can do about it:
 
-Set `skipSimulation: true` only if you need lower latency and handle validation yourself.
+| HTTP | Error | Meaning | What to do |
+|------|-------|---------|------------|
+| `400` | `simulation failed: insufficient funds` | Wallet doesn't have enough tokens, or not enough FOGO for fees | Show a balance error. Retrying will not help |
+| `409` | `simulation failed: slippage tolerance exceeded — re-quote and retry` | The price moved between the quote and the build | Get a fresh quote and retry |
+| `422` | `simulation failed: ...` | The transaction would revert for some other reason | Read `data.simulation.logs` |
+
+The simulation itself is at **`data.simulation`** on the rejection — the same field a successful response puts it in — so it still carries `logs`, `insufficientFunds`, `slippageExceeded` and `accountsNeeded`.
+
+Set `skipSimulation: true` if you want the transaction regardless: nothing simulates, so nothing gates, and you validate yourself.
 
 ## What's next
 

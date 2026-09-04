@@ -22,7 +22,7 @@ The Vulcan binary lets you run the full routing engine on your own server. It ex
 | Rate limits | One published budget, same for every plan | Built into the binary, per license |
 | Infrastructure | Managed by Vulcx | Your server |
 | RPC provider | Managed by Vulcx | FluxRPC (your key) |
-| Cost | Free — Vulcx earns from the on-chain swap fee, not API access | RPC fees only |
+| Cost | Free — Vulcx earns from the on-chain swap fee, not API access | Your own RPC and server. The community licence is free during beta |
 | SLA | Covered | Your responsibility |
 
 ## Requirements
@@ -30,7 +30,7 @@ The Vulcan binary lets you run the full routing engine on your own server. It ex
 | Requirement | Where to get it |
 |---|---|
 | FluxRPC key | [fluxrpc.com](https://fluxrpc.com?ref=VULCX) |
-| Community license key | [license.vulcx.xyz](https://license.vulcx.xyz) |
+| Community license key | Ask on [Telegram](https://t.me/vulcxsupport) |
 | Linux server (amd64 or arm64) | Any VPS or bare metal |
 
 The binary validates both at startup and refuses to start if either is missing or invalid.
@@ -49,7 +49,7 @@ The binary validates both at startup and refuses to start if either is missing o
     ```env
     RPC_URL=https://eu.fogo.fluxrpc.com?key=YOUR_FLUX_RPC_KEY
     YELLOWSTONE_TOKEN=YOUR_FLUX_RPC_KEY
-    COMMUNITY_LICENSE_KEY=vulcxcom_xxxxxxxxxxxxxxxxxxxx
+    COMMUNITY_LICENSE_KEY=vulcan_xxxxxxxxxxxxxxxxxxxx
     COMMUNITY_LICENSE_API=https://license.vulcx.xyz
     ```
   </Step>

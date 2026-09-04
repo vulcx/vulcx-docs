@@ -15,18 +15,32 @@ Currently: **Fogo** (5 max hops, Valiant/Fluxbeam/Moonit DEXs).
 
 ## Authentication
 
-Every endpoint requires an API key **except** `GET /health` and `GET /api/v1/tokens`. Send it as:
+An API key is **optional** on the REST endpoints (`GET /api/v1/quote`, `POST /api/v1/swap`,
+`POST /api/v1/instructions`, `GET /api/v1/price`). A call with no key is served anonymously
+against a small per-IP budget (1 cost unit/second, burst 5) — enough to evaluate the API. A key
+raises that to the published budget of 100 cost units/second, burst 200, which is the same for
+every plan. `GET /health` and `GET /api/v1/tokens` never need a key.
+
+`GET /api/v1/stream` (WebSocket) is the one endpoint where a key is **required**.
+
+Send it as:
 
 - `Authorization: Bearer vulcx_your_key_here` header on REST calls, or
-- `?key=vulcx_your_key_here` query parameter — **required** for the WebSocket stream
-  (`GET /api/v1/stream`), since a browser WS handshake can't carry custom headers.
+- `?key=vulcx_your_key_here` query parameter — required for the WebSocket stream, since a
+  browser WS handshake can't carry custom headers.
 
 ```bash
+# with a key
 curl "https://api.vulcx.xyz/api/v1/quote?..." -H "Authorization: Bearer $VULCX_KEY"
+# without one — works, at the anonymous budget
+curl "https://api.vulcx.xyz/api/v1/quote?..."
 ```
 
-A missing key returns `401 Unauthorized`; an invalid/disabled/revoked key returns `403 Forbidden`.
-Keys are free during beta — see https://docs.vulcx.xyz/get-started/authentication.
+An invalid/disabled/revoked key returns `403 Forbidden`. A *missing* key is not an error on the
+REST endpoints; on the WebSocket stream it returns `401 Unauthorized`.
+
+Keys are free — Vulcx earns from the on-chain protocol fee, not from API access, and there is no
+paid API tier. See https://docs.vulcx.xyz/get-started/authentication.
 
 ---
 
@@ -210,7 +224,7 @@ Build an unsigned transaction for a token swap.
 - `lastValidBlockHeight`: Transaction expires after this block (~60s). Must rebuild if expired.
 - `minAmountOut`: ExactIn only. On-chain minimum — tx reverts if output is less.
 - `maxAmountIn`: ExactOut only. On-chain maximum — tx reverts if input exceeds.
-- `simulation`: Present when skipSimulation=false. Check `insufficientFunds` and `slippageExceeded`.
+- `simulation`: Present when skipSimulation=false. A FAILED simulation is not returned here on a 200 — the request is rejected with 400/409/422 and the simulation is at `data.simulation` on that error body.
 - `feeAmount`: DEX pool trading fee across every hop — the LP fee the pools take, NOT Vulcx's.
 - `platformFeeBps` / `platformFeeAmount`: Vulcx's own fee rate (bps of output) and the amount. 0 when disabled on-chain or waived via a PartnerConfig override.
 - `integratorFeeBps` / `integratorFeeAmount`: the caller's own rate, kept 100% by them, paid on-chain to the `referrer` wallet. INDEPENDENT of platformFeeBps — the two ADD, they are not a split. Sum capped at 100 bps; over-cap returns 400.
@@ -221,7 +235,10 @@ Build an unsigned transaction for a token swap.
 - 403: `quoteId was issued to a different api key`
 - 409: `quoted route is no longer available: request a fresh quote` — pinned route gone, or (firm) price drifted past the margin. Re-quote and retry
 - 410: `quote expired: request a fresh quote` — quoteId past validForMs (or firmForMs for firm)
-- 500: `simulation failed: ...`, `failed to build transaction`
+- 422: `simulation failed: ...` — the built transaction would revert; read `data.simulation.logs`. Also `the best route needs more accounts than fit in one transaction`
+- 500: `failed to build transaction`
+
+A failed simulation is NEVER a 200 and NEVER a 500. `insufficient funds` is 400, `slippage tolerance exceeded` is 409, anything else is 422. No transaction is returned on any of them. `skipSimulation: true` disables the check entirely.
 
 ### Sign and submit flow (TypeScript)
 
@@ -335,8 +352,9 @@ One published budget for every API key regardless of plan: 100 cost units/second
 | invalid api key (403) | Key is invalid, disabled, or revoked — request/rotate a key |
 | no route found (404) | Try smaller amount or different slippage |
 | insufficient liquidity (400) | Reduce amount |
-| simulation.insufficientFunds | Check wallet balance |
-| simulation.slippageExceeded | Get fresh quote |
+| simulation failed: insufficient funds (400) | Check wallet balance — not retryable |
+| simulation failed: slippage tolerance exceeded (409) | Get fresh quote |
+| simulation failed: ... (422) | Read `data.simulation.logs` |
 | BlockhashExpired (on-chain) | Rebuild from scratch |
 | SlippageExceeded (on-chain) | Get fresh quote, increase slippageBps |
 | 429 rate limited | Exponential backoff: 1s, 2s, 4s |

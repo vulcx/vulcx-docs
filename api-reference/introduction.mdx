@@ -47,7 +47,7 @@ All responses use a consistent envelope:
 | `403` | The API key is invalid, disabled, or revoked |
 | `404` | Not found: no route exists for the given token pair/amount |
 | `429` | Rate limited: too many requests |
-| `500` | Internal error: transaction build or simulation failed |
+| `500` | Internal error building the transaction. A failed *simulation* is not a 500 — it is a `400`, `409` or `422` |
 
 ## Endpoints
 
