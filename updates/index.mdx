@@ -6,6 +6,28 @@ llmDescription: "Vulcx API changelog. Tracks API updates, new features, breaking
 
 API updates and changes in reverse chronological order.
 
+<Update label="v1.4.0" description="September 2026: Moonit dropped, excludeDexes removed, /swap gates on its own simulation">
+  ## `excludeDexes` is gone
+
+  - **Removed** from `POST /api/v1/cpi/route-accounts` and from the WebSocket `subscribe_route` payload. Sending it is now ignored rather than validated.
+  - Its one real use was excluding Moonit to lift the CPI authority-writable requirement. Moonit has moved on and its pools are no longer ingested, so nothing routes through it — and of the venues left, Fluxbeam carries no flow and excluding Vortex leaves nothing to route through.
+  - **`allowedIntermediateMints` and `maxHops` are unchanged.** They bound the ATA set your program must pre-provision and the account count your transaction must carry, which has nothing to do with which venues are live.
+
+  ## Moonit is no longer routed
+
+  - Its pools are out of the graph. Routes, quotes and the `poolType` values you see will only name Valiant and Fluxbeam.
+
+  ## `/swap` rejects a build whose simulation failed
+
+  - It used to return one with `200` and leave you to notice `data.simulation.success`. Now: **`400`** insufficient funds, **`409`** slippage exceeded, **`422`** anything else — and **no transaction in the body**. The simulation stays at `data.simulation` on the rejection, so code already reading that field keeps working.
+  - `skipSimulation: true` is the opt-out: nothing simulates, so nothing gates.
+  - See [Build transaction → Simulation](/docs/swap/build-transaction#simulation).
+
+  ## Deeper fills on Valiant pools
+
+  - Ingestion now subscribes five tick arrays per pool instead of three, matching what the transaction can already execute against. On the FOGO/USDC pair a 20,000 USDC quote returns roughly twice the output it did before, and a 100,000 USDC quote about 2.5x.
+</Update>
+
 <Update label="v1.3.0" description="August 2026: Additive integrator fees and one flat rate limit">
   ## Set your own fee, keep all of it
 

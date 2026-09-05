@@ -303,7 +303,7 @@
             }
           },
           "422": {
-            "description": "The best route needs more accounts than fit in one transaction. Constrain routing (`maxHops`, `excludeDexes`) or split the trade.",
+            "description": "The best route needs more accounts than fit in one transaction. Split the trade into smaller amounts.",
             "content": {
               "application/json": {
                 "schema": {
@@ -572,7 +572,7 @@
             }
           },
           "422": {
-            "description": "The best route needs more accounts than fit in one transaction. Constrain routing (`maxHops`, `excludeDexes`) or split the trade.",
+            "description": "The best route needs more accounts than fit in one transaction. Split the trade into smaller amounts.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1521,21 +1521,6 @@
             "type": "integer",
             "description": "Cap on route length (1 = direct pools only). 0/omitted = server default.",
             "example": 2
-          },
-          "excludeDexes": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "vortex",
-                "fluxbeam",
-                "moonit"
-              ]
-            },
-            "description": "DEX types to exclude from routing. Excluding \"moonit\" also lifts the authority-writable requirement on the CPI.",
-            "example": [
-              "moonit"
-            ]
           },
           "referrer": {
             "type": "string",

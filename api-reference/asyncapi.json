@@ -314,10 +314,7 @@
           "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
           "amount": "1000000000",
           "allowedIntermediateMints": [],
-          "maxHops": 1,
-          "excludeDexes": [
-           "moonit"
-          ]
+          "maxHops": 1
          }
         ]
        }
@@ -549,17 +546,6 @@
      "maxHops": {
       "type": "integer",
       "description": "Cap on route length (1 = direct only)."
-     },
-     "excludeDexes": {
-      "type": "array",
-      "items": {
-       "type": "string",
-       "enum": [
-        "vortex",
-        "fluxbeam",
-        "moonit"
-       ]
-      }
      },
      "referrer": {
       "type": "string",

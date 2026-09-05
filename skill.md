@@ -131,8 +131,7 @@ Use when ANOTHER on-chain program must swap atomically, signed by its PDA
 1. POST /api/v1/cpi/route-accounts
    body: { authority (your program PDA), inputMint, outputMint, amount, swapMode, slippageBps,
            allowedIntermediateMints? (corridor, max 16), maxHops? (1 = direct only),
-           excludeDexes? (["vortex"|"fluxbeam"|"moonit"]; excluding moonit lifts the
-           authority-writable requirement), referrer? }
+           referrer? }
    → data.routeInstruction (forward its accounts into your `route` CPI)
    → data.requiredTokenAccounts (ATAs your PDA must own + fund first; no wrap/unwrap emitted)
    → data.referrerAta (when referrer set — must pre-exist)
@@ -285,7 +284,7 @@ Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included), plus:
 | `no route found` | 404 | Try smaller amount, different slippage, or check token support |
 | `no pool found` | 404 | Token may not have listed pools |
 | `no route found: insufficient liquidity` | 404 | Pools exist but lack liquidity — reduce swap amount |
-| `the best route needs more accounts than fit in one transaction; ...` | 422 | Too many accounts for one tx (or a split route on the CPI endpoint) — constrain `maxHops`/`excludeDexes`, or split the trade |
+| `the best route needs more accounts than fit in one transaction; ...` | 422 | Too many accounts for one tx (or a split route on the CPI endpoint) — split the trade. `maxHops` narrows the route on /cpi/route-accounts |
 | `invalid inputMint` | 400 | Verify base58 public key format |
 | `invalid user wallet` | 400 | Verify wallet address |
 | `simulation failed` | 500 | Check simulation.logs, verify balance |

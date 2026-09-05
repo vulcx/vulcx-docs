@@ -61,8 +61,8 @@ All error responses use the same format:
 | `invalid userWallet address` | 400 | `userWallet` is not a valid base58 public key |
 | All quote errors above | 400/404 | Same causes as quote endpoint |
 | `multi-hop ExactOut is not supported on-chain; ...` | 400 | ExactOut works on a single hop only — use the ExactIn-with-buffer pattern the message describes |
-| `ExactOut is only supported on Vortex pools; ...` | 400 | The route crosses Fluxbeam or Moonit, whose CPIs have no exact-out mode. Re-quote as ExactIn or set `excludeDexes` |
-| `the best route needs more accounts than fit in one transaction; ...` | 422 | Constrain routing (`maxHops`, `excludeDexes`) or split the trade |
+| `ExactOut is only supported on Vortex pools; ...` | 400 | The route crosses Fluxbeam or Moonit, whose CPIs have no exact-out mode. Re-quote as ExactIn |
+| `the best route needs more accounts than fit in one transaction; ...` | 422 | Split the trade into smaller amounts. `maxHops` narrows the route on `POST /api/v1/cpi/route-accounts`; `/swap` and `/instructions` accept no routing constraints |
 | `failed to build transaction` | 500 | Internal error building the transaction |
 
 | `simulation failed: insufficient funds` | 400 | The wallet cannot fund this trade. Retrying will not change that |
@@ -135,7 +135,7 @@ Anchor custom errors from program `Vu1cUxynmbPUsFqVz51FJJ2y69vX2yrkTS13ajomd9D`.
 | `6003` | `MathOverflow` | Arithmetic overflowed — typically an extreme amount | Reduce the trade size |
 | `6002` / `6005` | `InvalidOwner` / `InvalidTokenAccount` | An account passed to the program has the wrong owner or malformed data | Rebuild from a fresh quote rather than hand-editing accounts |
 | `6011` | `PercentOverflow` | Split allocations for an input token exceed 100% | Engine-built transactions never do this — rebuild from a quote |
-| `6016` / `6017` / `6001` | `TooManyHops` / `TooManyAccounts` / `InsufficientAccounts` | Hop or account counts outside program limits | The engine normally prevents this (`422` at build). Constrain with `maxHops` / `excludeDexes` |
+| `6016` / `6017` / `6001` | `TooManyHops` / `TooManyAccounts` / `InsufficientAccounts` | Hop or account counts outside program limits | The engine normally prevents this (`422` at build). Constrain with `maxHops` on `/cpi/route-accounts`, or split the trade |
 | `6008` | `ExactOutMultiHopNotSupported` | ExactOut over more than one hop | The engine pre-rejects this as `400` — single-hop ExactOut only |
 | `6022` | `ExactOutUnsupportedSwapType` | ExactOut routed over Fluxbeam/Moonit, which have no exact-out CPI | The engine pre-rejects this as `400` — ExactOut is Valiant-only |
 | `6019`–`6021` | `InvalidSessionAccount` / `MissingSessionProgramSigner` / `SessionRouteUnsupportedHop` | Session-signed swaps only: bad or expired session, missing session-signer PDA, or a non-Valiant hop in a session route | Applies to session flows; standard signed swaps never hit these |

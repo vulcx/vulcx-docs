@@ -121,15 +121,14 @@ Send a `routes` array whose entries use the **same request shape** as
       "amount": "1000000000",
       "swapMode": "ExactIn",
       "slippageBps": 50,
-      "maxHops": 2,
-      "excludeDexes": ["moonit"]
+      "maxHops": 2
     }
   ]
 }
 ```
 
-`swapMode` defaults to `ExactIn`. `slippageBps`, `allowedIntermediateMints`, `maxHops`,
-`excludeDexes` and `referrer` are optional and behave exactly as on the REST endpoint.
+`swapMode` defaults to `ExactIn`. `slippageBps`, `allowedIntermediateMints`, `maxHops`
+and `referrer` are optional and behave exactly as on the REST endpoint.
 
 <Note>
   Route subscriptions are capped **separately** from quote subscriptions: **32 per connection**

@@ -46,7 +46,7 @@ There is no build step and no test suite. **Publishing is automatic**: pushing t
 - Product framing is consistent across the docs: **Vulcx runs on Fogo.** Multi-hop routing spans Valiant, Fluxbeam, and Moonit. There is no `chain` query parameter — the API is Fogo-only; a future chain would ship as a separate endpoint, not a proxied param. Keep new copy consistent with this.
 
 - **Venue naming: the brand is Valiant; `Vortex` is only the wire value.** The API reports
-  `routes[].poolType` as `"Vortex"` and matches `"vortex"` in `excludeDexes`, so those literals
+  `routes[].poolType` as `"Vortex"`, so that literal
   must appear verbatim wherever the docs quote the API — JSON response samples, enum lists,
   the `openapi.json` / `asyncapi.json` enums and example, the error string
   `ExactOut is only supported on Vortex pools; ...` and the `err.startsWith(...)` that matches it.
