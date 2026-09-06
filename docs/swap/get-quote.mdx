@@ -142,8 +142,8 @@ print(f"Route: {data['hopCount']} hop(s) via {pool_types}")
 
 <ResponseField name="inputMint" type="string">Input token mint address.</ResponseField>
 <ResponseField name="outputMint" type="string">Output token mint address.</ResponseField>
-<ResponseField name="amountIn" type="string">Input amount in smallest units. For `ExactIn`: same as requested. For `ExactOut`: calculated.</ResponseField>
-<ResponseField name="amountOut" type="string">Output amount in smallest units. For `ExactIn`: calculated. For `ExactOut`: same as requested.</ResponseField>
+<ResponseField name="amountIn" type="string">Input amount in smallest units — what the route actually consumes. For `ExactOut` this is the amount the route needs to buy your requested output. For `ExactIn` it is normally the amount you asked for, but see [Partial fills](#partial-fills): it can come back lower.</ResponseField>
+<ResponseField name="amountOut" type="string">Output amount in smallest units — what the route actually delivers. For `ExactIn` this is the amount the route produces. For `ExactOut` it is normally the amount you asked for, but see [Partial fills](#partial-fills): it can come back lower.</ResponseField>
 
 <ResponseField name="priceImpactBps" type="integer">Price impact in basis points.</ResponseField>
 <ResponseField name="priceImpactPercent" type="string">Human-readable price impact (e.g., `"0.25%"`).</ResponseField>
@@ -185,6 +185,34 @@ print(f"Route: {data['hopCount']} hop(s) via {pool_types}")
 </ResponseField>
 <ResponseField name="validForMs" type="integer">How long `quoteId` stays redeemable, in milliseconds.</ResponseField>
 <ResponseField name="firmForMs" type="integer">How long `quoteId` stays redeemable with `firm: true` (price-or-fail), in milliseconds.</ResponseField>
+
+## Partial fills
+
+Neither `amountIn` nor `amountOut` is guaranteed to equal what you asked for.
+
+A concentrated-liquidity pool holds its liquidity in ticks around the current
+price. A trade large enough to consume every tick the route can reach stops
+there rather than failing, and the quote reports what it could actually do:
+
+```
+GET /quote?...&amount=100000000000&swapMode=ExactIn
+
+"amountIn":  "99999759359"   <- 240,641 less than requested
+"amountOut": "818728884672746"
+```
+
+So compare both fields against your request before acting on a quote:
+
+- `ExactIn` — if `amountIn` is below your `amount`, the remainder was not
+  routable and stays in your wallet. Size the trade against `amountIn`, not
+  against what you asked for.
+- `ExactOut` — if `amountOut` is below your `amount`, the route cannot deliver
+  the full output. Treat that as a failed quote unless a partial fill is
+  acceptable to you.
+
+Ignoring this is not dangerous — you are never charged for input the route did
+not consume — but a caller that assumes the amounts match will misreport what
+the user received.
 
 ## Price impact guidance
 
