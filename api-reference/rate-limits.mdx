@@ -49,7 +49,7 @@ Anonymous callers share a small per-IP bucket, debited by the same cost table:
 |---|---|---|
 | Anonymous (no key) | 2 units/second | 20 units |
 
-A burst of 5 is exactly one `POST /api/v1/swap`. Anonymous access is for evaluation; for anything
+A burst of 20 covers one `POST /api/v1/swap` (5 units) plus a handful of quotes. Anonymous access is for evaluation; for anything
 else [get a key](/get-started/authentication) — same mechanics, 100× the budget, scoped to your
 account rather than shared with every anonymous caller on your IP.
 

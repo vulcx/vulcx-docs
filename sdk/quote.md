@@ -125,7 +125,7 @@ redemption. It is omitted when the quote can't be pinned (e.g. split routes). Se
 | `AuthError` | Invalid or missing API key |
 | `RateLimitError` | Too many requests (retried automatically) |
 
-See [Error Handling](./error-handling.md) for details.
+See [Error Handling](/sdk/error-handling) for details.
 
 ---
 

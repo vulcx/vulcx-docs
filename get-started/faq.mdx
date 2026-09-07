@@ -80,7 +80,7 @@ llmDescription: "Frequently asked questions about Vulcx. Covers supported chains
   </Accordion>
 
   <Accordion title="What are the rate limits?">
-    One budget for every key regardless of plan: 100 cost units/second, burst 200. Requests are debited by weight — a quote costs 1, a transaction build costs 5 — so that is 100 quotes/second or 20 builds/second. Without a key you get 1 unit/second, burst 5. If you hit a `429`, use exponential backoff (1s, 2s, 4s). See [Rate limits](/api-reference/rate-limits).
+    One budget for every key regardless of plan: 100 cost units/second, burst 200. Requests are debited by weight — a quote costs 1, a transaction build costs 5 — so that is 100 quotes/second or 20 builds/second. Without a key you get 2 units/second, burst 20. If you hit a `429`, use exponential backoff (1s, 2s, 4s). See [Rate limits](/api-reference/rate-limits).
   </Accordion>
 
   <Accordion title="When should I use /swap vs /instructions?">
@@ -91,7 +91,13 @@ llmDescription: "Frequently asked questions about Vulcx. Covers supported chains
   </Accordion>
 
   <Accordion title="What happens if a multi-hop swap partially fails?">
-    Nothing. All swap instructions execute atomically on-chain. If any hop fails (insufficient liquidity, slippage exceeded, etc.), the entire transaction reverts. No partial fills, no stuck funds.
+    Nothing. All swap instructions execute atomically on-chain. If any hop fails (insufficient liquidity, slippage exceeded, etc.), the entire transaction reverts — no half-executed route, no stuck intermediate tokens.
+
+    Do not read that as "the amounts always match your request". A route can be
+    sized down at quote time when it cannot source the full amount, and the
+    quote reports the smaller `amountIn`/`amountOut`. That reduced trade then
+    executes atomically. Compare the returned amounts against what you sent —
+    see [partial fills](/docs/swap/get-quote).
   </Accordion>
 
   <Accordion title="How do I monitor API status?">

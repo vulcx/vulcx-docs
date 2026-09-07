@@ -91,8 +91,8 @@ console.log("Swap confirmed:", sig);
 
 ## Next Steps
 
-- [Configuration](./configuration.md) -- all `SDKConfig` options
-- [Quote](./quote.md) -- full `quote()` reference
-- [Swap](./swap.md) -- full `swap()` reference with sign+submit patterns
-- [Error Handling](./error-handling.md) -- handling rate limits, auth errors, no routes
-- [Examples](./examples.md) -- React, Next.js, Node.js, and CDN examples
+- [Configuration](/sdk/configuration) -- all `SDKConfig` options
+- [Quote](/sdk/quote) -- full `quote()` reference
+- [Swap](/sdk/swap) -- full `swap()` reference with sign+submit patterns
+- [Error Handling](/sdk/error-handling) -- handling rate limits, auth errors, no routes
+- [Examples](/sdk/examples) -- React, Next.js, Node.js, and CDN examples

@@ -17,7 +17,7 @@ Currently: **Fogo** (5 max hops, Valiant/Fluxbeam DEXs).
 
 An API key is **optional** on the REST endpoints (`GET /api/v1/quote`, `POST /api/v1/swap`,
 `POST /api/v1/instructions`, `GET /api/v1/price`). A call with no key is served anonymously
-against a small per-IP budget (1 cost unit/second, burst 5) — enough to evaluate the API. A key
+against a small per-IP budget (2 cost units/second, burst 20) — enough to evaluate the API. A key
 raises that to the published budget of 100 cost units/second, burst 200, which is the same for
 every plan. `GET /health` and `GET /api/v1/tokens` never need a key.
 
@@ -342,7 +342,7 @@ building token pickers. No API key required. Served with `Cache-Control: public,
 
 ## Rate Limits
 
-One published budget for every API key regardless of plan: 100 cost units/second sustained, burst 200. Limits do NOT vary by plan — plans differ only in how many keys you may hold. Buckets are debited by request cost, not request count: quote/price 1, pools and cpi/route-accounts 3, swap/instructions 5. That is 100 quotes/second, or 20 transaction builds/second, or any mix. Without a key: 1 cost unit/second, burst 5. A separate pre-auth per-IP ceiling of 200 units/second, burst 400, runs before authentication and covers the WebSocket upgrade. 429 response on limit. Use exponential backoff.
+One published budget for every API key regardless of plan: 100 cost units/second sustained, burst 200. Limits do NOT vary by plan — plans differ only in how many keys you may hold. Buckets are debited by request cost, not request count: quote/price 1, pools and cpi/route-accounts 3, swap/instructions 5. That is 100 quotes/second, or 20 transaction builds/second, or any mix. Without a key: 2 cost units/second, burst 20. A separate pre-auth per-IP ceiling of 200 units/second, burst 400, runs before authentication and covers the WebSocket upgrade. 429 response on limit. Use exponential backoff.
 
 ## Error Recovery Summary
 

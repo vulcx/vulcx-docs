@@ -25,7 +25,7 @@ const ixs = await sdk.instructions(params: InstructionsRequest): Promise<Instruc
 | `quoteId` | `string` | no | -- | [Firm-quote](/docs/swap/firm-quotes) ID from `quote()` — replays the exact quoted route, min-out anchored to the quoted price |
 | `firm` | `boolean` | no | `false` | Firm (price-or-fail) redemption of `quoteId` within its `firmForMs` window |
 | `referrer` | `string` | no | -- | Referrer wallet (base58) — receives `integratorFeeBps` in full, paid on-chain in the output token |
-| `integratorFeeBps` | `number` | no | `0` | Your own fee rate in bps of the output, kept 100% by you. Added to Vulcx's rate, not carved out of it; sum capped at 100 bps. Requires `referrer`. See [Fees](/concepts/fees) |
+| `integratorFeeBps` | `number` | no | `0` | Your own fee rate in bps of the output, kept 100% by you. Added to Vulcx's rate, not carved out of it; sum capped at 100 bps. Requires `referrer`. See [Fees](/concepts/fees). Needs `@vulcx/sdk` **0.6.0 or newer** — earlier versions have no way to set it. |
 | `sessionAccount` | `string` | no | -- | Fogo session account (base58) — returns a session-shaped route; see below |
 
 ### Fogo Sessions mode

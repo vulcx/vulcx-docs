@@ -72,9 +72,9 @@ curl -s -X POST "https://api.vulcx.xyz/api/v1/swap" \
 ```
 
 ```typescript TypeScript (@vulcx/sdk)
-import { VulcxClient } from "@vulcx/sdk";
+import { VulcxSDK } from "@vulcx/sdk";
 
-const client = new VulcxClient({ apiKey: process.env.VULCX_KEY! });
+const client = new VulcxSDK({ apiKey: process.env.VULCX_KEY! });
 
 const quote = await client.quote({
   inputMint: "So11111111111111111111111111111111111111112",

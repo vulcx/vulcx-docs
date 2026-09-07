@@ -50,4 +50,8 @@ Every quote includes price impact data:
 
 ## Slippage protection
 
-The `slippageBps` parameter sets the maximum acceptable price deviation. If the on-chain execution price is worse than the threshold, the transaction reverts atomically. No partial fills.
+The `slippageBps` parameter sets the maximum acceptable price deviation. If the on-chain execution price is worse than the threshold, the transaction reverts atomically — it does not execute half a route.
+
+That is about execution, not about size: a quote may come back for less than
+you requested if the route cannot source the whole amount. See
+[partial fills](/docs/swap/get-quote).

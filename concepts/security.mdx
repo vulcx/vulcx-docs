@@ -11,7 +11,15 @@ Vulcx never holds or has access to your funds. The API returns unsigned transact
 
 ## Atomic execution
 
-All swap instructions execute atomically on-chain. If any hop in a multi-hop route fails (insufficient liquidity, slippage exceeded, etc.), the entire transaction reverts. No partial fills.
+All swap instructions execute atomically on-chain. If any hop in a multi-hop route fails (insufficient liquidity, slippage exceeded, etc.), the entire transaction reverts — you are never left holding an intermediate token.
+
+Atomic is not the same as full, and the distinction matters when you display
+numbers to a user. A route can be sized down before it is ever built: a
+concentrated-liquidity leg that runs out of reachable ticks fills what it can,
+and the quote reports the smaller `amountIn`/`amountOut` rather than failing.
+What executes then executes atomically at that size. Always compare the
+returned amounts against what you asked for — see
+[partial fills](/docs/swap/get-quote).
 
 ## Slippage protection
 

@@ -25,7 +25,7 @@ tags:
 
 An API key is **optional** on REST endpoints — `GET /api/v1/quote`, `POST /api/v1/swap`,
 `POST /api/v1/instructions`, `GET /api/v1/price` all work with no key, capped at a small
-anonymous per-IP rate limit (1 rps / burst 5). Send a key to get the account's full plan
+anonymous per-IP rate limit (2 rps / burst 20). Send a key to get the account's full plan
 throughput instead:
 
 - `Authorization: Bearer vulcx_your_key_here` on REST calls, or
@@ -305,4 +305,4 @@ Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included), plus:
 
 ## Rate Limits
 
-Buckets are debited by request cost, not request count: quote/price 1, pools/cpi 3, swap/instructions 5. With a key: 100 units/second sustained, burst 200 — the same for every plan, so 100 quotes/second or 20 builds/second or any mix. Limits do not vary by plan; plans differ only in how many keys you may hold. No key: 1 unit/second, burst 5, shared per IP.
+Buckets are debited by request cost, not request count: quote/price 1, pools/cpi 3, swap/instructions 5. With a key: 100 units/second sustained, burst 200 — the same for every plan, so 100 quotes/second or 20 builds/second or any mix. Limits do not vary by plan; plans differ only in how many keys you may hold. No key: 2 units/second, burst 20, shared per IP.

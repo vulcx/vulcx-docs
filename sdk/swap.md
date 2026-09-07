@@ -25,6 +25,8 @@ const swap = await sdk.swap(params: SwapRequest): Promise<SwapResponse>
 | `skipSimulation` | `boolean` | no | `false` | Skip pre-flight simulation. Faster but no validation. |
 | `quoteId` | `string` | no | -- | Firm-quote ID from `sdk.quote()` — replays the exact quoted route at the quoted price. Throws `QuoteExpiredError` (410) / `QuoteStaleError` (409); re-quote and retry. See [Firm quotes](/docs/swap/firm-quotes). |
 | `firm` | `boolean` | no | `false` | Price-or-fail redemption. Requires `quoteId`, only within the quote's `firmForMs` window; `slippageBps` is ignored. |
+| `referrer` | `string` | no | -- | Wallet that collects `integratorFeeBps`, paid on-chain in the output token. On its own it earns nothing — there is no automatic referral share. |
+| `integratorFeeBps` | `number` | no | `0` | Your own fee rate in bps of the output, yours in full. It ADDS to Vulcx's rate rather than being a share of it; the sum is capped at 100 bps. Requires `referrer`. Needs `@vulcx/sdk` **0.6.0 or newer** — earlier versions have no way to set it. |
 
 ---
 
