@@ -1,7 +1,7 @@
 ---
 title: "Rate Limits"
 description: "Vulcx API rate limits: one flat budget of 100 cost units/second (burst 200) for every key regardless of plan, debited by request weight — a quote costs 1, a transaction build costs 5. Covers anonymous access, the pre-auth per-IP ceiling, the 429 shape, and retry strategy."
-llmDescription: "Vulcx API rate limits on SVM chains (live on Fogo). One published budget applies to every API key regardless of plan: 100 cost units per second sustained, burst 200. Buckets are debited by request cost, not request count — GET /api/v1/quote and GET /api/v1/price cost 1 unit, GET /api/v1/pools and POST /api/v1/cpi/route-accounts cost 3, POST /api/v1/swap and POST /api/v1/instructions cost 5. That is 100 quotes/second, or 20 transaction builds/second, or any mix. Rate limits deliberately do NOT vary by plan; plans differ only in how many keys they allow. Anonymous requests with no Authorization header get 1 unit/second, burst 5. A separate pre-auth per-IP ceiling of 200 units/second, burst 400, runs before authentication and covers the WebSocket upgrade. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (do not cache quotes, stream instead of polling, use the instructions endpoint)."
+llmDescription: "Vulcx API rate limits on SVM chains (live on Fogo). One published budget applies to every API key regardless of plan: 100 cost units per second sustained, burst 200. Buckets are debited by request cost, not request count — GET /api/v1/quote and GET /api/v1/price cost 1 unit, GET /api/v1/pools and POST /api/v1/cpi/route-accounts cost 3, POST /api/v1/swap and POST /api/v1/instructions cost 5. That is 100 quotes/second, or 20 transaction builds/second, or any mix. Rate limits deliberately do NOT vary by plan; plans differ only in how many keys they allow. Anonymous requests with no Authorization header get 2 units/second, burst 20. A separate pre-auth per-IP ceiling of 200 units/second, burst 400, runs before authentication and covers the WebSocket upgrade. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (do not cache quotes, stream instead of polling, use the instructions endpoint)."
 ---
 
 The Vulcx API rate limits by **cost**, not by request count, against a single published budget
@@ -47,7 +47,7 @@ Anonymous callers share a small per-IP bucket, debited by the same cost table:
 
 | | Sustained | Burst |
 |---|---|---|
-| Anonymous (no key) | 1 unit/second | 5 units |
+| Anonymous (no key) | 2 units/second | 20 units |
 
 A burst of 5 is exactly one `POST /api/v1/swap`. Anonymous access is for evaluation; for anything
 else [get a key](/get-started/authentication) — same mechanics, 100× the budget, scoped to your
