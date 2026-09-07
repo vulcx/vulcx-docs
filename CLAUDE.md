@@ -45,6 +45,23 @@ There is no build step and no test suite. **Publishing is automatic**: pushing t
 - Mintlify components (e.g. `<Card>`, `<CodeGroup>`, accordions) are available inside MDX — match the components already used by neighboring pages rather than introducing new patterns.
 - Product framing is consistent across the docs: **Vulcx runs on Fogo.** Multi-hop routing spans **Valiant and Fluxbeam**. There is no `chain` query parameter — the API is Fogo-only; a future chain would ship as a separate endpoint, not a proxied param. Keep new copy consistent with this.
 
+- **The dashboard editor can serve stale content for a page. Verify before you
+  save through it.** Reproduced 2026-09-07 on `get-started/architecture.mdx`: a
+  freshly created editor session based on `main` at `61350fe` returned the
+  PRE-SVM-repositioning version of that page — title "routed on Fogo" instead of
+  "routed on SVM chains", and `Vortex, Fluxbeam, Moonit` in the llmDescription,
+  where `Vortex` in prose is itself the regression the venue-naming rule below
+  exists to prevent. Git at that same sha has the corrected text, and the live
+  site serves it.
+
+  Saving that page from a stale session would have silently reverted the SVM
+  framing and reintroduced the wire value into prose. The editor's `search` and
+  the git checkout were both correct; only the page read was stale, so a diff
+  against git is the check that catches it.
+
+  Work through git for anything substantial. If you do use the dashboard, read
+  the page first and compare it against `git show main:<path>` before saving.
+
 - **Moonit is gone.** It shut down and the engine stopped carrying its code
   (`019c676`/`ab616e5`); `internal/domain/pool.go` keeps its enum slot only as a
   documented gap, and nothing can emit it. Do not reintroduce it into a venue
