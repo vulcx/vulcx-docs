@@ -618,7 +618,7 @@
       "post": {
         "operationId": "buildRouteCpiAccounts",
         "summary": "Get CPI account list for calling route from another program",
-        "description": "Builds the Vulcx `route` instruction shaped for a Cross-Program Invocation (CPI): the supplied program PDA is wired in as the swap authority (signer, readonly). Forward `routeInstruction.accounts` into your program's `route` CPI and sign with your PDA seeds (`invoke_signed`). No ATA-create or SOL wrap/unwrap instructions are emitted — the returned `requiredTokenAccounts` are ATAs your PDA must own and fund before the CPI runs. Split routes are not yet supported and return 400. See the on-chain CPI guide for the full flow.",
+        "description": "Builds the Vulcx `route` instruction shaped for a Cross-Program Invocation (CPI): the supplied program PDA is wired in as the swap authority (signer, readonly). Forward `routeInstruction.accounts` into your program's `route` CPI and sign with your PDA seeds (`invoke_signed`). No ATA-create or SOL wrap/unwrap instructions are emitted — the returned `requiredTokenAccounts` are ATAs your PDA must own and fund before the CPI runs. Split routes are not yet supported and return 422. See the on-chain CPI guide for the full flow.",
         "tags": [
           "CPI"
         ],
@@ -767,6 +767,178 @@
           }
         }
       }
+    },
+    "/api/v1/tokens": {
+      "get": {
+        "summary": "Curated token list",
+        "description": "The display list the swap UI builds its token picker from. Served outside the API-key chain like /health, and cacheable for 300s. Curated, not exhaustive: a mint absent here is still swappable if a pool holds it.",
+        "tags": [
+          "market data"
+        ],
+        "operationId": "getTokens",
+        "responses": {
+          "200": {
+            "description": "Token list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TokenMeta"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pools/stats": {
+      "get": {
+        "summary": "Pool corpus counters",
+        "tags": [
+          "market data"
+        ],
+        "operationId": "getPoolStats",
+        "description": "Costs 3 rate-limit units.",
+        "responses": {
+          "200": {
+            "description": "Counters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PoolStats"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pools/list": {
+      "get": {
+        "summary": "List pools",
+        "tags": [
+          "market data"
+        ],
+        "operationId": "listPools",
+        "description": "Paginated walk of the pool corpus. Costs 3 rate-limit units.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Capped at 500; values above are clamped, not rejected.",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of pools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PoolList"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pools/{address}": {
+      "get": {
+        "summary": "One pool by address",
+        "tags": [
+          "market data"
+        ],
+        "operationId": "getPool",
+        "description": "Costs 3 rate-limit units.",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pool",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PoolInfo"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No pool at that address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -870,6 +1042,48 @@
           "error": {
             "type": "string",
             "example": "no route found"
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable reason. THIS is the contract: a code is never renamed or reused for a different meaning once shipped, and new ones may be added — treat an unrecognised code as its HTTP status class. `error` is the human sentence and may be reworded at any time; do not branch on it. Absent on responses from before codes existed, and on the admin debug routes.",
+            "enum": [
+              "INVALID_REQUEST",
+              "INVALID_WALLET",
+              "FEE_CAP_EXCEEDED",
+              "FEE_NEEDS_REFERRER",
+              "EXACT_OUT_MULTIHOP",
+              "EXACT_OUT_DEX",
+              "SESSION_ROUTE_UNSUP",
+              "QUOTE_MISMATCH",
+              "MISSING_API_KEY",
+              "INVALID_API_KEY",
+              "ORIGIN_REQUIRED",
+              "ORIGIN_NOT_ALLOWED",
+              "QUOTE_WRONG_KEY",
+              "NO_POOL",
+              "POOL_DATA_MISSING",
+              "NO_ROUTE",
+              "NO_ROUTE_CONSTRAINED",
+              "QUOTE_STALE",
+              "SIM_SLIPPAGE",
+              "SIM_INSUFFICIENT",
+              "QUOTE_EXPIRED",
+              "ROUTE_TOO_LARGE",
+              "CPI_SPLIT_UNSUP",
+              "SIM_FAILED",
+              "RATE_LIMITED",
+              "INTERNAL"
+            ],
+            "example": "NO_ROUTE"
+          },
+          "data": {
+            "type": "object",
+            "description": "Present on some failures and carrying whatever the caller needs to act. On a `/swap` or `/instructions` rejection whose simulation failed (400, 409, 422) it holds `simulation`, whose `insufficientFunds` and `slippageExceeded` booleans are the only stable machine-readable signal for why — branch on those rather than on the `error` string, which is prose and may be reworded.",
+            "properties": {
+              "simulation": {
+                "$ref": "#/components/schemas/SimulationResult"
+              }
+            }
           }
         },
         "required": [
@@ -888,7 +1102,11 @@
           },
           "poolType": {
             "type": "string",
-            "enum": ["Vortex", "Flux", "Cyclone"],
+            "enum": [
+              "Vortex",
+              "Flux",
+              "Cyclone"
+            ],
             "description": "Liquidity pool type. Wire values: `Vortex` (the venue branded Valiant) or `Flux` (Fluxbeam). `Cyclone` is reserved and not yet routable. Note that `Fluxbeam` is the brand, never the wire value.",
             "example": "Vortex"
           },
@@ -906,6 +1124,13 @@
             "type": "string",
             "description": "Output token mint for this hop.",
             "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          },
+          "hops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RouteHopInfo"
+            },
+            "description": "Per-pool breakdown, present only when this leg routes through more than one pool. A single-hop leg describes itself fully via poolAddress/poolType. Note that routes[] has one entry per PARALLEL leg, not per hop — summing percent across entries gives 100."
           }
         },
         "required": [
@@ -1023,6 +1248,28 @@
             "format": "int64",
             "description": "Absolute quote expiry (unix milliseconds) embedded in the signed message.",
             "example": 1767000000000
+          },
+          "isSplitRoute": {
+            "type": "boolean",
+            "description": "True when the trade is split across parallel legs.",
+            "example": false
+          },
+          "splitPercents": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Percentage of the input routed down each parallel leg, in the order of routes[]."
+          },
+          "contextSlot": {
+            "type": "integer",
+            "description": "The chain slot the pool state behind this quote was current to.",
+            "example": 729078408
+          },
+          "dataAgeMs": {
+            "type": "integer",
+            "description": "Milliseconds since any market-data update last reached the engine. Check it: pool state is in memory and the feed does not backfill after a reconnect, so a dropped feed leaves the engine pricing off frozen reserves — and the internal staleness penalty scales with price impact, so a low-impact trade priced off a dead feed is penalised by exactly zero and is otherwise indistinguishable from a fresh quote. This field is the difference.",
+            "example": 120
           }
         },
         "required": [
@@ -1037,7 +1284,8 @@
           "routes",
           "routePath",
           "hopCount",
-          "otherAmountThreshold"
+          "otherAmountThreshold",
+          "priceImpactWarning"
         ]
       },
       "SwapRequest": {
@@ -1147,6 +1395,18 @@
           "slippageExceeded": {
             "type": "boolean",
             "description": "True if the price moved beyond slippage tolerance."
+          },
+          "computeUnitsTotal": {
+            "type": "integer",
+            "description": "Total compute units the transaction is budgeted for, when the server computed it.",
+            "example": 90000
+          },
+          "accountsNeeded": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Accounts the simulation found missing. Present only when it failed for that reason."
           }
         },
         "required": [
@@ -1646,6 +1906,165 @@
           "routeInstruction",
           "requiredTokenAccounts",
           "addressLookupTableAddresses"
+        ]
+      },
+      "RouteHopInfo": {
+        "type": "object",
+        "description": "One pool hop inside a multi-hop leg.",
+        "properties": {
+          "poolAddress": {
+            "type": "string",
+            "example": "HJPjoWUrhoZzkNfRpHuieeFk9WcZWjwy6PBjZ81ngndJ"
+          },
+          "poolType": {
+            "type": "string",
+            "enum": [
+              "Vortex",
+              "Flux",
+              "Cyclone"
+            ],
+            "description": "Liquidity pool type. Wire values: `Vortex` (the venue branded Valiant) or `Flux` (Fluxbeam). `Cyclone` is reserved and not yet routable. Note that `Fluxbeam` is the brand, never the wire value.",
+            "example": "Vortex"
+          },
+          "inputMint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "outputMint": {
+            "type": "string",
+            "example": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"
+          }
+        },
+        "required": [
+          "poolAddress",
+          "poolType",
+          "inputMint",
+          "outputMint"
+        ]
+      },
+      "TokenMeta": {
+        "type": "object",
+        "description": "One entry in the curated display token list.",
+        "properties": {
+          "mint": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "symbol": {
+            "type": "string",
+            "example": "FOGO"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fogo"
+          },
+          "decimals": {
+            "type": "integer",
+            "example": 9
+          },
+          "logoURI": {
+            "type": "string",
+            "description": "May point at an asset that does not resolve; render a fallback.",
+            "example": "https://api.fogo.io/tokens/fogo.svg"
+          }
+        },
+        "required": [
+          "mint",
+          "symbol",
+          "name",
+          "decimals"
+        ]
+      },
+      "PoolStats": {
+        "type": "object",
+        "properties": {
+          "pool_count": {
+            "type": "integer",
+            "example": 1247
+          },
+          "update_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Account updates ingested since start.",
+            "example": 45892
+          }
+        },
+        "required": [
+          "pool_count",
+          "update_count"
+        ]
+      },
+      "PoolInfo": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "example": "HJPjoWUrhoZzkNfRpHuieeFk9WcZWjwy6PBjZ81ngndJ"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Vortex",
+              "Flux",
+              "Cyclone"
+            ],
+            "description": "Liquidity pool type. Wire values: `Vortex` (the venue branded Valiant) or `Flux` (Fluxbeam). `Cyclone` is reserved and not yet routable. Note that `Fluxbeam` is the brand, never the wire value.",
+            "example": "Vortex"
+          },
+          "token_mint_a": {
+            "type": "string"
+          },
+          "token_mint_b": {
+            "type": "string"
+          },
+          "token_symbol_a": {
+            "type": "string",
+            "description": "Omitted when the mint has no resolved metadata. Never synthesised from the address — absent means unknown."
+          },
+          "token_symbol_b": {
+            "type": "string",
+            "description": "Omitted when the mint has no resolved metadata."
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "address",
+          "type",
+          "token_mint_a",
+          "token_mint_b",
+          "active"
+        ]
+      },
+      "PoolList": {
+        "type": "object",
+        "properties": {
+          "pools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PoolInfo"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pools",
+          "total",
+          "page",
+          "limit",
+          "pages"
         ]
       }
     }

@@ -11,9 +11,62 @@ All error responses use the same format:
 ```json
 {
   "success": false,
-  "error": "error message"
+  "code": "NO_ROUTE",
+  "error": "no route found between tokens"
 }
 ```
+
+<Warning>
+**Branch on `code`, not on `error`.** `code` is the contract: it is never
+renamed or reused for a different meaning once shipped, so a client that
+switches on it keeps working. `error` is the human sentence and may be reworded
+at any time — matching it means a copy edit on our side silently breaks your
+integration.
+
+New codes may be added, so treat one you do not recognise as its HTTP status
+class rather than failing closed. Some responses carry no `code` at all: the
+admin debug routes, and anything served before codes shipped.
+
+Do not branch on the HTTP status alone either. It is overloaded: `404` is
+"no pool", "no route" *and* the disguised admin gate; `409` is both a drifted
+firm quote and a simulation that failed on slippage, which need different
+recoveries. The code separates them.
+</Warning>
+
+## Codes
+
+| Code | HTTP | Meaning | Recovery |
+| --- | --- | --- | --- |
+| `INVALID_REQUEST` | 400 | Params or body failed validation | Fix the request |
+| `INVALID_WALLET` | 400 | `userWallet`/`authority`/`sessionAccount` is not a valid pubkey | Fix the address |
+| `FEE_CAP_EXCEEDED` | 400 | `platformFeeBps + integratorFeeBps` is over the 100 bps ceiling | Lower `integratorFeeBps`; the message names both rates |
+| `FEE_NEEDS_REFERRER` | 400 | `integratorFeeBps` was set with no `referrer` to pay it to | Send a `referrer`, or drop the fee |
+| `EXACT_OUT_MULTIHOP` | 400 | Exact-out cannot span hops on chain | Use the ExactIn-with-buffer pattern |
+| `EXACT_OUT_DEX` | 400 | A hop's venue has no exact-out CPI | Re-quote with `swapMode=ExactIn` |
+| `SESSION_ROUTE_UNSUP` | 400 | The route has a hop that cannot forward the session signer | Retry without `sessionAccount`, or wait for a different route |
+| `QUOTE_MISMATCH` | 400 | The `quoteId` does not match the pair, amount or mode sent with it | Send the same parameters you quoted |
+| `SIM_INSUFFICIENT` | 400 | The build simulated and the wallet cannot cover it | Not retryable — fund the wallet |
+| `MISSING_API_KEY` | 401 | No `Authorization: Bearer` and no `?key=`. Only `/api/v1/stream` can return this | Send a key |
+| `INVALID_API_KEY` | 403 | The key does not exist, is disabled, or was revoked | Check the key |
+| `ORIGIN_REQUIRED` | 403 | The key is origin-locked and no `Origin` was sent | Send from an allowed origin |
+| `ORIGIN_NOT_ALLOWED` | 403 | The `Origin` is not on the key's allowlist | Add it, or use a different key |
+| `QUOTE_WRONG_KEY` | 403 | The `quoteId` was minted for a different API key | Redeem with the key that quoted |
+| `NO_POOL` | 404 | No pool exists for the pair | Nothing to do — the pair is not listed |
+| `POOL_DATA_MISSING` | 404 | Pools exist but their state is not loaded | Transient; retry shortly |
+| `NO_ROUTE` | 404 | Pools exist, but no path connects the pair at this size | Try a smaller amount |
+| `NO_ROUTE_CONSTRAINED` | 404 | A path exists, but not inside your constraints | Widen `allowedIntermediateMints`/`maxHops`, or drop them |
+| `QUOTE_STALE` | 409 | A pinned route drifted past its firm margin | Re-quote and retry |
+| `SIM_SLIPPAGE` | 409 | The build's own simulation failed on slippage | Re-quote and retry — this is **not** a firm-quote failure |
+| `QUOTE_EXPIRED` | 410 | The `quoteId` is past `validForMs` (3 s) | Re-quote |
+| `ROUTE_TOO_LARGE` | 422 | More accounts than fit in one transaction | Constrain the route, or split the trade |
+| `CPI_SPLIT_UNSUP` | 422 | Split routes have no CPI form yet | Use a pair that routes directly |
+| `SIM_FAILED` | 422 | Simulation failed for some other reason | Inspect `data.simulation` |
+| `RATE_LIMITED` | 429 | Bucket exhausted. Carries a `Retry-After` header | Back off — see [Rate limits](/api-reference/rate-limits) |
+| `INTERNAL` | 500 | Our fault | Retry; report it if it persists |
+
+On a `/swap` or `/instructions` rejection whose simulation failed, the result is
+attached at `data.simulation`. Its `insufficientFunds` and `slippageExceeded`
+booleans mirror `SIM_INSUFFICIENT` and `SIM_SLIPPAGE`.
 
 ## HTTP status codes
 
@@ -21,7 +74,7 @@ All error responses use the same format:
 | --- | --- | --- |
 | `200` | Success | Request processed successfully |
 | `400` | Bad Request | Invalid parameters, missing required fields, a route the on-chain program cannot execute (multi-hop ExactOut, ExactOut on a non-Valiant pool), or a `/swap` build whose simulation failed for insufficient funds |
-| `401` | Unauthorized | No API key was provided |
+| `401` | Unauthorized | No API key was provided. **Only `/api/v1/stream` returns this** — REST allows anonymous callers, so a keyless REST request is rate-limited, not rejected |
 | `403` | Forbidden | The key is invalid, disabled, or revoked — blocked by the key's origin allowlist — or a `quoteId` issued to a different key |
 | `404` | Not Found | No route or pool found for the given parameters, or pools exist without enough liquidity |
 | `409` | Conflict | Firm-quote redemption failed: the pinned route is gone, or the price drifted past the firm margin. Also a `/swap` build whose simulation failed on slippage — the price moved after quoting, so re-quote and retry |
@@ -32,15 +85,15 @@ All error responses use the same format:
 
 ## API errors
 
-### Authentication errors (all `/api/v1/*` endpoints)
+### Authentication errors
 
 | Error message | HTTP | Cause |
 | --- | --- | --- |
-| `missing api key` | 401 | No `Authorization: Bearer` header or `?key=` parameter was sent |
+| `missing api key` | 401 | No `Authorization: Bearer` header or `?key=` parameter was sent. Reachable only on `GET /api/v1/stream`, the one endpoint that always requires a key |
 | `invalid api key` | 403 | The key doesn't exist, is disabled, or was revoked |
 | `origin required for this api key` | 403 | The key has an origin allowlist and the request sent no `Origin`/`Referer` |
 | `origin not allowed for this api key` | 403 | The request's origin isn't on the key's allowlist |
-| `rate limit exceeded` | 429 | Too many requests — see [Rate limits](/api-reference/rate-limits) |
+| `rate limit exceeded` | 429 | Too many requests. The response carries `Retry-After` — see [Rate limits](/api-reference/rate-limits) |
 
 ### Quote errors (`GET /api/v1/quote`)
 

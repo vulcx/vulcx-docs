@@ -43,7 +43,7 @@ All responses use a consistent envelope:
 |------|---------|
 | `200` | Success |
 | `400` | Bad request: invalid parameters, missing required fields |
-| `401` | No API key was provided |
+| `401` | No API key was provided. Only `GET /api/v1/stream` returns this; REST allows anonymous callers |
 | `403` | The API key is invalid, disabled, or revoked |
 | `404` | Not found: no route exists for the given token pair/amount |
 | `429` | Rate limited: too many requests |

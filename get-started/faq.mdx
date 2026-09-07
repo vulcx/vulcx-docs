@@ -25,7 +25,27 @@ llmDescription: "Frequently asked questions about Vulcx. Covers supported chains
   <Accordion title="How fresh are quotes?">
     Quotes reflect real-time pool state at the moment of the request. Prices can change between getting a quote and submitting the transaction. The `otherAmountThreshold` field enforces a minimum output (`ExactIn`) or maximum input (`ExactOut`) on-chain.
 
-    Quotes don't have an explicit TTL, but the transaction built from `POST /api/v1/swap` expires at `lastValidBlockHeight` (roughly 60 seconds).
+    **Quotes do have an explicit TTL.** A `quoteId` dies **3 seconds** after it
+    is minted (`validForMs`), and the firm window is **400 ms** (`firmForMs`).
+    Both are measured from when the quote was created, not from when you send
+    it, so redeeming late returns `410 QUOTE_EXPIRED`.
+
+    The practical consequence: **do not hold a quote across a user
+    interaction.** A wallet popup will outlive it. Either build on the same
+    tick you quote, re-quote when the user clicks, refresh every ~2 s while a
+    price is on screen, or drop `quoteId` entirely and let the server re-quote
+    at build time under your `slippageBps` — you lose price pinning, not
+    correctness. The 400 ms firm window is only reachable from machine flows:
+    session-key signing, bots, keepers.
+
+    Separately, the transaction built from `POST /api/v1/swap` expires at
+    `lastValidBlockHeight` (roughly 60 seconds). That is a different clock from
+    the quote's, and the longer of the two.
+
+    Each quote also carries `contextSlot` and `dataAgeMs` — the slot its pool
+    state was current to, and how long ago market data last arrived. A
+    `dataAgeMs` materially above a second or two means the price is being
+    served off stale state; treat it as a reason to distrust the quote.
   </Accordion>
 
   <Accordion title="What's the difference between ExactIn and ExactOut?">
