@@ -101,7 +101,7 @@ const quote = await sdk.quote({
 | Field | Type | Description |
 |-------|------|-------------|
 | `poolAddress` | `string` | Pool address for this hop |
-| `poolType` | `string` | DEX type (e.g. `"Vortex"`, `"Fluxbeam"`, `"Moonit"`) |
+| `poolType` | `string` | Wire value: `"Vortex"` (branded Valiant) or `"Flux"` (Fluxbeam) |
 | `percent` | `number` | Percentage routed through this pool (100 for single route) |
 | `inputMint` | `string` | Input mint for this hop |
 | `outputMint` | `string` | Output mint for this hop |

@@ -2,7 +2,7 @@
 title: "Composing Swaps On-Chain (CPI)"
 sidebarTitle: "On-Chain Swaps (CPI)"
 description: "Call the Vulcx route instruction from your own SVM program via CPI, signed by your PDA — make a best-price swap one atomic step inside your protocol's logic."
-llmDescription: "Guide to composing Vulcx swaps on-chain via Cross-Program Invocation (CPI) on SVM chains (live on Fogo). Another Solana program calls the Vulcx aggregator's `route` instruction with invoke_signed, using its own PDA as the swap authority instead of a user wallet — so a best-price multi-hop swap becomes an atomic step inside a lending liquidation, vault rebalance, pay-with-any-token flow, perps collateral conversion, DAO treasury swap, or zap. Covers: when to use CPI vs POST /swap vs POST /instructions; the off-chain step POST /api/v1/cpi/route-accounts (cURL/TypeScript/Python) which returns routeInstruction + requiredTokenAccounts + referrerAta + addressLookupTableAddresses; route corridors (allowedIntermediateMints max 16, maxHops, never split, 404 if no route inside constraints; excluding moonit lifts the authority-writable requirement); per-request integrator fee (integratorFeeBps is the caller's own rate, kept 100% by them and paid on-chain to the referrer wallet; it ADDS to Vulcx's platformFeeBps rather than being a share of it, sum capped at 100 bps, referrerAta must pre-exist); the on-chain step in Rust/Anchor using the vulcx-cpi crate (RouteAccounts, RouteArgs, Hop, VortexHop, invoke_route_signed; `api` feature adds ParsedRoute::from_api_response which parses the endpoint JSON into typed builders and fails on layout drift; crate major version tracks the deployed program's instruction layout) with a full worked minimal integrator instruction and #[derive(Accounts)] context; the exact route account layout (6 fixed accounts + per-hop account groups for Vortex 7, Vortex V2 10, Fluxbeam 14, Moonit 14, with writable/signer flags); WebSocket subscribe_route streaming route templates (op subscribe_route, {type:route, seq, slot, route} pushed only when the template — route plan/accounts/LUTs — changes, max 32 per connection, for zero-HTTP-round-trip liquidation keepers); and gotchas (ATAs must be pre-created and funded, no wrap/unwrap emitted, simulate:false for real execution — simulate:true skips the min-out check, Moonit hops make the authority writable, split routes unsupported (422), multi-hop ExactOut returns 400 — use the ExactIn-with-buffer pattern). Includes the liquidation kit worked example (Anchor liquidate ix + TypeScript keeper). Beta feature."
+llmDescription: "Guide to composing Vulcx swaps on-chain via Cross-Program Invocation (CPI) on SVM chains (live on Fogo). Another Solana program calls the Vulcx aggregator's `route` instruction with invoke_signed, using its own PDA as the swap authority instead of a user wallet — so a best-price multi-hop swap becomes an atomic step inside a lending liquidation, vault rebalance, pay-with-any-token flow, perps collateral conversion, DAO treasury swap, or zap. Covers: when to use CPI vs POST /swap vs POST /instructions; the off-chain step POST /api/v1/cpi/route-accounts (cURL/TypeScript/Python) which returns routeInstruction + requiredTokenAccounts + referrerAta + addressLookupTableAddresses; route corridors (allowedIntermediateMints max 16, maxHops, never split, 404 if no route inside constraints; per-request integrator fee (integratorFeeBps is the caller's own rate, kept 100% by them and paid on-chain to the referrer wallet; it ADDS to Vulcx's platformFeeBps rather than being a share of it, sum capped at 100 bps, referrerAta must pre-exist); the on-chain step in Rust/Anchor using the vulcx-cpi crate (RouteAccounts, RouteArgs, Hop, VortexHop, invoke_route_signed; `api` feature adds ParsedRoute::from_api_response which parses the endpoint JSON into typed builders and fails on layout drift; crate major version tracks the deployed program's instruction layout) with a full worked minimal integrator instruction and #[derive(Accounts)] context; the exact route account layout (6 fixed accounts + per-hop account groups for Vortex 7, Vortex V2 10, Fluxbeam 14, with writable/signer flags); WebSocket subscribe_route streaming route templates (op subscribe_route, {type:route, seq, slot, route} pushed only when the template — route plan/accounts/LUTs — changes, max 32 per connection, for zero-HTTP-round-trip liquidation keepers); and gotchas (ATAs must be pre-created and funded, no wrap/unwrap emitted, simulate:false for real execution — simulate:true skips the min-out check, split routes unsupported (422), multi-hop ExactOut returns 400 — use the ExactIn-with-buffer pattern). Includes the liquidation kit worked example (Anchor liquidate ix + TypeScript keeper). Beta feature."
 ---
 
 <Note>
@@ -338,7 +338,7 @@ rarely assemble it by hand — but here it is for reference and debugging.
 | # | Account | Flags |
 |---|---------|-------|
 | 0 | `token_program` | readonly |
-| 1 | `authority` (`user_transfer_authority`) | **signer** — writable **iff** any hop is Moonit |
+| 1 | `authority` (`user_transfer_authority`) | **signer**, readonly |
 | 2 | `protocol_config` | readonly |
 | 3 | `vortex_program` | readonly |
 | 4 | `fluxbeam_program` | readonly |
@@ -395,27 +395,6 @@ in route order, then optional `protocol_fee_ata` / `referrer_ata` (writable).
 
 Covers both standard and bonding Fluxbeam swaps (identical layout; only the discriminator differs).
 </Tab>
-<Tab title="Moonit (14)">
-| # | Account | Flags |
-|---|---------|-------|
-| 0 | `curve_account` | writable |
-| 1 | `curve_token_account` | writable |
-| 2 | `curve_wsol_account` | writable |
-| 3 | `dex_fee` | writable |
-| 4 | `dex_fee_wsol_account` | writable |
-| 5 | `helio_fee` | writable |
-| 6 | `helio_fee_wsol_account` | writable |
-| 7 | `mint` | readonly |
-| 8 | `config_account` | readonly |
-| 9 | `token_program` | readonly |
-| 10 | `associated_token_program` | readonly |
-| 11 | `system_program` | readonly |
-| 12 | `moonit_program` | readonly |
-| 13 | `wsol_mint` | readonly |
-
-A Moonit hop makes the top-level `authority` a **writable** signer (it is the Moonit payer);
-`RouteAccounts` sets that flag for you.
-</Tab>
 </Tabs>
 
 ## Streaming route templates (zero round-trips at fire time)
@@ -453,9 +432,9 @@ instructions. Create and fund the accounts listed in `requiredTokenAccounts` bef
 
 - **`simulate: false` for real execution.** `simulate: true` makes `route` bail early — it's only for
   probing the account wiring without touching liquidity.
-- **Moonit hops need a writable authority.** If your route includes a Moonit hop, the authority must be
-  a *writable* signer. `RouteAccounts` detects this and sets the flag; make sure your PDA account is
-  marked `mut` in the context (harmless for non-Moonit routes).
+- **The authority is never writable.** It used to have to be, for Moonit hops. Moonit is gone and no
+  route can contain one, so `RouteAccounts` will not ask for a writable authority. Marking your PDA
+  `mut` is harmless but no longer needed.
 - **Split routes aren't supported yet.** A split route returns `422` from `POST /api/v1/cpi/route-accounts`.
   Retry with a pair that routes through a single path (any corridor constraint also disables splits).
 - **Multi-hop ExactOut is rejected with a `400`.** An exact-output swap can only bound its input on a

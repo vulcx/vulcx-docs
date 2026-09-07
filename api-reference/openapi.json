@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Vulcx API",
-    "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Valiant, Fluxbeam, and Moonit.",
+    "description": "Swap aggregator API on Fogo. Get quotes, build swap transactions, and retrieve raw instructions for multi-hop token swaps across Valiant and Fluxbeam.",
     "version": "1.0.0",
     "contact": {
       "name": "Vulcx",
@@ -618,7 +618,7 @@
       "post": {
         "operationId": "buildRouteCpiAccounts",
         "summary": "Get CPI account list for calling route from another program",
-        "description": "Builds the Vulcx `route` instruction shaped for a Cross-Program Invocation (CPI): the supplied program PDA is wired in as the swap authority (signer, and writable when a Moonit hop is involved). Forward `routeInstruction.accounts` into your program's `route` CPI and sign with your PDA seeds (`invoke_signed`). No ATA-create or SOL wrap/unwrap instructions are emitted — the returned `requiredTokenAccounts` are ATAs your PDA must own and fund before the CPI runs. Split routes are not yet supported and return 400. See the on-chain CPI guide for the full flow.",
+        "description": "Builds the Vulcx `route` instruction shaped for a Cross-Program Invocation (CPI): the supplied program PDA is wired in as the swap authority (signer, readonly). Forward `routeInstruction.accounts` into your program's `route` CPI and sign with your PDA seeds (`invoke_signed`). No ATA-create or SOL wrap/unwrap instructions are emitted — the returned `requiredTokenAccounts` are ATAs your PDA must own and fund before the CPI runs. Split routes are not yet supported and return 400. See the on-chain CPI guide for the full flow.",
         "tags": [
           "CPI"
         ],
@@ -888,7 +888,8 @@
           },
           "poolType": {
             "type": "string",
-            "description": "Liquidity pool type (Vortex, Fluxbeam, Moonit, etc.).",
+            "enum": ["Vortex", "Flux", "Cyclone"],
+            "description": "Liquidity pool type. Wire values: `Vortex` (the venue branded Valiant) or `Flux` (Fluxbeam). `Cyclone` is reserved and not yet routable. Note that `Fluxbeam` is the brand, never the wire value.",
             "example": "Vortex"
           },
           "percent": {
@@ -1600,7 +1601,7 @@
           },
           "routeInstruction": {
             "$ref": "#/components/schemas/RawInstruction",
-            "description": "The Vulcx `route` instruction to CPI into. Its account list is the ordered set the calling program must forward (authority is marked signer, and writable when any hop is Moonit)."
+            "description": "The Vulcx `route` instruction to CPI into. Its account list is the ordered set the calling program must forward (authority is marked signer, readonly)."
           },
           "requiredTokenAccounts": {
             "type": "array",

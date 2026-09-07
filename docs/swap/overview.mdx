@@ -1,7 +1,7 @@
 ---
 title: "Swap Overview"
 description: "The Vulcx swap lifecycle on SVM chains: quote, build or get instructions, then sign and submit. When to use /swap vs /instructions, ExactIn vs ExactOut, and supported DEXs."
-llmDescription: "Overview of the Vulcx swap lifecycle on SVM chains (live on Fogo): get quote, build transaction or get instructions, sign and submit. Explains when to use POST /swap vs POST /instructions, ExactIn vs ExactOut swap modes, Fogo capabilities (5 max hops, Valiant/Fluxbeam/Moonit DEXs), supported tokens, and links to detailed pages for each step."
+llmDescription: "Overview of the Vulcx swap lifecycle on SVM chains (live on Fogo): get quote, build transaction or get instructions, sign and submit. Explains when to use POST /swap vs POST /instructions, ExactIn vs ExactOut swap modes, Fogo capabilities (5 max hops, Valiant/Fluxbeam DEXs), supported tokens, and links to detailed pages for each step."
 ---
 
 # Swap Overview
@@ -49,15 +49,14 @@ Both modes support slippage protection. For `ExactIn`, the response includes `mi
 |---------|-------|
 | Max hops | 5 |
 | Compute cost | Standard |
-| Supported DEXs | Valiant, Fluxbeam, Moonit |
+| Supported DEXs | Valiant, Fluxbeam |
 
 ## Supported tokens
 
 Any SPL token with liquidity on a supported DEX can be swapped. The routing engine currently supports:
 
 - Valiant (concentrated liquidity)
-- Fluxbeam (AMM)
-- Moonit (bonding curves)
+- Fluxbeam (constant product and bonding curve)
 
 If a direct pool doesn't exist, the engine routes through intermediate tokens (multi-hop).
 

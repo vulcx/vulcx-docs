@@ -1,6 +1,6 @@
 ---
 name: vulcx-swap
-description: Integrate the Vulcx swap API on SVM chains (live on Fogo, Solana in progress). Use for getting quotes, building swap transactions, getting raw instructions, redeeming firm quotes (quoteId, price-or-fail), and handling errors across Valiant, Fluxbeam, and Moonit bonding curves.
+description: Integrate the Vulcx swap API on SVM chains (live on Fogo, Solana in progress). Use for getting quotes, building swap transactions, getting raw instructions, redeeming firm quotes (quoteId, price-or-fail), and handling errors across Valiant and Fluxbeam.
 version: "1.4.0"
 tags:
   - vulcx
@@ -44,7 +44,7 @@ on the WebSocket stream with no key. Keys are free during beta — see [Authenti
 
 ## Chain Support
 
-**Fogo** (5 max hops, Valiant/Fluxbeam/Moonit DEXs).
+**Fogo** (5 max hops, Valiant/Fluxbeam DEXs).
 
 ## Use / Do Not Use
 

@@ -2,7 +2,7 @@
 title: "Swap fees — pool, protocol & integrator fees"
 sidebarTitle: "Fees"
 description: "How Vulcx swap fees work on SVM chains (live on Fogo): the DEX pool fee, Vulcx's protocol fee, and your own integrator fee. The last two are independent rates that add — you keep 100% of yours."
-llmDescription: "Vulcx fee structure on SVM chains (live on Fogo). Three separate costs: (1) DEX pool fees set by pool operators (Valiant, Fluxbeam, Moonit), reported as feeBps in the quote response and feeAmount in swap/instructions responses; (2) Vulcx's protocol fee, reported as platformFeeBps and platformFeeAmount, taken from the output amount, set by the global on-chain protocol config or lowered by a per-integrator PartnerConfig override; (3) the integrator's own fee, set per request as integratorFeeBps and kept 100% by the integrator, paid on-chain to the referrer wallet and reported as integratorFeeAmount. platformFeeBps and integratorFeeBps are INDEPENDENT and ADD — integratorFeeBps is not a share of the protocol fee. Their sum is capped at 100 bps (1%); exceeding it returns HTTP 400. Setting integratorFeeBps requires a referrer wallet to pay it to. Both rates stand down together when the protocol fee is disabled on-chain. amountIn and amountOut already account for every cost."
+llmDescription: "Vulcx fee structure on SVM chains (live on Fogo). Three separate costs: (1) DEX pool fees set by pool operators (Valiant, Fluxbeam), reported as feeBps in the quote response and feeAmount in swap/instructions responses; (2) Vulcx's protocol fee, reported as platformFeeBps and platformFeeAmount, taken from the output amount, set by the global on-chain protocol config or lowered by a per-integrator PartnerConfig override; (3) the integrator's own fee, set per request as integratorFeeBps and kept 100% by the integrator, paid on-chain to the referrer wallet and reported as integratorFeeAmount. platformFeeBps and integratorFeeBps are INDEPENDENT and ADD — integratorFeeBps is not a share of the protocol fee. Their sum is capped at 100 bps (1%); exceeding it returns HTTP 400. Setting integratorFeeBps requires a referrer wallet to pay it to. Both rates stand down together when the protocol fee is disabled on-chain. amountIn and amountOut already account for every cost."
 ---
 
 A swap on Vulcx has up to three separate costs. They are reported as distinct fields, never
@@ -10,8 +10,8 @@ rolled into one number.
 
 ## 1. Pool fees
 
-Each liquidity pool charges its own fee per hop, set by the pool operator (Valiant, Fluxbeam,
-Moonit) and deducted automatically as the swap executes.
+Each liquidity pool charges its own fee per hop, set by the pool operator (Valiant, Fluxbeam)
+and deducted automatically as the swap executes.
 
 - `feeBps` on `GET /api/v1/quote` — the total pool fee across all hops, in basis points.
 - `feeAmount` on `POST /api/v1/swap` and `POST /api/v1/instructions` — the same fee as an amount.

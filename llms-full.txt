@@ -8,7 +8,7 @@ Base URL: `https://api.vulcx.xyz`
 
 ## Chain Support
 
-Currently: **Fogo** (5 max hops, Valiant/Fluxbeam/Moonit DEXs).
+Currently: **Fogo** (5 max hops, Valiant/Fluxbeam DEXs).
 
 
 ---
@@ -112,7 +112,7 @@ Get the best swap route and estimated output for a token pair.
 
 - `amountIn` / `amountOut`: In smallest token units. For ExactIn, amountIn=requested, amountOut=calculated. Vice versa for ExactOut.
 - `priceImpactSeverity`: `none` (<0.1%), `low` (0.1-1%), `moderate` (1-3%), `high` (3-5%), `extreme` (>5%).
-- `routes[]`: Each hop. poolAddress, poolType (Fogo: Vortex|Fluxbeam|Moonit), percent, inputMint, outputMint.
+- `routes[]`: Each hop. poolAddress, poolType (Fogo: Vortex|Flux), percent, inputMint, outputMint.
 - `routePath`: Token mints in order. Direct: [A, B]. Multi-hop: [A, X, Y, B].
 - `otherAmountThreshold`: ExactIn → minimum output. ExactOut → maximum input. Enforced on-chain.
 - `quoteId`: Firm-quote commitment ID. Pass it to POST /swap or POST /instructions within `validForMs` to replay this exact route with min-out anchored to this price. Omitted when the quote can't be pinned (e.g. split routes). Bound to the issuing API key.
@@ -312,7 +312,7 @@ Every /quote response and WebSocket quote push carries `quoteId` + `validForMs` 
 
 ## POST /api/v1/cpi/route-accounts and CPI tooling (summary)
 
-For on-chain programs CPI-ing the Vulcx `route` instruction with their own PDA as authority. Request: authority (PDA), inputMint, outputMint, amount, swapMode, slippageBps, plus optional route constraints — allowedIntermediateMints (corridor, max 16), maxHops (1 = direct only) (["vortex"|"fluxbeam"|"moonit"]; excluding moonit lifts the authority-writable requirement) — and optional referrer. Response: routeInstruction (programId/data/accounts to forward verbatim into the CPI), requiredTokenAccounts (PDA's ATAs, must pre-exist and be funded; no ATA-create/wrap instructions are emitted), referrerAta (must pre-exist), addressLookupTableAddresses (attach to the OUTER v0 tx). Constrained requests bypass caches and never split; no route inside constraints → 404. Multi-hop ExactOut → 400 (use ExactIn-with-buffer: quote ExactOut to size input, execute ExactIn at input x (1+buffer), sweep surplus). Rust crate `vulcx-cpi`: typed builders (RouteAccounts, RouteArgs, VortexHop/FluxbeamHop/MoonitHop, invoke_route_signed), CI parity tests against the deployed program, and an `api`-feature ParsedRoute::from_api_response that parses the endpoint JSON into typed builders and errors on layout drift. The WebSocket stream op `subscribe_route` (max 32/connection) pushes `{"type":"route","seq","slot","route":{...same payload...}}` only when the template (route plan/accounts/LUTs) changes — hold the latest template in memory and fire with zero HTTP round-trips. Full guide: https://docs.vulcx.xyz/guides/onchain-cpi
+For on-chain programs CPI-ing the Vulcx `route` instruction with their own PDA as authority. Request: authority (PDA), inputMint, outputMint, amount, swapMode, slippageBps, plus optional route constraints — allowedIntermediateMints (corridor, max 16), maxHops (1 = direct only)  — and optional referrer. Response: routeInstruction (programId/data/accounts to forward verbatim into the CPI), requiredTokenAccounts (PDA's ATAs, must pre-exist and be funded; no ATA-create/wrap instructions are emitted), referrerAta (must pre-exist), addressLookupTableAddresses (attach to the OUTER v0 tx). Constrained requests bypass caches and never split; no route inside constraints → 404. Multi-hop ExactOut → 400 (use ExactIn-with-buffer: quote ExactOut to size input, execute ExactIn at input x (1+buffer), sweep surplus). Rust crate `vulcx-cpi`: typed builders (RouteAccounts, RouteArgs, VortexHop/FluxbeamHop, invoke_route_signed), CI parity tests against the deployed program, and an `api`-feature ParsedRoute::from_api_response that parses the endpoint JSON into typed builders and errors on layout drift. The WebSocket stream op `subscribe_route` (max 32/connection) pushes `{"type":"route","seq","slot","route":{...same payload...}}` only when the template (route plan/accounts/LUTs) changes — hold the latest template in memory and fire with zero HTTP round-trips. Full guide: https://docs.vulcx.xyz/guides/onchain-cpi
 
 ---
 

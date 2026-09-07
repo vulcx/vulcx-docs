@@ -43,7 +43,19 @@ There is no build step and no test suite. **Publishing is automatic**: pushing t
 - `skill.md` (root) is a standalone **agent-skill definition** (`name: vulcx-swap`) that teaches an AI agent to call the Vulcx API. It duplicates the API surface in condensed form — when endpoints, params, or error behavior change, update it alongside the page content and `openapi.json`. `Assistant.md` is currently empty.
 - `style.css` (root) is custom CSS that Mintlify **auto-loads** (no registration needed); it exists to match the landing page's black-and-silver look. Prefer global, version-stable selectors over Mintlify's internal class names, per the note at the top of the file.
 - Mintlify components (e.g. `<Card>`, `<CodeGroup>`, accordions) are available inside MDX — match the components already used by neighboring pages rather than introducing new patterns.
-- Product framing is consistent across the docs: **Vulcx runs on Fogo.** Multi-hop routing spans Valiant, Fluxbeam, and Moonit. There is no `chain` query parameter — the API is Fogo-only; a future chain would ship as a separate endpoint, not a proxied param. Keep new copy consistent with this.
+- Product framing is consistent across the docs: **Vulcx runs on Fogo.** Multi-hop routing spans **Valiant and Fluxbeam**. There is no `chain` query parameter — the API is Fogo-only; a future chain would ship as a separate endpoint, not a proxied param. Keep new copy consistent with this.
+
+- **Moonit is gone.** It shut down and the engine stopped carrying its code
+  (`019c676`/`ab616e5`); `internal/domain/pool.go` keeps its enum slot only as a
+  documented gap, and nothing can emit it. Do not reintroduce it into a venue
+  list, a `poolType` enum, an account-layout table or an `excludeDexes` example.
+  This line used to say the opposite, which is why it survived in ~20 pages.
+
+- **The `poolType` wire values are `Vortex`, `Flux` and `Cyclone`** — not
+  `Fluxbeam`, which is the brand and has never been the wire value, and not
+  `Moonit`. `Cyclone` (Valiant's Blaze launch curve) exists in the engine but is
+  not yet wired into discovery or the builder, so it cannot appear in a response
+  today; document it as a value the enum reserves, not as a routable venue.
 
 - **Venue naming: the brand is Valiant; `Vortex` is only the wire value.** The API reports
   `routes[].poolType` as `"Vortex"`, so that literal
