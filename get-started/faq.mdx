@@ -58,13 +58,13 @@ llmDescription: "Frequently asked questions about Vulcx. Covers supported chains
   <Accordion title="How are fees calculated?">
     Up to three, each reported separately:
 
-    1. **Pool fees** set by the DEX operators. Shown as `feeBps` in the quote response and `feeAmount` in the swap/instructions response.
+    1. **Pool fees** set by the DEX operators. Shown as `feeBps` in the quote response and `feeAmount` in the swap/instructions response. `feeAmount` is in the **input** token — pool fees are taken on the way in — so never subtract it from `amountOut`.
     2. **Vulcx's protocol fee** — `platformFeeBps`, taken from the output amount and reported as `platformFeeAmount`.
     3. **Your integrator fee** — `integratorFeeBps`, set per request and kept by you in full, paid on-chain to your `referrer` wallet.
 
     Rates 2 and 3 are independent and **add**; yours is not a share of ours. Their sum is capped at 100 bps. See [Fees](/concepts/fees).
 
-    The `amountIn` and `amountOut` values already account for all fees. No hidden charges.
+    `amountIn` and `amountOut` are net of pool fees. Vulcx's fee and yours are deducted from `amountOut` on-chain, so what the user receives is `amountOut - platformFeeAmount - integratorFeeAmount`.
   </Accordion>
 </AccordionGroup>
 

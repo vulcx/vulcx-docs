@@ -225,8 +225,9 @@ Build an unsigned transaction for a token swap.
 - `minAmountOut`: ExactIn only. On-chain minimum — tx reverts if output is less.
 - `maxAmountIn`: ExactOut only. On-chain maximum — tx reverts if input exceeds.
 - `simulation`: Present when skipSimulation=false. A FAILED simulation is not returned here on a 200 — the request is rejected with 400/409/422 and the simulation is at `data.simulation` on that error body.
-- `feeAmount`: DEX pool trading fee across every hop — the LP fee the pools take, NOT Vulcx's.
-- `platformFeeBps` / `platformFeeAmount`: Vulcx's own fee rate (bps of output) and the amount. 0 when disabled on-chain or waived via a PartnerConfig override.
+- `feeAmount`: DEX pool trading fee across every hop — the LP fee the pools take, NOT Vulcx's. Denominated in the INPUT token, because pool fees are taken on the way in; never subtract it from `amountOut`.
+- `platformFeeBps` / `platformFeeAmount`: Vulcx's own fee rate (bps of output) and the amount. One rate for every caller. 0 when disabled on-chain.
+- `amountOut` is GROSS: `platformFeeAmount` and `integratorFeeAmount` are deducted from it on-chain, so a user receives `amountOut - platformFeeAmount - integratorFeeAmount`.
 - `integratorFeeBps` / `integratorFeeAmount`: the caller's own rate, kept 100% by them, paid on-chain to the `referrer` wallet. INDEPENDENT of platformFeeBps — the two ADD, they are not a split. Sum capped at 100 bps; over-cap returns 400.
 
 ### Errors

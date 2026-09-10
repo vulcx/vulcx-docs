@@ -1491,8 +1491,8 @@
           },
           "platformFeeBps": {
             "type": "integer",
-            "description": "Vulcx's fee rate in basis points of the output amount: the global on-chain protocol rate, or this integrator's PartnerConfig override. 0 when the protocol fee is disabled or waived.",
-            "example": 20
+            "description": "Vulcx's fee rate in basis points of the output amount. One rate for every caller, from the on-chain protocol config. 0 when the protocol fee is disabled on-chain.",
+            "example": 15
           },
           "platformFeeAmount": {
             "type": "string",
@@ -1701,8 +1701,8 @@
           },
           "platformFeeBps": {
             "type": "integer",
-            "description": "Vulcx's fee rate in basis points of the output amount: the global on-chain protocol rate, or this integrator's PartnerConfig override. 0 when the protocol fee is disabled or waived.",
-            "example": 20
+            "description": "Vulcx's fee rate in basis points of the output amount. One rate for every caller, from the on-chain protocol config. 0 when the protocol fee is disabled on-chain.",
+            "example": 15
           },
           "platformFeeAmount": {
             "type": "string",
@@ -1834,7 +1834,7 @@
           "platformFeeBps": {
             "type": "integer",
             "example": 0,
-            "description": "Vulcx's fee rate in basis points of the output amount: the global on-chain protocol rate, or this integrator's PartnerConfig override. 0 when the protocol fee is disabled or waived."
+            "description": "Vulcx's fee rate in basis points of the output amount. One rate for every caller, from the on-chain protocol config. 0 when the protocol fee is disabled on-chain."
           },
           "platformFeeAmount": {
             "type": "string",
