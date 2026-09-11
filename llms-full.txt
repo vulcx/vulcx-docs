@@ -110,7 +110,7 @@ Get the best swap route and estimated output for a token pair.
 
 ### Response field details
 
-- `amountIn` / `amountOut`: In smallest token units. For ExactIn, amountIn=requested, amountOut=calculated. Vice versa for ExactOut.
+- `amountIn` / `amountOut`: In smallest token units. For ExactIn, amountIn=requested, amountOut=calculated. For ExactOut, amountIn=calculated and amountOut=requested plus Vulcx's fee, so the user receives exactly the requested amount. amountOut is always gross: the user receives amountOut - platformFeeAmount - integratorFeeAmount.
 - `priceImpactSeverity`: `none` (<0.1%), `low` (0.1-1%), `moderate` (1-3%), `high` (3-5%), `extreme` (>5%).
 - `routes[]`: Each hop. poolAddress, poolType (Fogo: Vortex|Flux), percent, inputMint, outputMint.
 - `routePath`: Token mints in order. Direct: [A, B]. Multi-hop: [A, X, Y, B].
