@@ -165,7 +165,7 @@ print(f"Transaction built. Expires at block {data['lastValidBlockHeight']}")
 <ResponseField name="transaction" type="string">Base64-encoded unsigned transaction. Deserialize, sign, and submit.</ResponseField>
 <ResponseField name="lastValidBlockHeight" type="integer">Transaction expires after this block height (~60 seconds from creation).</ResponseField>
 <ResponseField name="amountIn" type="string">Input amount in smallest units.</ResponseField>
-<ResponseField name="amountOut" type="string">Estimated output amount in smallest units.</ResponseField>
+<ResponseField name="amountOut" type="string">Output amount in smallest units, before fees. You receive `amountOut - platformFeeAmount - integratorFeeAmount`. For `ExactOut` the route is sized so that difference is exactly the `amount` you asked for.</ResponseField>
 <ResponseField name="minAmountOut" type="string">Minimum output after slippage (`ExactIn` only). Transaction reverts if actual output is less.</ResponseField>
 <ResponseField name="maxAmountIn" type="string">Maximum input after slippage (`ExactOut` only). Transaction reverts if actual input exceeds this.</ResponseField>
 <ResponseField name="feeAmount" type="string">DEX pool trading fee across every hop — the LP fee the pools take, not Vulcx's.</ResponseField>

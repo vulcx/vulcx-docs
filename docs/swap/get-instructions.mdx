@@ -178,7 +178,7 @@ print(f"{len(data['instructions'])} instructions, {data['hopCount']} hop(s)")
 ## Response fields
 
 <ResponseField name="amountIn" type="string">Input amount in smallest units.</ResponseField>
-<ResponseField name="amountOut" type="string">Estimated output amount.</ResponseField>
+<ResponseField name="amountOut" type="string">Output amount in smallest units, before fees. You receive `amountOut - platformFeeAmount - integratorFeeAmount`. For `ExactOut` the route is sized so that difference is exactly the `amount` you asked for.</ResponseField>
 <ResponseField name="otherAmountThreshold" type="string">Slippage-adjusted threshold. `ExactIn`: minimum output. `ExactOut`: maximum input.</ResponseField>
 <ResponseField name="feeAmount" type="string">DEX pool trading fee across every hop — the LP fee the pools take, not Vulcx's.</ResponseField>
 <ResponseField name="platformFeeBps" type="integer">Vulcx's fee rate, in bps of the output. `0` when the protocol fee is disabled on-chain or waived for you.</ResponseField>
