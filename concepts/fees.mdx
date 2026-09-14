@@ -55,6 +55,19 @@ returns HTTP `400` — the program refuses a fee with no destination, and the AP
 layer earlier so you get an error instead of a failed transaction.
 </Warning>
 
+### Set it once on your API key
+
+Instead of sending the fee on every request, set a **default fee** and **fee wallet** on the key at
+[portal.vulcx.xyz](https://portal.vulcx.xyz). A `/swap`, `/instructions` or `/cpi/route-accounts`
+request that omits `integratorFeeBps` uses the key's default; one that omits `referrer` pays the
+key's fee wallet. Anything you send on the request still wins, and an explicit `"integratorFeeBps": 0`
+turns the default off for that call. Requests without a key have no defaults.
+
+A key can also carry a **ceiling**: any request on that key asking for more returns 400
+`FEE_ABOVE_KEY_MAX`. Use it when the key ships inside a client other people can modify.
+
+The portal's Earnings page shows what your fee wallets were paid, read from settled transactions.
+
 ## The two rates add — they are not a split
 
 `platformFeeBps` and `integratorFeeBps` are **independent**. Yours is not a share of Vulcx's, and

@@ -41,6 +41,7 @@ recoveries. The code separates them.
 | `INVALID_WALLET` | 400 | `userWallet`/`authority`/`sessionAccount` is not a valid pubkey | Fix the address |
 | `FEE_CAP_EXCEEDED` | 400 | `platformFeeBps + integratorFeeBps` is over the 100 bps ceiling | Lower `integratorFeeBps`; the message names both rates |
 | `FEE_NEEDS_REFERRER` | 400 | `integratorFeeBps` was set with no `referrer` to pay it to | Send a `referrer`, or drop the fee |
+| `FEE_ABOVE_KEY_MAX` | 400 | `integratorFeeBps` is above the ceiling set on this API key in the portal | Lower the fee, or raise the key's ceiling at portal.vulcx.xyz |
 | `EXACT_OUT_MULTIHOP` | 400 | Exact-out cannot span hops on chain | Use the ExactIn-with-buffer pattern |
 | `EXACT_OUT_DEX` | 400 | A hop's venue has no exact-out CPI | Re-quote with `swapMode=ExactIn` |
 | `SESSION_ROUTE_UNSUP` | 400 | The route has a hop that cannot forward the session signer | Retry without `sessionAccount`, or wait for a different route |
