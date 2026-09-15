@@ -20,8 +20,8 @@ HEADER = """# Vulcx
 > Valiant and Fluxbeam; Solana support is in progress.
 > Base URL: `https://api.vulcx.xyz`. Three core endpoints: GET /api/v1/quote, POST /api/v1/swap,
 > POST /api/v1/instructions. An API key is OPTIONAL on REST endpoints — anonymous calls work but
-> are capped at 2 cost units/second, burst 20; a key raises that to the one published budget of 100 cost
-> units/second, burst 200, which is the same for every plan. GET /health
+> are capped at 2 cost units/second, burst 20; a key raises that to the account's plan budget
+> (20 cost units/second, burst 40, on Free; up to 2000/4000 on Pro). GET /health
 > needs no key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is
 > required, passed as ?key=vulcx_...
 """

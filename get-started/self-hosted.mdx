@@ -2,7 +2,7 @@
 title: "Self-hosted"
 sidebarTitle: "Self-Hosted"
 description: "Run your own Vulcx routing engine on your infrastructure using the community binary."
-llmDescription: "Overview of the Vulcan (self-hosted) binary for SVM chains (Fogo today). Explains hosted API vs self-hosted comparison (auth: API key vs license key; rate limits: one published budget that is the same for every plan vs built into the binary per license; infra: managed vs self-managed; cost: the hosted API is free because Vulcx earns from the on-chain swap fee rather than API access, self-hosted costs RPC fees only). Requirements: FluxRPC key (fluxrpc.com?ref=VULCX), community license key (license.vulcx.xyz), Linux amd64 or arm64 server. Docker Compose quickstart: copy .env, fill RPC_URL/YELLOWSTONE_TOKEN/COMMUNITY_LICENSE_KEY, docker compose up -d, curl /health. Same API surface as the hosted instance — all endpoints (quote, swap, instructions, price, stream) work identically. Links to full self-hosting guide (/guides/self-hosting) and vulcan GitHub. SVM chains: live on Fogo today, Solana in progress."
+llmDescription: "Overview of the Vulcan (self-hosted) binary for SVM chains (Fogo today). Explains hosted API vs self-hosted comparison (auth: API key vs license key; rate limits: a per-account budget set by the plan vs built into the binary per license; infra: managed vs self-managed; cost: the hosted API is free because Vulcx earns from the on-chain swap fee rather than API access, self-hosted costs RPC fees only). Requirements: FluxRPC key (fluxrpc.com?ref=VULCX), community license key (license.vulcx.xyz), Linux amd64 or arm64 server. Docker Compose quickstart: copy .env, fill RPC_URL/YELLOWSTONE_TOKEN/COMMUNITY_LICENSE_KEY, docker compose up -d, curl /health. Same API surface as the hosted instance — all endpoints (quote, swap, instructions, price, stream) work identically. Links to full self-hosting guide (/guides/self-hosting) and vulcan GitHub. SVM chains: live on Fogo today, Solana in progress."
 noindex: true
 ---
 
@@ -32,7 +32,7 @@ The Vulcan binary lets you run the full routing engine on your own server. It ex
 | | Hosted API | Self-Hosted |
 |---|---|---|
 | Auth | API key | Community license key |
-| Rate limits | One published budget, same for every plan | Built into the binary, per license |
+| Rate limits | Per-account budget set by your plan | Built into the binary, per license |
 | Infrastructure | Managed by Vulcx | Your server |
 | RPC provider | Managed by Vulcx | FluxRPC (your key) |
 | Cost | Free — Vulcx earns from the on-chain swap fee, not API access | Your own RPC and server. The community licence is free during beta |

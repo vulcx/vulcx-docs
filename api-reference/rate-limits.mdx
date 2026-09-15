@@ -1,13 +1,13 @@
 ---
 title: "Rate Limits"
-description: "Vulcx API rate limits: one flat budget of 100 cost units/second (burst 200) for every key regardless of plan, debited by request weight — a quote costs 1, a transaction build costs 5. Covers anonymous access, the pre-auth per-IP ceiling, the 429 shape, and retry strategy."
-llmDescription: "Vulcx API rate limits on SVM chains (live on Fogo). One published budget applies to every API key regardless of plan: 100 cost units per second sustained, burst 200. Buckets are debited by request cost, not request count — GET /api/v1/quote and GET /api/v1/price cost 1 unit, GET /api/v1/pools and POST /api/v1/cpi/route-accounts cost 3, POST /api/v1/swap and POST /api/v1/instructions cost 5. That is 100 quotes/second, or 20 transaction builds/second, or any mix. Rate limits deliberately do NOT vary by plan; plans differ only in how many keys they allow. Anonymous requests with no Authorization header get 2 units/second, burst 20. A separate pre-auth per-IP ceiling of 200 units/second, burst 400, runs before authentication and covers the WebSocket upgrade. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (do not cache quotes, stream instead of polling, use the instructions endpoint)."
+description: "Vulcx API rate limits: a per-account budget of cost units/second set by your plan (20/s on Free up to 2,000/s on Pro), debited by request weight — a quote costs 1, a transaction build costs 5. Covers stream connection limits, anonymous access, the pre-auth per-IP ceiling, the 429 shape, and retry strategy."
+llmDescription: "Vulcx API rate limits on SVM chains (live on Fogo). Limits apply per account: every API key an account holds shares one budget and one set of WebSocket stream connections, both set by the plan. Budgets in cost units per second (burst): Free 20 (40), Starter 40 (80), Builder 120 (240), Growth 300 (600), Scale 800 (1600), Pro 2000 (4000), Enterprise negotiated from 2000 (4000). Stream connections: Free none, Starter 1, Builder 5, Growth 15, Scale 50, Pro 150; Free-plan keys keep one stream connection until 2026-11-14. Buckets are debited by request cost, not request count — GET /api/v1/quote and GET /api/v1/price cost 1 unit, GET /api/v1/pools and POST /api/v1/cpi/route-accounts cost 3, POST /api/v1/swap and POST /api/v1/instructions cost 5. A budget of N units is N quotes/second or N/5 transaction builds/second or any mix. Anonymous requests with no Authorization header get 2 units/second, burst 20. A separate pre-auth per-IP ceiling of twice the highest plan (4000 units/second, burst 8000) runs before authentication and covers the WebSocket upgrade. A stream upgrade on a plan without the stream returns 403 STREAM_NOT_IN_PLAN; one past the plan's connection limit returns 429 STREAM_LIMIT. Covers the 429 response format, exponential backoff retry strategy with cURL, TypeScript, and Python examples, and best practices (do not cache quotes, stream instead of polling, use the instructions endpoint)."
 ---
 
-The Vulcx API rate limits by **cost**, not by request count, against a single published budget
-that is the same for every caller who sends a key.
+The Vulcx API rate limits by **cost**, not by request count, against a budget set by your plan.
+Limits apply **per account**: every key you hold draws from the same budget.
 
-## One budget, weighted by what you ask for
+## A budget, weighted by what you ask for
 
 A quote is a read against in-memory pool state. A swap runs that same routing and then builds a
 transaction, resolves its lookup tables, and simulates it. Charging both "one request" makes the
@@ -23,21 +23,38 @@ bucket by its weight:
 | `POST /api/v1/swap` | 5 |
 | `POST /api/v1/instructions` | 5 |
 
-| With an API key | Sustained | Burst |
-|---|---|---|
-| Every plan | 100 units/second | 200 units |
+## Limits by plan
 
-Through the table above that is **100 quotes/second, or 20 transaction builds/second, or any mix
-of the two**.
+| Plan | Sustained | Burst | Keys | Stream connections |
+|---|---|---|---|---|
+| Free | 20 units/second | 40 units | 2 | — |
+| Starter | 40 units/second | 80 units | 3 | 1 |
+| Builder | 120 units/second | 240 units | 10 | 5 |
+| Growth | 300 units/second | 600 units | 15 | 15 |
+| Scale | 800 units/second | 1,600 units | 25 | 50 |
+| Pro | 2,000 units/second | 4,000 units | 50 | 150 |
+| Enterprise | Negotiated | Negotiated | Negotiated | Negotiated |
+
+Through the cost table, a budget of N units/second is **N quotes/second, or N/5 transaction
+builds/second, or any mix of the two** — Builder's 120 units is 120 quotes/second or 24 builds.
 
 <Note>
-**Rate limits do not vary by plan.** Free, Pro, Scale and Enterprise keys are all rated at the
-same 100 units/second. Plans differ in how many keys you may hold, not in throughput.
-
-This is deliberate. A ceiling derived from trailing volume cannot be capacity-planned against,
-and it throttles a new integration hardest on day one — exactly when its quote-to-swap ratio is
-at its worst and it needs headroom most.
+**Limits are per account, not per key.** Creating more keys splits one integration's traffic
+across them; it does not add budget. The same holds for stream connections: they are counted
+across every key on the account.
 </Note>
+
+## Stream connections
+
+`GET /api/v1/stream` is available from Starter up, capped at the plan's connection count across
+the whole account. An upgrade on a plan without the stream returns `403` with code
+`STREAM_NOT_IN_PLAN`; one past the limit returns `429` with code `STREAM_LIMIT`. A closed
+connection frees its slot immediately.
+
+<Info>
+Free-plan keys keep **one** stream connection until **14 November 2026**, so integrations built
+while the stream was free have time to move to a paid plan.
+</Info>
 
 ## Anonymous access (no API key)
 
@@ -50,7 +67,7 @@ Anonymous callers share a small per-IP bucket, debited by the same cost table:
 | Anonymous (no key) | 2 units/second | 20 units |
 
 A burst of 20 covers one `POST /api/v1/swap` (5 units) plus a handful of quotes. Anonymous access is for evaluation; for anything
-else [get a key](/get-started/authentication) — same mechanics, 100× the budget, scoped to your
+else [get a key](/get-started/authentication) — same mechanics, at least 10× the budget, scoped to your
 account rather than shared with every anonymous caller on your IP.
 
 `GET /health` requires no key and is not subject to any of these limits.
@@ -63,15 +80,16 @@ including ones with a missing or invalid key — and to the WebSocket upgrade.
 
 | | Sustained | Burst |
 |---|---|---|
-| Per client IP, pre-auth | 200 units/second | 400 units |
+| Per client IP, pre-auth | 4,000 units/second | 8,000 units |
 
-It sits at twice the published per-key budget so it never binds on legitimate traffic from a
+It sits at twice the highest plan's budget so it never binds on legitimate traffic from a
 single customer; it should only trip on abuse. If you proxy many customers through one egress IP,
-they share this ceiling even though their per-key budgets are separate.
+they share this ceiling even though their per-account budgets are separate.
 
 <Note>
-  The WebSocket handshake is covered by this per-IP limiter **only** — the per-key budget above is
-  not applied to the upgrade. Once connected, the stream is not rate limited per message.
+  The WebSocket handshake is covered by this per-IP limiter and by the plan's connection limit —
+  the per-account request budget is not applied to the upgrade. Once connected, the stream is not
+  rate limited per message.
 </Note>
 
 ## Rate limit response
@@ -81,7 +99,8 @@ When rate limited, the API returns HTTP `429`:
 ```json
 {
   "success": false,
-  "error": "rate limit exceeded"
+  "error": "rate limit exceeded",
+  "code": "RATE_LIMITED"
 }
 ```
 
@@ -133,8 +152,8 @@ def fetch_with_retry(url, max_retries=3, **kwargs):
   price-or-fail window for `firmForMs` (~400 ms) — see [Firm quotes](/docs/swap/firm-quotes). Re-fetch
   before you build. (`lastValidBlockHeight` bounds how long the *transaction* can land, ~60 s; that
   is a different clock from how long the *price* is honoured.)
-- **Stream instead of polling.** If you need continuously fresh prices, subscribe on
-  [`GET /api/v1/stream`](/api-reference/stream/index) — the connection is not per-message rate
-  limited, so it is strictly cheaper than spending 1 unit per `/quote`.
+- **Stream instead of polling.** If your plan includes the stream and you need continuously fresh
+  prices, subscribe on [`GET /api/v1/stream`](/api-reference/stream/index) — the connection is not
+  per-message rate limited, so it is strictly cheaper than spending 1 unit per `/quote`.
 - **Prefer `/instructions` over `/quote` + `/swap`.** One `POST /api/v1/instructions` costs 5 units;
   a `GET /api/v1/quote` followed by `POST /api/v1/swap` costs 6 and makes the engine route twice.

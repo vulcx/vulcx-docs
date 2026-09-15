@@ -52,6 +52,7 @@ recoveries. The code separates them.
 | `ORIGIN_REQUIRED` | 403 | The key is origin-locked and no `Origin` was sent | Send from an allowed origin |
 | `ORIGIN_NOT_ALLOWED` | 403 | The `Origin` is not on the key's allowlist | Add it, or use a different key |
 | `QUOTE_WRONG_KEY` | 403 | The `quoteId` was minted for a different API key | Redeem with the key that quoted |
+| `STREAM_NOT_IN_PLAN` | 403 | `/api/v1/stream` upgrade on a plan that does not include the stream | Move to a plan with stream connections — see [Rate limits](/api-reference/rate-limits#stream-connections) |
 | `NO_POOL` | 404 | No pool exists for the pair | Nothing to do — the pair is not listed |
 | `POOL_DATA_MISSING` | 404 | Pools exist but their state is not loaded | Transient; retry shortly |
 | `NO_ROUTE` | 404 | Pools exist, but no path connects the pair at this size | Try a smaller amount |
@@ -63,6 +64,7 @@ recoveries. The code separates them.
 | `CPI_SPLIT_UNSUP` | 422 | Split routes have no CPI form yet | Use a pair that routes directly |
 | `SIM_FAILED` | 422 | Simulation failed for some other reason | Inspect `data.simulation` |
 | `RATE_LIMITED` | 429 | Bucket exhausted. Carries a `Retry-After` header | Back off — see [Rate limits](/api-reference/rate-limits) |
+| `STREAM_LIMIT` | 429 | The account already holds its plan's stream connections | Close a connection, or move to a larger plan |
 | `INTERNAL` | 500 | Our fault | Retry; report it if it persists |
 
 On a `/swap` or `/instructions` rejection whose simulation failed, the result is

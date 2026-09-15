@@ -34,7 +34,7 @@ throughput instead:
 
 ```bash
 curl "https://api.vulcx.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn"
-# or, for the full published budget (100 cost units/second):
+# or, for your plan's budget (20 cost units/second on Free, more on paid plans):
 curl "https://api.vulcx.xyz/api/v1/quote?inputMint=...&outputMint=...&amount=...&swapMode=ExactIn" \
   -H "Authorization: Bearer $VULCX_KEY"
 ```
@@ -305,4 +305,4 @@ Same as `/swap` without `skipSimulation` (`quoteId` and `firm` included), plus:
 
 ## Rate Limits
 
-Buckets are debited by request cost, not request count: quote/price 1, pools/cpi 3, swap/instructions 5. With a key: 100 units/second sustained, burst 200 — the same for every plan, so 100 quotes/second or 20 builds/second or any mix. Limits do not vary by plan; plans differ only in how many keys you may hold. No key: 2 units/second, burst 20, shared per IP.
+Buckets are debited by request cost, not request count: quote/price 1, pools/cpi 3, swap/instructions 5. With a key, limits are per account and set by the plan — units/second (burst): Free 20 (40), Starter 40 (80), Builder 120 (240), Growth 300 (600), Scale 800 (1600), Pro 2000 (4000). A budget of N is N quotes/second or N/5 builds/second or any mix, shared by every key on the account. The WebSocket stream needs a plan with stream connections (Starter 1, Builder 5, Growth 15, Scale 50, Pro 150; Free keys keep one until 2026-11-14): otherwise `403 STREAM_NOT_IN_PLAN`, or `429 STREAM_LIMIT` past the count. No key: 2 units/second, burst 20, shared per IP.

@@ -2,27 +2,28 @@
 title: "Authentication — API keys & the Authorization header"
 sidebarTitle: "Authentication"
 description: "Authenticate Vulcx API requests with an API key using the Authorization: Bearer header — optional on REST endpoints, required on the WebSocket stream. How to get a key, use it from the SDK, and keep it secure."
-llmDescription: "How to authenticate with the Vulcx API. REST endpoints on https://api.vulcx.xyz (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /api/v1/price) accept an OPTIONAL API key (format vulcx_...) sent in the Authorization: Bearer header — calls with no key are allowed but capped at a small anonymous per-IP budget (2 cost units/second, burst 20); a key raises that to the single published budget of 100 cost units/second, burst 200, which is identical for every plan — plans differ only in how many keys you may hold. GET /health never requires a key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is REQUIRED, passed as ?key=vulcx_... since browsers can't set custom headers on a WS handshake. Covers getting a key (free during beta, requested at https://vulcx.xyz/api-key/), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey), 401/403 errors for invalid keys, key security best practices, and a link to rate limits. SVM chains: live on Fogo today, Solana in progress."
+llmDescription: "How to authenticate with the Vulcx API. REST endpoints on https://api.vulcx.xyz (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /api/v1/price) accept an OPTIONAL API key (format vulcx_...) sent in the Authorization: Bearer header — calls with no key are allowed but capped at a small anonymous per-IP budget (2 cost units/second, burst 20); a key raises that to your plan's per-account budget (20 cost units/second, burst 40, on Free; up to 2000/4000 on Pro), shared by every key on the account. GET /health never requires a key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is REQUIRED, passed as ?key=vulcx_... since browsers can't set custom headers on a WS handshake, and the key's plan must include stream connections (Starter and up; Free keys keep one connection until 2026-11-14) — otherwise 403 STREAM_NOT_IN_PLAN, or 429 STREAM_LIMIT past the plan's connection count. Covers getting a key (free during beta, requested at https://vulcx.xyz/api-key/), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey), 401/403 errors for invalid keys, key security best practices, and a link to rate limits. SVM chains: live on Fogo today, Solana in progress."
 icon: "key"
 ---
 
 An API key is **optional** on REST calls to the Vulcx API (`https://api.vulcx.xyz`) — `/quote`,
 `/swap`, `/instructions`, and `/price` all work with no key. Without one, you're on a small shared
-anonymous budget of 2 cost units/second; send a key and you get your own 100 cost units/second. Keys
+anonymous budget of 2 cost units/second; send a key and you get your plan's own budget — 20 cost
+units/second on Free, more on paid plans. Keys
 look like `vulcx_` followed by a long hex string, and you send them in the standard `Authorization:
 Bearer` header (or as a `?key=` query parameter).
 
 <Note>
 The **WebSocket stream is the exception**: `GET /api/v1/stream` always requires a key, passed as
-`?key=` since a browser WS handshake can't carry custom headers. See
-[WebSocket streaming](#websocket-streaming) below.
+`?key=` since a browser WS handshake can't carry custom headers, and the key's plan must include
+stream connections. See [WebSocket streaming](#websocket-streaming) below.
 </Note>
 
 <Note>
-Vulcx is **free during beta** — there are no paid tiers yet. Getting a key is still worthwhile:
-anonymous access is capped at 2 cost units per second, burst 20, against the 100/200 a key gets (see
-[Rate limits](/api-reference/rate-limits)), and a key is what gives you your own budget rather
-than a bucket shared with every anonymous caller on your IP.
+Getting a key is worthwhile even on Free: anonymous access is capped at 2 cost units per second,
+burst 20, against the 20/40 a Free key gets (see [Rate limits](/api-reference/rate-limits)), and a
+key is what gives you your own budget rather than a bucket shared with every anonymous caller on
+your IP. Paid plans raise the budget and add stream connections.
 </Note>
 
 ## Get an API key
@@ -99,6 +100,10 @@ key as a `key` query parameter instead:
 wss://api.vulcx.xyz/api/v1/stream?key=vulcx_your_key_here
 ```
 
+The stream is part of paid plans from Starter up, and each plan caps how many connections the
+account may hold at once — see [Rate limits](/api-reference/rate-limits#stream-connections).
+Free-plan keys keep one connection until 14 November 2026.
+
 ## Keep your key secret
 
 <Warning>
@@ -115,7 +120,8 @@ A key grants access under your account's rate limits. Treat it like a password.
 | Status | Meaning |
 |--------|---------|
 | `401 Unauthorized` | No API key was provided, on an endpoint that requires one — only the WebSocket stream (`/api/v1/stream`) requires a key; REST calls with no key succeed anonymously instead. |
-| `403 Forbidden` | The key is invalid, disabled, or revoked. |
+| `403 Forbidden` | The key is invalid, disabled, or revoked — or, on the stream, its plan does not include stream connections (`STREAM_NOT_IN_PLAN`). |
+| `429 Too Many Requests` | On the stream: the account already holds its plan's connections (`STREAM_LIMIT`). |
 
 The SDK surfaces these as `AuthError` — see [SDK error handling](/sdk/error-handling). For
 throughput limits — including the tighter anonymous-tier limit — and the `429` response, see

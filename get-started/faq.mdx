@@ -80,7 +80,7 @@ llmDescription: "Frequently asked questions about Vulcx. Covers supported chains
   </Accordion>
 
   <Accordion title="What are the rate limits?">
-    One budget for every key regardless of plan: 100 cost units/second, burst 200. Requests are debited by weight — a quote costs 1, a transaction build costs 5 — so that is 100 quotes/second or 20 builds/second. Without a key you get 2 units/second, burst 20. If you hit a `429`, use exponential backoff (1s, 2s, 4s). See [Rate limits](/api-reference/rate-limits).
+    Your plan sets a per-account budget shared by all your keys: 20 cost units/second (burst 40) on Free, rising to 120 on Builder and 2,000 on Pro. Requests are debited by weight — a quote costs 1, a transaction build costs 5 — so Builder's 120 units is 120 quotes/second or 24 builds/second. The WebSocket stream is included from Starter up, with a per-plan connection limit. Without a key you get 2 units/second, burst 20. If you hit a `429`, use exponential backoff (1s, 2s, 4s). See [Rate limits](/api-reference/rate-limits).
   </Accordion>
 
   <Accordion title="When should I use /swap vs /instructions?">

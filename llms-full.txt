@@ -18,10 +18,11 @@ Currently: **Fogo** (5 max hops, Valiant/Fluxbeam DEXs).
 An API key is **optional** on the REST endpoints (`GET /api/v1/quote`, `POST /api/v1/swap`,
 `POST /api/v1/instructions`, `GET /api/v1/price`). A call with no key is served anonymously
 against a small per-IP budget (2 cost units/second, burst 20) — enough to evaluate the API. A key
-raises that to the published budget of 100 cost units/second, burst 200, which is the same for
-every plan. `GET /health` and `GET /api/v1/tokens` never need a key.
+raises that to the plan's per-account budget (Free 20 cost units/second, burst 40; see Rate
+Limits), shared by every key on the account. `GET /health` and `GET /api/v1/tokens` never need a key.
 
-`GET /api/v1/stream` (WebSocket) is the one endpoint where a key is **required**.
+`GET /api/v1/stream` (WebSocket) is the one endpoint where a key is **required**, and the key's plan
+must include stream connections (Starter and up; Free keys keep one connection until 2026-11-14).
 
 Send it as:
 
@@ -343,7 +344,7 @@ building token pickers. No API key required. Served with `Cache-Control: public,
 
 ## Rate Limits
 
-One published budget for every API key regardless of plan: 100 cost units/second sustained, burst 200. Limits do NOT vary by plan — plans differ only in how many keys you may hold. Buckets are debited by request cost, not request count: quote/price 1, pools and cpi/route-accounts 3, swap/instructions 5. That is 100 quotes/second, or 20 transaction builds/second, or any mix. Without a key: 2 cost units/second, burst 20. A separate pre-auth per-IP ceiling of 200 units/second, burst 400, runs before authentication and covers the WebSocket upgrade. 429 response on limit. Use exponential backoff.
+Limits apply per account — every API key an account holds shares one budget and one set of stream connections. Budget in cost units/second (burst), keys, stream connections: Free 20 (40), 2 keys, no stream; Starter $19/mo 40 (80), 3, 1; Builder $49/mo 120 (240), 10, 5; Growth $99/mo 300 (600), 15, 15; Scale $249/mo 800 (1600), 25, 50; Pro $499/mo 2000 (4000), 50, 150; Enterprise negotiated. Free-plan keys keep one stream connection until 2026-11-14. Buckets are debited by request cost, not request count: quote/price 1, pools and cpi/route-accounts 3, swap/instructions 5 — a budget of N units is N quotes/second or N/5 builds/second. Without a key: 2 cost units/second, burst 20. A separate pre-auth per-IP ceiling of 4000 units/second, burst 8000, runs before authentication and covers the WebSocket upgrade. 429 `RATE_LIMITED` on the request budget; stream upgrades return 403 `STREAM_NOT_IN_PLAN` or 429 `STREAM_LIMIT`. Use exponential backoff.
 
 ## Error Recovery Summary
 
