@@ -2,7 +2,7 @@
 title: "Authentication — API keys & the Authorization header"
 sidebarTitle: "Authentication"
 description: "Authenticate Vulcx API requests with an API key using the Authorization: Bearer header — optional on REST endpoints, required on the WebSocket stream. How to get a key, use it from the SDK, and keep it secure."
-llmDescription: "How to authenticate with the Vulcx API. REST endpoints on https://api.vulcx.xyz (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /api/v1/price) accept an OPTIONAL API key (format vulcx_...) sent in the Authorization: Bearer header — calls with no key are allowed but capped at a small anonymous per-IP budget (2 cost units/second, burst 20); a key raises that to your plan's per-account budget (20 cost units/second, burst 40, on Free; up to 2000/4000 on Pro), shared by every key on the account. GET /health never requires a key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is REQUIRED, passed as ?key=vulcx_... since browsers can't set custom headers on a WS handshake, and the key's plan must include stream connections (Starter and up; Free keys keep one connection until 2026-11-14) — otherwise 403 STREAM_NOT_IN_PLAN, or 429 STREAM_LIMIT past the plan's connection count. Covers getting a key (free during beta, requested at https://vulcx.xyz/api-key/), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey), 401/403 errors for invalid keys, key security best practices, and a link to rate limits. SVM chains: live on Fogo today, Solana in progress."
+llmDescription: "How to authenticate with the Vulcx API. REST endpoints on https://api.vulcx.xyz (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions, GET /api/v1/price) accept an OPTIONAL API key (format vulcx_...) sent in the Authorization: Bearer header — calls with no key are allowed but capped at a small anonymous per-IP budget (2 cost units/second, burst 20); a key raises that to your plan's per-account budget (20 cost units/second, burst 40, on Free; up to 2000/4000 on Pro), shared by every key on the account. GET /health never requires a key. The WebSocket stream (GET /api/v1/stream) is the one endpoint where a key is REQUIRED, passed as ?key=vulcx_... since browsers can't set custom headers on a WS handshake, and the key's plan must include stream connections (Starter and up; Free keys keep one connection until 2026-11-14) — otherwise 403 STREAM_NOT_IN_PLAN, or 429 STREAM_LIMIT past the plan's connection count. Covers getting a key (self-serve at https://portal.vulcx.xyz, sign in with Google or GitHub; Free plan included), authenticating with cURL/TypeScript/Python, passing the key in the SDK (apiKey), 401/403 errors for invalid keys, key security best practices, and a link to rate limits. SVM chains: live on Fogo today, Solana in progress."
 icon: "key"
 ---
 
@@ -29,15 +29,15 @@ your IP. Paid plans raise the budget and add stream connections.
 ## Get an API key
 
 <Steps>
-  <Step title="Request a key">
-    Keys are free during beta and issued by hand, so the form asks what you are
-    building. You will hear back within a day.
+  <Step title="Create a key">
+    Sign in to the portal with Google or GitHub and create a key. It works against mainnet
+    immediately on the Free plan; upgrade there when you need a larger budget or the stream.
 
-    <Card title="Request an API key" icon="key" href="https://vulcx.xyz/api-key/" horizontal>
-      Takes a minute. Email, product, and what you are building.
+    <Card title="Open the Vulcx Portal" icon="key" href="https://portal.vulcx.xyz" horizontal>
+      Keys, per-key fee defaults, usage and earnings.
     </Card>
 
-    Prefer to just ask? [Telegram](https://t.me/vulcxsupport) still works.
+    Need something the plans don't cover? Ask on [Telegram](https://t.me/vulcxsupport).
   </Step>
   <Step title="Store it as an environment variable">
     Never hard-code a key in source. Keep it in an environment variable:

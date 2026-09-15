@@ -6,6 +6,23 @@ llmDescription: "Vulcx API changelog. Tracks API updates, new features, breaking
 
 API updates and changes in reverse chronological order.
 
+<Update label="v1.5.0" description="September 2026: Plans, per-account limits, and the stream as a plan feature">
+  ## Plans
+
+  - Seven plans — **Free, Starter, Builder, Growth, Scale, Pro, Enterprise** — each with its own per-second budget, key quota and stream connections. This replaces the single limit every key shared. See [Rate Limits](/api-reference/rate-limits).
+  - Budgets are **per account**: every key on the account draws from one bucket. The cost weights are unchanged.
+  - Protocol fees your swaps pay in the previous 30 days are credited against the subscription, up to the plan price.
+
+  ## The stream needs a plan that includes it
+
+  - `GET /api/v1/stream` now checks the key's plan. **`403 STREAM_NOT_IN_PLAN`** when the plan has no stream connections, **`429 STREAM_LIMIT`** when the account already holds its plan's count.
+  - Free keys keep one connection until **14 November 2026**.
+
+  ## Keys are self-serve
+
+  - Create keys at [portal.vulcx.xyz](https://portal.vulcx.xyz) with Google or GitHub, and set a default fee, fee ceiling and fee wallet per key. See [Fees](/concepts/fees).
+</Update>
+
 <Update label="v1.4.0" description="September 2026: Moonit dropped, excludeDexes removed, /swap gates on its own simulation">
   ## `excludeDexes` is gone
 

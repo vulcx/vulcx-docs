@@ -9,7 +9,7 @@
   "production": {
    "host": "api.vulcx.xyz",
    "protocol": "wss",
-   "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.vulcx.xyz/api/v1/stream?key=vulcx_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes.",
+   "description": "Production WebSocket server. Requires an API key as a `?key=` query parameter on the connection URL (e.g. `wss://api.vulcx.xyz/api/v1/stream?key=vulcx_...`) — browsers can't set custom headers on a WebSocket handshake, so this is the only way to authenticate. A missing or invalid key is rejected before the upgrade completes. The key's plan must include the stream (Starter and up; Free keys keep one connection until 2026-11-14): otherwise the handshake is rejected with 403 STREAM_NOT_IN_PLAN, or 429 STREAM_LIMIT once the account holds its plan's connection count.",
    "security": [
     {
      "$ref": "#/components/securitySchemes/ApiKeyQuery"

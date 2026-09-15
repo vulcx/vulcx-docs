@@ -1,7 +1,7 @@
 ---
 title: "Stream Quotes"
 description: "WS /api/v1/stream — Subscribe to live swap quotes over WebSocket and receive a push whenever the price changes."
-llmDescription: "Protocol reference for the Vulcx WebSocket quote stream at wss://api.vulcx.xyz/api/v1/stream on SVM chains (live on Fogo). Requires an API key as a ?key=vulcx_... query parameter (not a header — browsers can't set custom headers on a WS handshake); connecting without one fails the handshake. Raw JSON-over-WebSocket (not socket.io). Clients send subscribe/unsubscribe ops with a pairs array ({in, out, amount, exactIn}); the server replies with an immediate first quote, an ack ({type:subscribed|unsubscribed|error, count}), and thereafter pushes a quote message ({type:quote, in, out, amount, amountOut, priceImpactBps, hops, slot, quoteId, validForMs, firmForMs}) only when the quote materially changes. Each push carries a firm-quote quoteId redeemable on POST /swap or POST /instructions; a {type:invalidate, quoteId} push means the last quote drifted past the firm margin. Limits: 256 subscriptions per connection, change-only pushes, ~50ms debounce."
+llmDescription: "Protocol reference for the Vulcx WebSocket quote stream at wss://api.vulcx.xyz/api/v1/stream on SVM chains (live on Fogo). Requires an API key as a ?key=vulcx_... query parameter (not a header — browsers can't set custom headers on a WS handshake); connecting without one fails the handshake. The key's plan must include the stream (Starter and up; Free keys keep one connection until 2026-11-14): otherwise 403 STREAM_NOT_IN_PLAN, and 429 STREAM_LIMIT once the account holds its plan's connection count. Raw JSON-over-WebSocket (not socket.io). Clients send subscribe/unsubscribe ops with a pairs array ({in, out, amount, exactIn}); the server replies with an immediate first quote, an ack ({type:subscribed|unsubscribed|error, count}), and thereafter pushes a quote message ({type:quote, in, out, amount, amountOut, priceImpactBps, hops, slot, quoteId, validForMs, firmForMs}) only when the quote materially changes. Each push carries a firm-quote quoteId redeemable on POST /swap or POST /instructions; a {type:invalidate, quoteId} push means the last quote drifted past the firm margin. Limits: 256 subscriptions per connection, change-only pushes, ~50ms debounce."
 asyncapi: "api-reference/asyncapi.json stream"
 ---
 
@@ -28,10 +28,16 @@ For one-off quotes, [`GET /api/v1/quote`](/api-reference/quote/index) is simpler
 This endpoint requires an API key like every other endpoint (see
 [Authentication](/get-started/authentication)) — but since browsers can't set custom headers on a
 WebSocket handshake, the key must be passed as a `?key=` query parameter, not an `Authorization`
-header. A handshake without a valid key is rejected before the upgrade completes. The upgrade is guarded by
-the **pre-auth per-IP** limiter only — the per-plan key limits that apply to REST endpoints are
-**not** applied to the handshake (see [Rate Limits](/api-reference/rate-limits)). Once upgraded, the
-connection is long-lived and is not subject to any per-request rate limiter.
+header. A handshake without a valid key is rejected before the upgrade completes.
+
+The key's plan must include the stream: **Starter and up**. Each plan allows a number of open
+connections **per account**, shared by every key on it. A plan without the stream is rejected with
+`403 STREAM_NOT_IN_PLAN`, and a handshake past the account's connection count with
+`429 STREAM_LIMIT`; closing a connection frees its slot. Free keys keep one connection until
+14 November 2026. See [Rate Limits](/api-reference/rate-limits) for the connections per plan.
+
+The per-second REST budget does **not** apply to the handshake, only the pre-auth per-IP limiter.
+Once upgraded, the connection is long-lived and is not subject to any per-request rate limiter.
 
 ## Client messages
 
