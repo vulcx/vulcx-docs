@@ -207,7 +207,7 @@
     "primary": {
       "type": "button",
       "label": "Get API key",
-      "href": "https://vulcx.xyz/api-key/"
+      "href": "https://portal.vulcx.xyz"
     }
   },
   "footer": {

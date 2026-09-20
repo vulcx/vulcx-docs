@@ -1,7 +1,7 @@
 ---
 title: "Get Instructions"
 description: "Get raw swap instructions from POST /api/v1/instructions to compose Vulcx swaps with your own logic — memos, account creation, batching — into one transaction."
-llmDescription: "Detailed guide for POST /api/v1/instructions on SVM chains (live on Fogo). Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body (including optional quoteId and firm for firm-quote redemption, referrer for the on-chain referral fee share, and sessionAccount for Fogo Sessions — session-shaped single route instruction, no ATA-create/wrap instructions, requiredTokenAccounts in the response, Valiant-V1-only), response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses, requiredTokenAccounts), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables."
+llmDescription: "Detailed guide for POST /api/v1/instructions on SVM chains (live on Fogo). Explains when to use instructions instead of swap (custom transaction composition, adding memos, creating accounts). Covers request body (including optional quoteId and firm for firm-quote redemption, referrer as the wallet the caller's own integratorFeeBps is paid to (kept in full, not a share of Vulcx's rate), and sessionAccount for Fogo Sessions — session-shaped single route instruction, no ATA-create/wrap instructions, requiredTokenAccounts in the response, Valiant-V1-only), response schema (InstructionsResponse with RawInstruction array, addressLookupTableAddresses, requiredTokenAccounts), and complete TypeScript example for building a v0 transaction from raw instructions with Address Lookup Tables."
 ---
 
 # Get Instructions

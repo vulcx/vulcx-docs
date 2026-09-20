@@ -57,8 +57,12 @@ All responses use a consistent envelope:
 | `POST https://api.vulcx.xyz/api/v1/swap` | POST | Optional | Build unsigned swap transaction |
 | `POST https://api.vulcx.xyz/api/v1/instructions` | POST | Optional | Get raw swap instructions |
 | `WS wss://api.vulcx.xyz/api/v1/stream` | WS | ✅ | [Stream live quotes over WebSocket](/api-reference/stream/index) |
+| `POST https://api.vulcx.xyz/api/v1/cpi/route-accounts` | POST | Optional | [Route instruction for a program to CPI into](/api-reference/cpi-route-accounts) |
 | `GET https://api.vulcx.xyz/api/v1/price/:mint` | GET | Optional | [Spot USD price for a token](/api-reference/price/index) |
+| `GET https://api.vulcx.xyz/api/v1/price?mints=` | GET | Optional | Spot USD prices for several tokens in one call |
+| `GET https://api.vulcx.xyz/api/v1/tokens` | GET | — | The token list the router knows, with decimals and logos |
 | `GET https://api.vulcx.xyz/health` | GET | — | Service health check |
+| `GET https://api.vulcx.xyz/health/swap` | GET | — | Swap canary: whether a real quote still routes |
 
 <Note>
 "Optional" means the endpoint works with no key, but is then subject to a small anonymous-tier

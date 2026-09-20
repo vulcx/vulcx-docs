@@ -117,7 +117,7 @@ booleans mirror `SIM_INSUFFICIENT` and `SIM_SLIPPAGE`.
 | `invalid userWallet address` | 400 | `userWallet` is not a valid base58 public key |
 | All quote errors above | 400/404 | Same causes as quote endpoint |
 | `multi-hop ExactOut is not supported on-chain; ...` | 400 | ExactOut works on a single hop only — use the ExactIn-with-buffer pattern the message describes |
-| `ExactOut is only supported on Vortex pools; ...` | 400 | The route crosses Fluxbeam, whose CPIs have no exact-out mode. Re-quote as ExactIn |
+| `ExactOut is only supported on Valiant pools; ...` | 400 | The route crosses Fluxbeam, whose CPIs have no exact-out mode. Re-quote as ExactIn |
 | `the best route needs more accounts than fit in one transaction; ...` | 422 | Split the trade into smaller amounts. `maxHops` narrows the route on `POST /api/v1/cpi/route-accounts`; `/swap` and `/instructions` accept no routing constraints |
 | `failed to build transaction` | 500 | Internal error building the transaction |
 
@@ -144,7 +144,7 @@ booleans mirror `SIM_INSUFFICIENT` and `SIM_SLIPPAGE`.
 | `invalid userWallet address` | 400 | `userWallet` is not a valid base58 public key |
 | All quote errors above | 400/404 | Same causes as quote endpoint |
 | `multi-hop ExactOut is not supported on-chain; ...` | 400 | Single-hop ExactOut only |
-| `ExactOut is only supported on Vortex pools; ...` | 400 | Route crosses a DEX with no exact-out CPI |
+| `ExactOut is only supported on Valiant pools; ...` | 400 | Route crosses a DEX with no exact-out CPI |
 | `the best route needs more accounts than fit in one transaction; ...` | 422 | Too many accounts for one transaction |
 | `pool data unavailable` | 404 | Pool account data unavailable (temporary) |
 | `failed to build instructions` | 500 | Internal error building the instructions |
