@@ -2,7 +2,7 @@
 mode: "custom"
 title: "Vulcx"
 description: "SVM Swap Aggregator with best-price routing across Valiant and Fluxbeam."
-llmDescription: "Vulcx documentation home. Vulcx is a best-price swap aggregator for SVM chains, live on Fogo, with multi-hop routing across Valiant and Fluxbeam, exposed via three endpoints (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions). Includes a quickstart cURL example (1 FOGO to USDC) and links to the SDK and API reference."
+llmDescription: "Vulcx documentation home. Vulcx is a best-price swap aggregator for SVM chains, live on Fogo, with multi-hop routing across Valiant and Fluxbeam, exposed via three endpoints (GET /api/v1/quote, POST /api/v1/swap, POST /api/v1/instructions). Includes a quickstart cURL example (10 USDC.s to FOGO) and links to the SDK and API reference."
 ---
 
 <div className="relative min-h-screen text-[#181D27] dark:text-[#F9F9FB] overflow-hidden">
@@ -42,7 +42,7 @@ llmDescription: "Vulcx documentation home. Vulcx is a best-price swap aggregator
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 font-medium">Get a quote: 1 FOGO → USDC on Fogo</p>
 
 ```bash
-curl "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn"
+curl "https://api.vulcx.xyz/api/v1/quote?inputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&outputMint=So11111111111111111111111111111111111111112&amount=10000000&swapMode=ExactIn"
 ```
 
     </div>

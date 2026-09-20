@@ -36,16 +36,16 @@ Get a quote for swapping 1 FOGO to USDC on Fogo:
 <CodeGroup>
 
 ```bash cURL
-curl "https://api.vulcx.xyz/api/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&amount=1000000000&swapMode=ExactIn&slippageBps=50"
+curl "https://api.vulcx.xyz/api/v1/quote?inputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&outputMint=So11111111111111111111111111111111111111112&amount=10000000&swapMode=ExactIn&slippageBps=50"
 ```
 
 ```typescript TypeScript
 const response = await fetch(
   "https://api.vulcx.xyz/api/v1/quote?" +
     new URLSearchParams({
-      inputMint: "So11111111111111111111111111111111111111112",
-      outputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-      amount: "1000000000",
+      inputMint: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG", // USDC.s, 6 decimals
+      outputMint: "So11111111111111111111111111111111111111112", // FOGO, 9 decimals
+      amount: "10000000", // 10 USDC.s
       swapMode: "ExactIn",
       slippageBps: "50",
     })
@@ -60,9 +60,9 @@ import requests
 resp = requests.get(
     "https://api.vulcx.xyz/api/v1/quote",
     params={
-        "inputMint": "So11111111111111111111111111111111111111112",
-        "outputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-        "amount": "1000000000",
+        "inputMint": "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",  # USDC.s, 6 decimals
+        "outputMint": "So11111111111111111111111111111111111111112",  # FOGO, 9 decimals
+        "amount": "10000000",  # 10 USDC.s
         "swapMode": "ExactIn",
         "slippageBps": "50",
     },
@@ -76,6 +76,17 @@ print(f"Output: {data['amountOut']}, Hops: {data['hopCount']}")
 <Note>
   The example above works with no API key — anonymous requests are capped at a small per-IP rate limit. See [Authentication](/get-started/authentication) for how to get a free key and the full published budget.
 </Note>
+
+<Warning>
+  **Trying `/swap` before you have a funded Fogo wallet?** Send `"skipSimulation": true`.
+
+  `/swap` simulates the transaction it built and refuses to return one whose
+  simulation failed — which is what you want in production, and not what you
+  want while evaluating. A wallet with no FOGO and no token accounts fails that
+  simulation with `SIM_FAILED` / `AccountNotFound`, and you get a `422` instead
+  of a transaction. With `skipSimulation` you get the base64 transaction
+  straight away and can inspect it without holding anything.
+</Warning>
 
 ## Next steps
 
