@@ -13,11 +13,11 @@
     "indexing": "navigable",
     "metatags": {
       "og:type": "website",
-      "og:site_name": "Vulcx",
+      "og:site_name": "Vulcx Docs",
       "og:locale": "en_US",
-      "og:image": "/images/og-card.png",
+      "og:image": "https://vulcx.xyz/assets/og.png",
       "twitter:card": "summary_large_image",
-      "twitter:image": "/images/og-card.png",
+      "twitter:image": "https://vulcx.xyz/assets/og.png",
       "msvalidate.01": "D0649C9A3D18AD8578956ADCD7C927AB"
     }
   },
