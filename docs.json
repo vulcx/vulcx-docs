@@ -31,9 +31,9 @@
     ]
   },
   "colors": {
-    "primary": "#F47026",
-    "light": "#FD944C",
-    "dark": "#B03118"
+    "primary": "#FF4F1F",
+    "light": "#FF7A52",
+    "dark": "#D93D10"
   },
   "appearance": {
     "default": "dark",
@@ -41,18 +41,17 @@
   },
   "background": {
     "color": {
-      "dark": "#08080a",
+      "dark": "#000000",
       "light": "#ffffff"
-    },
-    "decoration": "grid"
+    }
   },
   "fonts": {
     "heading": {
-      "family": "Bricolage Grotesque",
-      "weight": 700
+      "family": "Geist",
+      "weight": 600
     },
     "body": {
-      "family": "Inter",
+      "family": "Geist",
       "weight": 400
     }
   },
@@ -61,7 +60,7 @@
       "theme": "github-dark"
     }
   },
-  "favicon": "/favicon-vx.png",
+  "favicon": "/favicon.svg",
   "openapi": [
     "/api-reference/openapi.json"
   ],
