@@ -141,6 +141,31 @@ and `referrer` are optional and behave exactly as on the REST endpoint.
   (quotes allow 256). Each template is materially more expensive to maintain than a quote.
 </Note>
 
+### Blockhash feed
+
+```json
+{"op":"subscribe_blockhash"}
+{"op":"unsubscribe_blockhash"}
+```
+
+Pushes the latest blockhash on **every block** (about 25 per second on Fogo), and the most recent one
+immediately on subscribe. It is the same blockhash Vulcx builds transactions with, taken from the block
+feed. `lastValidBlockHeight` uses Fogo's real validity window (about 3,000 blocks), not the 150 blocks a
+Solana-style RPC reports. If you assemble transactions from
+[`/instructions`](/api-reference/instructions/index), you can use it without fetching a blockhash from
+your RPC.
+
+### Price feed
+
+```json
+{"op":"subscribe_price","mints":["So11111111111111111111111111111111111111112"]}
+{"op":"unsubscribe_price","mints":["So11111111111111111111111111111111111111112"]}
+```
+
+Pushes a mint's USD price when it changes, and the current price immediately on subscribe. These are
+the same prices [`/api/v1/price`](/api-reference/price/index) serves: spot, derived from Fogo pools,
+re-evaluated every few seconds. Up to 256 mints per connection.
+
 ## Server messages
 
 ### Quote push
@@ -218,6 +243,32 @@ gate, so you may still occasionally get a `409` without having seen an invalidat
 
 <ResponseField name="type" type="string">Always `"invalidate"`.</ResponseField>
 <ResponseField name="quoteId" type="string">The commitment ID that drifted stale.</ResponseField>
+
+### Blockhash push
+
+```json
+{
+  "type": "blockhash",
+  "blockhash": "7QYzRvP8L31q8SpU9AEqcQtWZSb8gzcK7Q64ZEcEVMrn",
+  "lastValidBlockHeight": 762118028,
+  "slot": 762436411
+}
+```
+
+### Price push
+
+```json
+{
+  "type": "price",
+  "mint": "So11111111111111111111111111111111111111112",
+  "priceUsd": 0.0068981,
+  "slot": 762436300,
+  "updatedAt": 1790052455
+}
+```
+
+`updatedAt` is the Unix time in seconds when the price was derived. `slot` can be `0` for a price that
+was carried over rather than observed in a specific slot.
 
 ### Acknowledgement
 

@@ -6,7 +6,7 @@ llmDescription: "Vulcx API changelog. Tracks API updates, new features, breaking
 
 API updates and changes in reverse chronological order.
 
-<Update label="v1.5.1" description="September 2026: Rate-limit headers, a stream that survives deploys, and where the API runs">
+<Update label="v1.5.1" description="September 2026: Rate-limit headers, blockhash and price feeds, a stream that survives deploys, and where the API runs">
   ## Rate-limit headers on every response
 
   - `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` report your bucket in cost units, and a `429` carries a `Retry-After` computed from your plan's refill rate. They are exposed over CORS, so browser code can read them too. See [Rate Limits](/api-reference/rate-limits).
@@ -14,6 +14,11 @@ API updates and changes in reverse chronological order.
   ## The stream stays connected through our deploys
 
   - `/api/v1/stream` connections are now held by a separate process. Restarting or upgrading the routing engine no longer disconnects you, and your subscriptions resume by themselves. Keep your reconnect logic anyway: a network or gateway restart can still close the socket.
+
+  ## Blockhash and price feeds on the stream
+
+  - `subscribe_blockhash` pushes the latest blockhash on every block, with Fogo's real `lastValidBlockHeight`. If you assemble transactions from `/instructions`, you no longer need a blockhash RPC call.
+  - `subscribe_price` pushes a mint's USD price when it changes. See [Stream](/api-reference/stream/index).
 
   ## Where the API runs
 
