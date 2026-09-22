@@ -104,9 +104,25 @@ When rate limited, the API returns HTTP `429`:
 }
 ```
 
+## Rate limit headers
+
+Every rate-limited response, successful or not, reports where your bucket stands. Units are
+**cost units**, not requests: a transaction build spends 5, a quote 1.
+
+| Header | Meaning |
+|---|---|
+| `X-RateLimit-Limit` | Your bucket's capacity (the plan's burst) |
+| `X-RateLimit-Remaining` | Cost units available right now, after this request |
+| `X-RateLimit-Reset` | Seconds until the bucket is full again |
+| `Retry-After` | On a `429` only: seconds until a request of this cost would be allowed |
+
+The headers are exposed over CORS, so browser code can read them. Anonymous requests report
+the anonymous bucket. The pre-auth per-IP ceiling sends only `Retry-After`.
+
 ## Retry strategy
 
-Use exponential backoff when you receive a `429`:
+On a `429`, wait `Retry-After` seconds if it is present. It is computed from your plan's
+refill rate and the cost of the request you just made. Otherwise, use exponential backoff:
 
 <CodeGroup>
 ```bash cURL

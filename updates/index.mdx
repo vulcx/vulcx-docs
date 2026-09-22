@@ -6,6 +6,20 @@ llmDescription: "Vulcx API changelog. Tracks API updates, new features, breaking
 
 API updates and changes in reverse chronological order.
 
+<Update label="v1.5.1" description="September 2026: Rate-limit headers, a stream that survives deploys, and where the API runs">
+  ## Rate-limit headers on every response
+
+  - `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` report your bucket in cost units, and a `429` carries a `Retry-After` computed from your plan's refill rate. They are exposed over CORS, so browser code can read them too. See [Rate Limits](/api-reference/rate-limits).
+
+  ## The stream stays connected through our deploys
+
+  - `/api/v1/stream` connections are now held by a separate process. Restarting or upgrading the routing engine no longer disconnects you, and your subscriptions resume by themselves. Keep your reconnect logic anyway: a network or gateway restart can still close the socket.
+
+  ## Where the API runs
+
+  - `api.vulcx.xyz` is served from **Amsterdam, Netherlands**, with no CDN in front of it. To minimise latency, host nearby and reuse connections: see [Server location & latency](/get-started/latency).
+</Update>
+
 <Update label="v1.5.0" description="September 2026: Plans, per-account limits, and the stream as a plan feature">
   ## Plans
 

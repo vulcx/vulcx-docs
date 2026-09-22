@@ -81,6 +81,7 @@
               "get-started/introduction",
               "get-started/authentication",
               "get-started/architecture",
+              "get-started/latency",
               "get-started/faq"
             ]
           }

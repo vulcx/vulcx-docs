@@ -1,0 +1,105 @@
+---
+title: "Server location and latency — where the Vulcx API runs"
+sidebarTitle: "Server location & latency"
+description: "The Vulcx API runs in Amsterdam, Netherlands, with no CDN in front of it. Host your bot or backend nearby, reuse connections, and use the stream instead of polling for the lowest latency."
+llmDescription: "Where the Vulcx API is hosted and how to minimise latency to it. api.vulcx.xyz is served from a single origin in Amsterdam, Netherlands (Oracle Cloud), deliberately not behind a CDN or proxy, over HTTPS (TLS 1.3, HTTP/1.1 with keep-alive). For the lowest latency: host your backend in or near Amsterdam (e.g. Oracle Cloud eu-amsterdam-1, Google Cloud europe-west4, Microsoft Azure West Europe, DigitalOcean AMS3, Vultr Amsterdam; AWS has no Netherlands region, eu-central-1 Frankfurt is the nearest), reuse HTTP connections (a new connection costs a TCP and TLS handshake — measured from Vietnam, ~815 ms cold vs ~282 ms warm for a quote), subscribe to WS /api/v1/stream instead of polling /quote, and redeem firm quotes inside their window (firmForMs, validForMs). Do not hardcode the server IP; resolve api.vulcx.xyz. Includes a curl command to measure connect, TLS and time-to-first-byte from your own server."
+---
+
+The Vulcx API runs in **Amsterdam, Netherlands**. If your bot, backend or
+market-making system is latency-sensitive, run it close to that and hold
+your connections open. Those two choices matter far more than anything
+else you can tune.
+
+## Where the API runs
+
+| | |
+|---|---|
+| Region | Amsterdam, Netherlands (Oracle Cloud) |
+| Hostname | `api.vulcx.xyz`, resolved directly to the origin |
+| In front of it | Nothing. No CDN or proxy, on purpose: each hop adds latency to every request |
+| Protocol | HTTPS, TLS 1.3, HTTP/1.1 with keep-alive; WebSocket for [`/api/v1/stream`](/api-reference/stream/index) |
+
+Always use the hostname `api.vulcx.xyz`, and don't hardcode an IP address.
+If the API moves or gains regions, the name will keep working and an IP will
+not. Changes are announced in [Updates](/updates/index).
+
+<Note>
+The marketing site, the portal and these docs are served through CDNs. Only
+the API is direct. Latency to `vulcx.xyz` says nothing about latency to
+`api.vulcx.xyz`, so measure the API itself (below).
+</Note>
+
+## Host your server nearby
+
+Any provider with a data centre in or near Amsterdam puts you a few
+milliseconds from the API. For example:
+
+| Provider | Region |
+|---|---|
+| Oracle Cloud | `eu-amsterdam-1`, the same region as the API |
+| Google Cloud | `europe-west4` (Netherlands) |
+| Microsoft Azure | West Europe (Netherlands) |
+| DigitalOcean | `AMS3` |
+| Vultr | Amsterdam |
+| AWS | No Netherlands region; `eu-central-1` (Frankfurt) is the nearest |
+
+If your users or your other infrastructure are somewhere else, measure
+before choosing (below). Distance dominates: from Southeast Asia, most of a
+request's time is spent crossing to Europe, not inside the API.
+
+## Reuse connections
+
+Every new connection pays a TCP handshake and a TLS handshake before the
+request is even sent. Measured from Vietnam to the API for the same quote:
+
+| | Median | 90th percentile |
+|---|---|---|
+| New connection for each request | ~815 ms | ~866 ms |
+| Reused (keep-alive) connection | **~282 ms** | ~307 ms |
+
+From a server in Amsterdam, both numbers shrink to a few milliseconds plus
+the quote itself. The ratio still holds, though: reuse your connections.
+
+- The [SDK](/sdk/quickstart) uses the platform `fetch`. It keeps connections
+  alive by default in Node.js 18+ and in browsers, so you don't need to do
+  anything.
+- With your own HTTP client, keep one client or connection pool for the life
+  of the process. Don't create one per request.
+
+## Stream instead of polling
+
+If you track prices for a set of pairs, don't poll `/quote`. Subscribe to
+[`/api/v1/stream`](/docs/swap/stream-quotes): the server pushes a fresh quote
+when pool state changes, and nothing when it doesn't. You get changes as
+soon as they happen, with no request round trip and no rate-limit cost per
+update.
+
+## Act inside the quote window
+
+Every quote carries a `quoteId`:
+- It can be redeemed on `/swap` or `/instructions` for `validForMs`
+  (currently 3 s).
+- It can be redeemed as a **firm** price for `firmForMs` (currently 400 ms).
+
+The round trip from your server to the API has to fit inside those windows.
+That's one more reason to be close. See
+[Firm quotes](/docs/swap/firm-quotes).
+
+## Measure it yourself
+
+Run this on the machine that will call the API. It prints the time to
+connect, to finish the TLS handshake, and to receive the first byte of a
+real quote:
+
+```bash
+curl -s -o /dev/null \
+  -w "connect %{time_connect}s  tls %{time_appconnect}s  first byte %{time_starttransfer}s\n" \
+  "https://api.vulcx.xyz/api/v1/quote?inputMint=uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG&outputMint=So11111111111111111111111111111111111111112&amount=10000000&swapMode=ExactIn"
+```
+
+Run it a few times. The first run includes a DNS lookup. `connect` is
+roughly one network round trip to Amsterdam, and `first byte` minus `tls` is
+what a reused connection costs per request.
+
+Sending the signed transaction is a separate hop, from your server to the
+Fogo RPC you submit through. It isn't affected by where the Vulcx API runs.
